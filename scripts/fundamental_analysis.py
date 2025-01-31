@@ -6,18 +6,10 @@ class FinancialAnalyzer:
         self.ticker = ticker
         self.company = yf.Ticker(self.ticker)
 
-    def _format_currency(self, value, scale="M"):
+    def _format_currency(self, value):
         """Format a numeric value as a currency string with dollar sign and dot as thousand separator."""
         try:
-            if scale == "M":
-                value /= 1_000_000
-                suffix = "M"
-            elif scale == "B":
-                value /= 1_000_000_000
-                suffix = "B"
-            else:
-                suffix = ""
-            return f"${value:,.0f}{suffix}".replace(',', '.')
+            return f"${value:,.0f}".replace(',', '.')  # Formato completo con separadores de miles
         except (ValueError, TypeError):
             return "N/A"  # Return "N/A" if the value is not numeric
 
@@ -156,13 +148,8 @@ class FinancialAnalyzer:
             print(f"  {metric}:")
             for date, value in values.items():
                 formatted_date = date.strftime('%Y-%m-%d')
-                formatted_value = self._format_currency(value, scale="M")
+                formatted_value = self._format_currency(value)  # Valor completo
                 print(f"    {formatted_date}: {formatted_value}")
         else:
-            formatted_value = self._format_currency(values, scale="M")
+            formatted_value = self._format_currency(values)  # Valor completo
             print(f"  {metric}: {formatted_value}")
-            
-    
-    
-
-    

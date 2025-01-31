@@ -12,6 +12,18 @@ class FinancialAnalyzer:
             return f"${value:,.0f}".replace(',', '.')  # Formato completo con separadores de miles
         except (ValueError, TypeError):
             return "N/A"  # Return "N/A" if the value is not numeric
+        
+    def _print_values(self, metric, values):
+        """Print values for a given metric."""
+        if isinstance(values, pd.Series):
+            print(f"  {metric}:")
+            for date, value in values.items():
+                formatted_date = date.strftime('%Y-%m-%d')
+                formatted_value = self._format_currency(value)  # Valor completo
+                print(f"    {formatted_date}: {formatted_value}")
+        else:
+            formatted_value = self._format_currency(values)  # Valor completo
+            print(f"  {metric}: {formatted_value}")
 
     def _filter_metrics(self, data, metrics_dict):
         """Filter metrics that exist in the financial data."""
@@ -141,15 +153,3 @@ class FinancialAnalyzer:
 
         except Exception as e:
             print(f"Error retrieving cash flow statement for {self.ticker}: {e}")
-
-    def _print_values(self, metric, values):
-        """Print values for a given metric."""
-        if isinstance(values, pd.Series):
-            print(f"  {metric}:")
-            for date, value in values.items():
-                formatted_date = date.strftime('%Y-%m-%d')
-                formatted_value = self._format_currency(value)  # Valor completo
-                print(f"    {formatted_date}: {formatted_value}")
-        else:
-            formatted_value = self._format_currency(values)  # Valor completo
-            print(f"  {metric}: {formatted_value}")

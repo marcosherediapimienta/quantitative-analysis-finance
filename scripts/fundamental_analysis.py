@@ -1,80 +1,90 @@
-import yfinance as yf
-import pandas as pd
+import requests
 
-class FundamentalAnalysis:
-    def __init__(self, tickers):
-        """
-        Inicializa la clase con una lista de tickers.
-        :param tickers: Lista de tickers (ejemplo: ["AAPL", "MSFT"])
-        """
-        self.tickers = tickers
-    
-    def get_fundamental_data(self):
-        """
-        Obtiene los datos fundamentales de los tickers especificados.
-        Devuelve un DataFrame con métricas clave.
-        """
-        fundamental_data = []
-        
-        for ticker in self.tickers:
-            print(f"Downloading data for {ticker}...")
-            try:
-                stock = yf.Ticker(ticker)
-                print(f"Getting info for ticker {ticker}...")
-                
-                # Obtener información clave
-                info = stock.info
-                financials = stock.financials
-                balance_sheet = stock.balance_sheet
-                cashflow = stock.cashflow
+# Usando tu clave API
+api_key = 'T7N2JJGEJG6MJ9OZ'
 
-                # Mostrar las primeras filas de cada dataframe para depuración
-                print("Financials:\n", financials.head())
-                print("Balance Sheet:\n", balance_sheet.head())
-                print("Cashflow:\n", cashflow.head())
-                
-                # Extraer datos relevantes
-                data = {
-                    "Ticker": ticker,
-                    "Sector": info.get("sector", "N/A"),
-                    "Industry": info.get("industry", "N/A"),
-                    "Market Cap": info.get("marketCap", "N/A"),
-                    "PE Ratio": info.get("trailingPE", "N/A"),
-                    "PB Ratio": info.get("priceToBook", "N/A"),
-                    "EPS": info.get("trailingEps", "N/A"),
-                    "Dividend Yield": info.get("dividendYield", "N/A"),
-                    "Revenue (TTM)": self.get_data(financials, "Total Revenue"),
-                    "Net Income (TTM)": self.get_data(financials, "Net Income"),
-                    "Total Assets": self.get_data(balance_sheet, "Total Assets"),
-                    "Total Liabilities": self.get_data(balance_sheet, "Total Liabilities Net Minority Interest"),
-                    "Free Cash Flow (TTM)": self.get_data(cashflow, "Free Cash Flow"),
-                }
+# Función para obtener los datos fundamentales de la empresa
+def get_company_overview(symbol):
+    url = f'https://www.alphavantage.co/query?function=OVERVIEW&symbol={symbol}&apikey={api_key}'
+    response = requests.get(url)
+    data = response.json()
+    return data
 
-                fundamental_data.append(data)
+# Función para obtener el perfil de un ETF
+def get_etf_profile(symbol):
+    url = f'https://www.alphavantage.co/query?function=ETF_PROFILE&symbol={symbol}&apikey={api_key}'
+    response = requests.get(url)
+    data = response.json()
+    return data
 
-            except Exception as e:
-                print(f"Error obteniendo datos para {ticker}: {e}")
+# Función para obtener los dividendos de la empresa
+def get_dividends(symbol):
+    url = f'https://www.alphavantage.co/query?function=DIVIDENDS&symbol={symbol}&apikey={api_key}'
+    response = requests.get(url)
+    data = response.json()
+    return data
 
-        # Convertir a DataFrame
-        df_fundamental = pd.DataFrame(fundamental_data)
+# Función para obtener los splits de la empresa
+def get_splits(symbol):
+    url = f'https://www.alphavantage.co/query?function=SPLITS&symbol={symbol}&apikey={api_key}'
+    response = requests.get(url)
+    data = response.json()
+    return data
 
-        # Formatear números grandes para mayor legibilidad
-        for column in ["Market Cap", "Revenue (TTM)", "Net Income (TTM)", "Total Assets", "Total Liabilities", "Free Cash Flow (TTM)"]:
-            if column in df_fundamental.columns:
-                df_fundamental[column] = pd.to_numeric(df_fundamental[column], errors="coerce")  # Convertir a numérico
-                df_fundamental[column] = df_fundamental[column].apply(lambda x: f"{x:,.2f}" if pd.notnull(x) else "N/A")
-        
-        return df_fundamental
-    
-    def get_data(self, df, column):
-        """
-        Verifica si la columna está en el dataframe y extrae el valor.
-        :param df: El dataframe de financials, balance_sheet o cashflow.
-        :param column: El nombre de la columna a extraer.
-        :return: El valor de la columna o "N/A" si no existe.
-        """
-        if column in df.index:
-            return df.loc[column].values[0]
-        else:
-            return "N/A"
+# Función para obtener el estado de resultados de la empresa
+def get_income_statement(symbol):
+    url = f'https://www.alphavantage.co/query?function=INCOME_STATEMENT&symbol={symbol}&apikey={api_key}'
+    response = requests.get(url)
+    data = response.json()
+    return data
 
+# Función para obtener el balance de la empresa
+def get_balance_sheet(symbol):
+    url = f'https://www.alphavantage.co/query?function=BALANCE_SHEET&symbol={symbol}&apikey={api_key}'
+    response = requests.get(url)
+    data = response.json()
+    return data
+
+# Función para obtener el flujo de caja de la empresa
+def get_cash_flow(symbol):
+    url = f'https://www.alphavantage.co/query?function=CASH_FLOW&symbol={symbol}&apikey={api_key}'
+    response = requests.get(url)
+    data = response.json()
+    return data
+
+# Función para obtener las ganancias de la empresa
+def get_earnings(symbol):
+    url = f'https://www.alphavantage.co/query?function=EARNINGS&symbol={symbol}&apikey={api_key}'
+    response = requests.get(url)
+    data = response.json()
+    return data
+
+# Función para obtener el estado de listado y exclusión de una acción o ETF
+def get_listing_status(state='active', date=None):
+    url = f'https://www.alphavantage.co/query?function=LISTING_STATUS&apikey={api_key}'
+    if date:
+        url += f'&date={date}'
+    if state:
+        url += f'&state={state}'
+    response = requests.get(url)
+    data = response.content.decode('utf-8')
+    return data
+
+def get_earnings_calendar(symbol=None, horizon='3month'):
+    url = f'https://www.alphavantage.co/query?function=EARNINGS_CALENDAR&apikey={api_key}'
+    if symbol:
+        url += f'&symbol={symbol}'
+    if horizon:
+        url += f'&horizon={horizon}'
+    response = requests.get(url)
+
+    # Imprimir la respuesta para depuración
+    print(response.text)  # Esto imprimirá el contenido completo de la respuesta
+
+    try:
+        data = response.json()  # Intentar decodificar la respuesta JSON
+    except ValueError:
+        print("Error al decodificar la respuesta JSON")
+        return None
+
+    return data

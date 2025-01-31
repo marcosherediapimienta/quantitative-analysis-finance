@@ -1,5 +1,7 @@
 import yfinance as yf
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 class FinancialAnalyzer:
     def __init__(self, ticker):
@@ -34,7 +36,30 @@ class FinancialAnalyzer:
                     available_metrics[category].append(metric)
         return available_metrics
 
-    def get_balance_sheet(self):
+    def _normalize_data(self, data):
+        """Normalize the data to a 0-1 scale."""
+        return (data - data.min()) / (data.max() - data.min())
+
+    def _plot_metrics(self, data, metrics_dict, title):
+        """Plot the metrics that exist in the financial data."""
+        available_metrics = self._filter_metrics(data, metrics_dict)
+        for category, metrics in available_metrics.items():
+            if metrics:
+                plt.figure(figsize=(10, 6))
+                for metric in metrics:
+                    values = data.loc[metric]
+                    if isinstance(values, pd.Series):
+                        # Normalizar los datos antes de graficar
+                        normalized_values = self._normalize_data(values)
+                        sns.lineplot(x=values.index, y=normalized_values, label=metric)
+                plt.title(f"{title} - {category}")
+                plt.xlabel('Date')
+                plt.ylabel('Normalized Value')
+                plt.legend()
+                plt.grid(True)
+                # No llamamos a plt.show() aquí
+
+    def get_balance_sheet(self, plot=False):
         try:
             # Get the balance sheet
             info = self.company.balance_sheet
@@ -77,10 +102,14 @@ class FinancialAnalyzer:
                         values = info.loc[account]
                         self._print_values(account, values)
 
+            # Plot the balance sheet metrics if requested
+            if plot:
+                self._plot_metrics(info, balance_sheet, "Balance Sheet")
+
         except Exception as e:
             print(f"Error retrieving balance sheet for {self.ticker}: {e}")
 
-    def get_income_statement(self):
+    def get_income_statement(self, plot=False):
         try:
             # Get the income statement
             info = self.company.financials
@@ -118,10 +147,14 @@ class FinancialAnalyzer:
                         values = info.loc[metric]
                         self._print_values(metric, values)
 
+            # Plot the income statement metrics if requested
+            if plot:
+                self._plot_metrics(info, income_stmt, "Income Statement")
+
         except Exception as e:
             print(f"Error retrieving income statement for {self.ticker}: {e}")
 
-    def get_cash_flow(self):
+    def get_cash_flow(self, plot=False):
         try:
             # Get the cash flow statement
             info = self.company.cash_flow
@@ -150,6 +183,10 @@ class FinancialAnalyzer:
                     for metric in metrics:
                         values = info.loc[metric]
                         self._print_values(metric, values)
+
+            # Plot the cash flow metrics if requested
+            if plot:
+                self._plot_metrics(info, cash_flow, "Cash Flow Statement")
 
         except Exception as e:
             print(f"Error retrieving cash flow statement for {self.ticker}: {e}")

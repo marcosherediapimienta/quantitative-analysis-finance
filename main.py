@@ -1,10 +1,13 @@
 import yfinance as yf
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 from scripts.fundamental_analysis import FinancialAnalyzer
 
-
-ticker = "AAPL"
+ticker = "META"
 analyzer = FinancialAnalyzer(ticker)
-balance_sheet = analyzer.get_balance_sheet()
-income_statement = analyzer.get_income_statement()
-cash_flow = analyzer.get_cash_flow()
+analyzer.get_balance_sheet(plot=True)
+analyzer.get_income_statement(plot=True)
+analyzer.get_cash_flow(plot=True)
+
+plt.show()

@@ -1,24 +1,39 @@
 import yfinance as yf
 import pandas as pd
 
-class BalanceSheetAnalyzer:
+class FinancialAnalyzer:
     def __init__(self, ticker):
         self.ticker = ticker
+        self.company = yf.Ticker(self.ticker)
 
-    def _format_currency(self, value):
+    def _format_currency(self, value, scale="M"):
         """Format a numeric value as a currency string with dollar sign and dot as thousand separator."""
         try:
-            return f"${value:,.0f}".replace(',', '.')
+            if scale == "M":
+                value /= 1_000_000
+                suffix = "M"
+            elif scale == "B":
+                value /= 1_000_000_000
+                suffix = "B"
+            else:
+                suffix = ""
+            return f"${value:,.0f}{suffix}".replace(',', '.')
         except (ValueError, TypeError):
             return "N/A"  # Return "N/A" if the value is not numeric
 
+    def _filter_metrics(self, data, metrics_dict):
+        """Filter metrics that exist in the financial data."""
+        available_metrics = {key: [] for key in metrics_dict.keys()}
+        for category, metrics in metrics_dict.items():
+            for metric in metrics:
+                if metric in data.index:
+                    available_metrics[category].append(metric)
+        return available_metrics
+
     def get_balance_sheet(self):
         try:
-            # Download company data from Yahoo Finance
-            company = yf.Ticker(self.ticker)
-
             # Get the balance sheet
-            info = company.balance_sheet
+            info = self.company.balance_sheet
 
             # List of accounts to filter
             balance_sheet = {
@@ -47,11 +62,7 @@ class BalanceSheetAnalyzer:
             }
 
             # Filter accounts that exist in the balance sheet
-            available_accounts = {key: [] for key in balance_sheet.keys()}
-            for category, accounts in balance_sheet.items():
-                for account in accounts:
-                    if account in info.index:
-                        available_accounts[category].append(account)
+            available_accounts = self._filter_metrics(info, balance_sheet)
 
             # Print the balance sheet with formatted values
             print(f"Balance Sheet for {self.ticker}:")
@@ -60,27 +71,15 @@ class BalanceSheetAnalyzer:
                     print(f"\n{category}:")
                     for account in accounts:
                         values = info.loc[account]
+                        self._print_values(account, values)
 
-                        # If the value is a Series (multiple dates), iterate through each date
-                        if isinstance(values, pd.Series):
-                            print(f"  {account}:")
-                            for date, value in values.items():
-                                formatted_value = self._format_currency(value)
-                                print(f"    {date}: {formatted_value}")
-                        else:
-                            formatted_value = self._format_currency(values)
-                            print(f"  {account}: {formatted_value}")
-        
         except Exception as e:
             print(f"Error retrieving balance sheet for {self.ticker}: {e}")
 
     def get_income_statement(self):
         try:
-            # Download company data from Yahoo Finance
-            company = yf.Ticker(self.ticker)
-
             # Get the income statement
-            info = company.financials  # Note that 'income_stmt' might not be the correct property
+            info = self.company.financials
 
             # List of metrics to filter
             income_stmt = {
@@ -104,11 +103,7 @@ class BalanceSheetAnalyzer:
             }
 
             # Filter metrics that exist in the income statement
-            available_metrics = {key: [] for key in income_stmt.keys()}
-            for category, metrics in income_stmt.items():
-                for metric in metrics:
-                    if metric in info.index:
-                        available_metrics[category].append(metric)
+            available_metrics = self._filter_metrics(info, income_stmt)
 
             # Print the income statement with formatted values
             print(f"Income Statement for {self.ticker}:")
@@ -117,17 +112,57 @@ class BalanceSheetAnalyzer:
                     print(f"\n{category}:")
                     for metric in metrics:
                         values = info.loc[metric]
-
-                        # If the value is a Series with multiple dates, iterate and print each value
-                        if isinstance(values, pd.Series):
-                            print(f"  {metric}:")
-                            for date, value in values.items():
-                                # Ensure monetary format
-                                formatted_value = f"${value:,.0f}".replace(',', '.')
-                                print(f"    {date}: {formatted_value}")
-                        else:
-                            formatted_value = f"${values:,.0f}".replace(',', '.')
-                            print(f"  {metric}: {formatted_value}")
+                        self._print_values(metric, values)
 
         except Exception as e:
             print(f"Error retrieving income statement for {self.ticker}: {e}")
+
+    def get_cash_flow(self):
+        try:
+            # Get the cash flow statement
+            info = self.company.cash_flow
+
+            # List of metrics to filter
+            cash_flow = {
+                "Cash Flow": [
+                    'Operating Cash Flow',  
+                    'Investing Cash Flow',
+                    'Financing Cash Flow',
+                    'Capital Expenditure',
+                    'Free Cash Flow',
+                    'Repayment Debt',
+                    'Repurchase of Capital Stock'
+                ]
+            }
+
+            # Filter metrics that exist in the cash flow statement
+            available_metrics = self._filter_metrics(info, cash_flow)
+
+            # Print the cash flow statement with formatted values
+            print(f"Cash Flow Statement for {self.ticker}:")
+            for category, metrics in available_metrics.items():
+                if metrics:
+                    print(f"\n{category}:")
+                    for metric in metrics:
+                        values = info.loc[metric]
+                        self._print_values(metric, values)
+
+        except Exception as e:
+            print(f"Error retrieving cash flow statement for {self.ticker}: {e}")
+
+    def _print_values(self, metric, values):
+        """Print values for a given metric."""
+        if isinstance(values, pd.Series):
+            print(f"  {metric}:")
+            for date, value in values.items():
+                formatted_date = date.strftime('%Y-%m-%d')
+                formatted_value = self._format_currency(value, scale="M")
+                print(f"    {formatted_date}: {formatted_value}")
+        else:
+            formatted_value = self._format_currency(values, scale="M")
+            print(f"  {metric}: {formatted_value}")
+            
+    
+    
+
+    

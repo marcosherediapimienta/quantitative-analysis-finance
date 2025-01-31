@@ -1,10 +1,10 @@
 import yfinance as yf
 import pandas as pd
-from scripts.fundamental_analysis import BalanceSheetAnalyzer
+from scripts.fundamental_analysis import FinancialAnalyzer
 
 # Uso de la clase
 ticker = "AAPL" 
-analyzer = BalanceSheetAnalyzer(ticker) 
+analyzer = FinancialAnalyzer(ticker) 
 analyzer.get_balance_sheet() 
-analyzer = BalanceSheetAnalyzer(ticker)
 analyzer.get_income_statement()
+analyzer.get_cash_flow()    

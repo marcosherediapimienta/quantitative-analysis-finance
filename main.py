@@ -16,5 +16,8 @@ ticker = "NVDA"
 ta_analysis = TechnicalAnalysis(ticker)
 ta_analysis.plot_indicators()
 
-#portfolio_risk = RiskAnalysis(ticker)
-#portfolio_risk.summary()
+#RiskAnalysis
+#tickers = ["NVDA", "META", "AMZN", "MSFT"]
+#weights = [0.4, 0.4, 0.1, 0.1] 
+#portfolio = RiskAnalysis(tickers, weights)
+#portfolio.summary()

@@ -1,95 +1,93 @@
 import yfinance as yf
 import numpy as np
 import pandas as pd
-import scipy.stats as stats
-import matplotlib.pyplot as plt
 
 class RiskAnalysis:
-    def __init__(self, tickers, start="2024-01-01", end="2025-01-01", benchmark="^GSPC"):
-        self.tickers = tickers if isinstance(tickers,list) else [tickers]
+    def __init__(self, tickers, weights, start="2023-01-01", end=None, benchmark="^GSPC", risk_free_rate=0.03):
+        if end is None:
+            end = pd.to_datetime("today").strftime("%Y-%m-%d")
+        self.tickers = tickers if isinstance(tickers, list) else [tickers]
+        self.weights = np.array(weights)
+        if not np.isclose(self.weights.sum(), 1):
+            self.weights = self.weights / self.weights.sum()
         self.start = start
         self.end = end
         self.benchmark = benchmark
+        self.risk_free_rate = risk_free_rate / 252
         self.data = self._download_data()
 
     def _download_data(self):
-        """Downloads adjusted close price data for assets and benchmark."""
-        prices = yf.download(self.tickers + [self.benchmark], start=self.start, end=self.end)["Adj Close"]
-        return prices
+        """Descarga precios ajustados de cierre."""
+        tickers = self.tickers + [self.benchmark]
+        try:
+            prices = yf.download(tickers, start=self.start, end=self.end)["Adj Close"]
+            return prices
+        except Exception as e:
+            print(f"Error downloading data: {e}")
+            return None
 
     def compute_volatility(self):
-        """Computes annualized volatility of the assets."""
-        returns = self.data.pct_change().dropna()
-        volatilities = returns.std() * np.sqrt(252)  
-        return volatilities
+        """Calcula la volatilidad anualizada de la cartera."""
+        returns = self.data[self.tickers].pct_change().dropna()
+        return np.sqrt(np.dot(self.weights.T, np.dot(returns.cov(), self.weights))) * np.sqrt(252)
+
+    def compute_var(self, confidence_level=0.95, horizon=1):
+        """Calcula el Value at Risk (VaR) para un nivel de confianza y horizonte dados."""
+        returns = self.data[self.tickers].pct_change().dropna()
+        portfolio_returns = returns.dot(self.weights)
+        return np.percentile(portfolio_returns, 100 * (1 - confidence_level)) * np.sqrt(horizon)
+
+    def compute_cvar(self, confidence_level=0.95, horizon=1):
+        """Calcula el Conditional Value at Risk (CVaR) para un nivel de confianza y horizonte dados."""
+        returns = self.data[self.tickers].pct_change().dropna()
+        portfolio_returns = returns.dot(self.weights)
+        var = self.compute_var(confidence_level, horizon)
+        return portfolio_returns[portfolio_returns <= var].mean()
 
     def compute_beta(self):
-        """Calculates Beta of the assets relative to the benchmark."""
+        """Calcula la beta de la cartera respecto al benchmark."""
         returns = self.data.pct_change().dropna()
+        portfolio_returns = returns[self.tickers].dot(self.weights)
         market_returns = returns[self.benchmark]
-        betas = {}
+        cov_matrix = np.cov(portfolio_returns, market_returns)
+        return cov_matrix[0, 1] / cov_matrix[1, 1]
 
-        for ticker in self.tickers:
-            cov_matrix = np.cov(returns[ticker], market_returns)
-            beta = cov_matrix[0, 1] / cov_matrix[1, 1]
-            betas[ticker] = beta
-        
-        return betas
+    def compute_sharpe_ratio(self):
+        """Calcula el ratio de Sharpe anualizado de la cartera."""
+        returns = self.data[self.tickers].pct_change().dropna()
+        portfolio_returns = returns.dot(self.weights)
+        excess_return = portfolio_returns.mean() - self.risk_free_rate
+        return (excess_return * 252) / self.compute_volatility()
 
-    def compute_var(self, confidence_level=0.95):
-        """Computes historical Value at Risk (VaR) at a given confidence level."""
-        returns = self.data.pct_change().dropna()
-        var_values = {}
+    def compute_sortino_ratio(self):
+        """Calcula el ratio de Sortino anualizado de la cartera."""
+        returns = self.data[self.tickers].pct_change().dropna()
+        portfolio_returns = returns.dot(self.weights)
+        downside_returns = portfolio_returns[portfolio_returns < 0]
+        downside_vol = downside_returns.std() * np.sqrt(252)
+        excess_return = portfolio_returns.mean() - self.risk_free_rate
+        return (excess_return * 252) / downside_vol
 
-        for ticker in self.tickers:
-            var = np.percentile(returns[ticker], 100 * (1 - confidence_level))
-            var_values[ticker] = var
-        
-        return var_values
+    def compute_max_drawdown(self):
+        """Calcula el máximo drawdown de la cartera."""
+        cumulative_returns = (1 + self.data[self.tickers].pct_change()).cumprod()
+        portfolio_value = cumulative_returns.dot(self.weights)
+        return (portfolio_value / portfolio_value.cummax() - 1).min()
 
-    def compute_cvar(self, confidence_level=0.95):
-        """Computes Conditional Value at Risk (CVaR) at a given confidence level."""
-        returns = self.data.pct_change().dropna()
-        cvar_values = {}
-
-        for ticker in self.tickers:
-            var = np.percentile(returns[ticker], 100 * (1 - confidence_level))
-            cvar = returns[ticker][returns[ticker] <= var].mean()
-            cvar_values[ticker] = cvar
-        
-        return cvar_values
-
-    def plot_var_cvar(self):
-        """Plots Value at Risk (VaR) and Conditional VaR (CVaR) as histograms."""
-        returns = self.data.pct_change().dropna()
-        
-        for ticker in self.tickers:
-            var = self.compute_var()[ticker]
-            cvar = self.compute_cvar()[ticker]
-
-            plt.figure(figsize=(8, 5))
-            plt.hist(returns[ticker], bins=50, color='lightcoral', alpha=0.7, edgecolor='black')
-            plt.axvline(var, color='blue', linestyle='dashed', linewidth=2, label=f"VaR 95%: {var:.4f}")
-            plt.axvline(cvar, color='red', linestyle='dashed', linewidth=2, label=f"CVaR 95%: {cvar:.4f}")
-            plt.title(f"Risk Distribution: {ticker}")
-            plt.xlabel("Daily Returns")
-            plt.ylabel("Frequency")
-            plt.legend()
-            plt.show()
+    def compute_treynor_ratio(self):
+        """Calcula el ratio de Treynor de la cartera."""
+        annual_return = self.data[self.tickers].pct_change().dot(self.weights).mean() * 252
+        return (annual_return - self.risk_free_rate * 252) / self.compute_beta()
 
     def summary(self):
-        """Displays a summary of computed risk metrics and generates plots."""
-        print(f"\nRisk Analysis for {', '.join(self.tickers)}")
+        """Muestra un resumen de las métricas de riesgo de la cartera."""
+        print(f"\nRisk Analysis for Portfolio: {', '.join(self.tickers)}")
         print("-" * 50)
-        print("Annualized Volatility:")
-        print(self.compute_volatility())
-
-        print("\nBeta relative to the market:")
-        print(self.compute_beta())
-
-        print("\nValue at Risk (VaR) 95%:")
-        print(self.compute_var())
-
-        print("\nConditional VaR (CVaR) 95%:")
-        print(self.compute_cvar())
-        self.plot_var_cvar()
+        print(f"Annualized Volatility: {self.compute_volatility():.4f}")
+        print(f"Beta relative to {self.benchmark}: {self.compute_beta():.4f}")
+        print(f"Value at Risk (VaR 95%): {self.compute_var():.4%}")
+        print(f"Conditional VaR (CVaR 95%): {self.compute_cvar():.4%}")
+        print(f"Sharpe Ratio: {self.compute_sharpe_ratio():.4f}")
+        print(f"Sortino Ratio: {self.compute_sortino_ratio():.4f}")
+        print(f"Max Drawdown: {self.compute_max_drawdown():.4%}")
+        print(f"Treynor Ratio: {self.compute_treynor_ratio():.4f}")

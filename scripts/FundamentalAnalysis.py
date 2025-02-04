@@ -43,21 +43,25 @@ class FinancialAnalyzer:
     def _plot_metrics(self, data, metrics_dict, title):
         """Plot the metrics that exist in the financial data."""
         available_metrics = self._filter_metrics(data, metrics_dict)
+        figures = []  # Store all figure objects
+
         for category, metrics in available_metrics.items():
             if metrics:
-                plt.figure(figsize=(10, 6))
+                fig, ax = plt.subplots(figsize=(10, 6))  # Create a new figure
                 for metric in metrics:
                     values = data.loc[metric]
                     if isinstance(values, pd.Series):
-                        # Normalizar los datos antes de graficar
+                        # Normalize the data before plotting
                         normalized_values = self._normalize_data(values)
-                        sns.lineplot(x=values.index, y=normalized_values, label=metric)
-                plt.title(f"{title} - {category}")
-                plt.xlabel('Date')
-                plt.ylabel('Normalized Value')
-                plt.legend()
-                plt.grid(True)
-                plt.show()
+                        sns.lineplot(x=values.index, y=normalized_values, label=metric, ax=ax)
+                ax.set_title(f"{title} - {category}")
+                ax.set_xlabel('Date')
+                ax.set_ylabel('Normalized Value')
+                ax.legend()
+                ax.grid(True)
+                figures.append(fig)  # Add the figure to the list
+
+        return figures  # Return all figures for later display
 
     def get_balance_sheet(self, plot=False):
         """Retrieve and print the balance sheet for the given ticker."""
@@ -85,10 +89,12 @@ class FinancialAnalyzer:
                         self._print_values(account, values)
 
             if plot:
-                self._plot_metrics(info, balance_sheet, "Balance Sheet")
+                figures = self._plot_metrics(info, balance_sheet, "Balance Sheet")
+                return figures  # Return figures for later display
 
         except Exception as e:
             print(f"Error retrieving balance sheet for {self.ticker}: {str(e)}")
+            return []
 
     def get_income_statement(self, plot=False):
         """Retrieve and print the income statement for the given ticker."""
@@ -115,10 +121,12 @@ class FinancialAnalyzer:
                         self._print_values(metric, values)
 
             if plot:
-                self._plot_metrics(info, income_stmt, "Income Statement")
+                figures = self._plot_metrics(info, income_stmt, "Income Statement")
+                return figures  # Return figures for later display
 
         except Exception as e:
             print(f"Error retrieving income statement for {self.ticker}: {str(e)}")
+            return []
 
     def get_cash_flow(self, plot=False):
         """Retrieve and print the cash flow statement for the given ticker."""
@@ -150,10 +158,12 @@ class FinancialAnalyzer:
                         self._print_values(metric, values)
 
             if plot:
-                self._plot_metrics(info, cash_flow, "Cash Flow Statement")
+                figures = self._plot_metrics(info, cash_flow, "Cash Flow Statement")
+                return figures  # Return figures for later display
 
         except Exception as e:
             print(f"Error retrieving cash flow statement for {self.ticker}: {str(e)}")
+            return []
 
     def get_financial_ratios(self):
         """Retrieve and print financial ratios for the given ticker."""

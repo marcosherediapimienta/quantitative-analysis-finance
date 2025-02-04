@@ -13,8 +13,8 @@ ticker = "NVDA"
 #analyzer.get_cash_flow(plot=True)
 #analyzer.get_financial_ratios()
 
-#ta_analysis = TechnicalAnalysis(ticker)
-#ta_analysis.plot_indicators()
+ta_analysis = TechnicalAnalysis(ticker)
+ta_analysis.plot_indicators()
 
-portfolio_risk = RiskAnalysis(ticker)
-portfolio_risk.summary()
+#portfolio_risk = RiskAnalysis(ticker)
+#portfolio_risk.summary()

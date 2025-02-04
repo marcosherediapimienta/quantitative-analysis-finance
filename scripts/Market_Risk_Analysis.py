@@ -1,15 +1,12 @@
 import yfinance as yf
-import datetime
 import numpy as np
 import pandas as pd
 import scipy.stats as stats
 import matplotlib.pyplot as plt
 
 class RiskAnalysis:
-    def __init__(self, tickers, start="2024-02-04", end=None, benchmark="^GSPC"):
-        if end is None:
-            end = datetime.date.today().strftime("%Y-%m-%d")  # Fecha actual en formato YYYY-MM-DD
-        self.tickers = tickers if isinstance(tickers, list) else [tickers]
+    def __init__(self, tickers, start="2024-01-01", end="2025-01-01", benchmark="^GSPC"):
+        self.tickers = tickers if isinstance(tickers,list) else [tickers]
         self.start = start
         self.end = end
         self.benchmark = benchmark
@@ -23,7 +20,7 @@ class RiskAnalysis:
     def compute_volatility(self):
         """Computes annualized volatility of the assets."""
         returns = self.data.pct_change().dropna()
-        volatilities = returns.std() * np.sqrt(252)  # Annualized volatility
+        volatilities = returns.std() * np.sqrt(252)  
         return volatilities
 
     def compute_beta(self):

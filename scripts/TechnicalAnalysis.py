@@ -5,11 +5,9 @@ import pandas_ta as ta
 import matplotlib.pyplot as plt
 
 class TechnicalAnalysis:
-    def __init__(self, ticker, start="2024-02-04", end=None):
-        if end is None:
-            end = datetime.date.today().strftime("%Y-%m-%d")  
+    def __init__(self, ticker, start="2024-02-04", end="2025-02-04"):
         self.ticker = ticker
-        self.data = yf.download(ticker, start=start, end=end)
+        self.data = yf.download(ticker,start=start, end=end)
         self.add_indicators()
 
     def add_indicators(self):

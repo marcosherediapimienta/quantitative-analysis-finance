@@ -25,7 +25,12 @@ class RiskAnalysis:
         except Exception as e:
             print(f"Error downloading data: {e}")
             return None
-
+    
+    def compute_correlation_matrix(self):
+        """Calcula la matriz de correlación de los activos en la cartera."""
+        returns = self.data[self.tickers].pct_change().dropna()
+        return returns.corr()
+    
     def compute_volatility(self):
         """Calcula la volatilidad anualizada de la cartera."""
         returns = self.data[self.tickers].pct_change().dropna()
@@ -91,3 +96,5 @@ class RiskAnalysis:
         print(f"Sortino Ratio: {self.compute_sortino_ratio():.4f}")
         print(f"Max Drawdown: {self.compute_max_drawdown():.4%}")
         print(f"Treynor Ratio: {self.compute_treynor_ratio():.4f}")
+        print(f"Correlation Matrix:{self.compute_correlation_matrix()}")
+

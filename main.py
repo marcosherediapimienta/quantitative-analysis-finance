@@ -13,11 +13,11 @@ ticker = "NVDA"
 #analyzer.get_cash_flow(plot=True)
 #analyzer.get_financial_ratios()
 
-ta_analysis = TechnicalAnalysis(ticker)
-ta_analysis.plot_indicators()
+#ta_analysis = TechnicalAnalysis(ticker)
+#ta_analysis.plot_indicators()
 
 #RiskAnalysis
-#tickers = ["NVDA", "META", "AMZN", "MSFT"]
-#weights = [0.4, 0.4, 0.1, 0.1] 
-#portfolio = RiskAnalysis(tickers, weights)
-#portfolio.summary()
+tickers = ["NVDA", "META", "AMZN", "MSFT"]
+weights = [0.4, 0.4, 0.1, 0.1] 
+portfolio = RiskAnalysis(tickers, weights)
+portfolio.summary()

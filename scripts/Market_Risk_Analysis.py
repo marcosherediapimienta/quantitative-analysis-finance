@@ -1,11 +1,14 @@
 import yfinance as yf
+import datetime
 import numpy as np
 import pandas as pd
 import scipy.stats as stats
 import matplotlib.pyplot as plt
 
 class RiskAnalysis:
-    def __init__(self, tickers, start="2023-01-01", end="2024-02-01", benchmark="^GSPC"):
+    def __init__(self, tickers, start="2024-02-04", end=None, benchmark="^GSPC"):
+        if end is None:
+            end = datetime.date.today().strftime("%Y-%m-%d")  # Fecha actual en formato YYYY-MM-DD
         self.tickers = tickers if isinstance(tickers, list) else [tickers]
         self.start = start
         self.end = end

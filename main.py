@@ -6,7 +6,7 @@ from scripts.FundamentalAnalysis import FinancialAnalyzer
 from scripts.TechnicalAnalysis import TechnicalAnalysis
 from scripts.Market_Risk_Analysis import RiskAnalysis
 
-ticker = "META"
+ticker = "NVDA"
 #analyzer = FinancialAnalyzer(ticker)
 #analyzer.get_balance_sheet(plot=True)
 #analyzer.get_income_statement(plot=True)

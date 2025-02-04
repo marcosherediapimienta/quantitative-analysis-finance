@@ -1,10 +1,13 @@
 import yfinance as yf
 import pandas as pd
+import datetime
 import pandas_ta as ta
 import matplotlib.pyplot as plt
 
 class TechnicalAnalysis:
-    def __init__(self, ticker, start="2023-01-01", end="2024-02-01"):
+    def __init__(self, ticker, start="2024-02-04", end=None):
+        if end is None:
+            end = datetime.date.today().strftime("%Y-%m-%d")  
         self.ticker = ticker
         self.data = yf.download(ticker, start=start, end=end)
         self.add_indicators()

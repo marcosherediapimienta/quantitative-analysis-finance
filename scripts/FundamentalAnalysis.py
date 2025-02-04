@@ -176,6 +176,9 @@ class FinancialAnalyzer:
                 "Liquidity Ratios": {
                     "Current Ratio": info.get('currentRatio', 'N/A'),
                     "Quick Ratio": info.get('quickRatio', 'N/A')
+                },
+                "Debt Ratios": {
+                    "Debt-to-Equity Ratio": info.get('debtToEquity', 'N/A'),
                 }
             }
 

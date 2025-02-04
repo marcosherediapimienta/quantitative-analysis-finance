@@ -2,13 +2,17 @@ import yfinance as yf
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from scripts.fundamental_analysis import FinancialAnalyzer
+from scripts.FundamentalAnalysis import FinancialAnalyzer
+from scripts.TechnicalAnalysis import TechnicalAnalysis
 
-ticker = "NVDA"
-analyzer = FinancialAnalyzer(ticker)
-analyzer.get_balance_sheet(plot=True)
-analyzer.get_income_statement(plot=True)
-analyzer.get_cash_flow(plot=True)
-analyzer.get_financial_ratios()
+ticker = "META"
+#analyzer = FinancialAnalyzer(ticker)
+#analyzer.get_balance_sheet(plot=True)
+#analyzer.get_income_statement(plot=True)
+#analyzer.get_cash_flow(plot=True)
+#analyzer.get_financial_ratios()
 
-plt.show()
+#plt.show()
+
+ta_analysis = TechnicalAnalysis(ticker)
+ta_analysis.plot_indicators()

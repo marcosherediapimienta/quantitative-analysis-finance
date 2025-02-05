@@ -52,7 +52,7 @@ class TechnicalAnalysis:
 
         # MACD with correctly scaled Volume
         ax_macd = axes[2]
-        ax_vol = ax_macd.twinx()  # Eje secundario para el volumen
+        ax_vol = ax_macd.twinx()  
         ax_vol.fill_between(self.data.index, self.data["Volume"], color="gray", alpha=0.3, label="Volume")
         ax_macd.plot(self.data.index, self.data["MACD"], label="MACD", color="green", linewidth=1.5)
         ax_macd.plot(self.data.index, self.data["MACD_Signal"], label="MACD Signal", color="red", linewidth=1.5)

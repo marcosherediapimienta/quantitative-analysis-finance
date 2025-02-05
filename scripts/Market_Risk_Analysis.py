@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 class RiskAnalysis:
-    def __init__(self, tickers, weights, start="2023-01-01", end=None, benchmark="^GSPC", risk_free_rate=0.03):
+    def __init__(self, tickers, weights, start="2023-01-01", end="2024-01-01", benchmark="^GSPC", risk_free_rate=0.03):
         if end is None:
             end = pd.to_datetime("today").strftime("%Y-%m-%d")
         self.tickers = tickers if isinstance(tickers, list) else [tickers]
@@ -97,4 +97,3 @@ class RiskAnalysis:
         print(f"Max Drawdown: {self.compute_max_drawdown():.4%}")
         print(f"Treynor Ratio: {self.compute_treynor_ratio():.4f}")
         print(f"Correlation Matrix:{self.compute_correlation_matrix()}")
-

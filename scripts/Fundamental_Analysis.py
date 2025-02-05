@@ -47,7 +47,7 @@ class FinancialAnalyzer:
 
         for category, metrics in available_metrics.items():
             if metrics:
-                fig, ax = plt.subplots(figsize=(10, 6))  # Create a new figure
+                fig, ax = plt.subplots(figsize=(10, 6))  
                 for metric in metrics:
                     values = data.loc[metric]
                     if isinstance(values, pd.Series):
@@ -59,9 +59,9 @@ class FinancialAnalyzer:
                 ax.set_ylabel('Normalized Value')
                 ax.legend()
                 ax.grid(True)
-                figures.append(fig)  # Add the figure to the list
+                figures.append(fig)  
 
-        return figures  # Return all figures for later display
+        return figures  
 
     def get_balance_sheet(self, plot=False):
         """Retrieve and print the balance sheet for the given ticker."""
@@ -122,7 +122,7 @@ class FinancialAnalyzer:
 
             if plot:
                 figures = self._plot_metrics(info, income_stmt, "Income Statement")
-                return figures  # Return figures for later display
+                return figures  
 
         except Exception as e:
             print(f"Error retrieving income statement for {self.ticker}: {str(e)}")
@@ -159,7 +159,7 @@ class FinancialAnalyzer:
 
             if plot:
                 figures = self._plot_metrics(info, cash_flow, "Cash Flow Statement")
-                return figures  # Return figures for later display
+                return figures  
 
         except Exception as e:
             print(f"Error retrieving cash flow statement for {self.ticker}: {str(e)}")

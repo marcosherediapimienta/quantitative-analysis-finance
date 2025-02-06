@@ -8,7 +8,7 @@ from scripts.Market_Risk_Analysis import RiskAnalysis
 
 #Fundamental & Technical Analysis
 
-ticker = "NVDA"
+#ticker = "NVDA"
 #analyzer = FinancialAnalyzer(ticker)
 #analyzer.get_balance_sheet(plot=True)
 #analyzer.get_income_statement(plot=True)
@@ -17,8 +17,7 @@ ticker = "NVDA"
 #ta_analysis = TechnicalAnalysis(ticker)
 #ta_analysis.plot_indicators()
 
-#Risk Analysis
-tickers = ["NVDA", "META", "AMZN", "MSFT"]
-weights = [0.4, 0.4, 0.1, 0.1] 
-portfolio = RiskAnalysis(tickers, weights)
-portfolio.summary()
+#tickers = ['AAPL', 'GOOGL']
+#weights = [0.6, 0.4]
+#portfolio = RiskAnalysis(tickers, weights)
+#portfolio.summary()

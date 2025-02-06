@@ -50,12 +50,12 @@ class RiskAnalysis:
         return portfolio_returns[portfolio_returns <= var].mean()
 
     def compute_beta(self):
-        """Calcula la beta de la cartera respecto al benchmark."""
-        returns = self.data.pct_change().dropna()
-        portfolio_returns = returns[self.tickers].dot(self.weights)
-        market_returns = returns[self.benchmark]
-        cov_matrix = np.cov(portfolio_returns, market_returns)
-        return cov_matrix[0, 1] / cov_matrix[1, 1]
+        """Calcula el beta de la cartera en relación con el benchmark."""
+        returns = self.data[self.tickers].pct_change().dropna()
+        benchmark_returns = self.data[self.benchmark].pct_change().dropna()
+        covariance = np.cov(returns.T, benchmark_returns)[0, 1]
+        benchmark_variance = benchmark_returns.var()
+        return covariance / benchmark_variance
 
     def compute_sharpe_ratio(self):
         """Calcula el ratio de Sharpe anualizado de la cartera."""
@@ -82,7 +82,7 @@ class RiskAnalysis:
     def compute_treynor_ratio(self):
         """Calcula el ratio de Treynor de la cartera."""
         annual_return = self.data[self.tickers].pct_change().dot(self.weights).mean() * 252
-        return (annual_return - self.risk_free_rate * 252) / self.compute_beta()
+        return (annual_return - self.risk_free_rate * 252) / float(self.compute_beta())
 
     def summary(self):
         """Muestra un resumen de las métricas de riesgo de la cartera."""
@@ -96,4 +96,12 @@ class RiskAnalysis:
         print(f"Sortino Ratio: {self.compute_sortino_ratio():.4f}")
         print(f"Max Drawdown: {self.compute_max_drawdown():.4%}")
         print(f"Treynor Ratio: {self.compute_treynor_ratio():.4f}")
-        print(f"Correlation Matrix:{self.compute_correlation_matrix()}")
+        
+        print("\nCorrelation Matrix:")
+        print(self.compute_correlation_matrix())
+
+tickers = ['AAPL', 'GOOGL', 'MSFT']  
+weights = [0.4, 0.3, 0.3]  
+risk_analysis = RiskAnalysis(tickers=tickers, weights=weights, start="2023-01-01", end="2024-01-01", benchmark="^GSPC")
+risk_analysis.summary()
+

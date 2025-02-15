@@ -15,7 +15,14 @@ class MeanVarianceOptimization:
         if len(self.tickers) > 1:
             self.cov_matrix = self._calculate_cov_matrix()
         else:
-            self.cov_matrix = None  # No aplica cuando hay solo un activo
+            self.cov_matrix = None 
+        
+        # Mostrar los rendimientos promedio y la matriz de covarianza
+        print("Mean Returns:")
+        print(self.mean_returns)
+
+        print("\nCovariance Matrix:")
+        print(self.cov_matrix)
     
     def _download_data(self):
         """Descargar los datos de precios ajustados"""
@@ -66,12 +73,18 @@ class MeanVarianceOptimization:
     def summary(self):
         """Mostrar resumen de la optimización"""
         portfolio_return, portfolio_volatility = self.portfolio_performance()
+        optimal_weights = self.optimize_portfolio()
         
         print(f"Expected Portfolio Return: {portfolio_return:.2%}")
         print(f"Portfolio Volatility: {portfolio_volatility:.2%}")
+        
+        # Mostrar los pesos de cada activo en la cartera óptima
+        print("\nOptimal Portfolio Weights:")
+        for ticker, weight in zip(self.tickers, optimal_weights):
+            print(f"{ticker}: {weight:.2%}")
 
-
-tickers = ['META', 'MSFT', 'BTC-USD'] 
+# Ejemplo de uso
+tickers = ['ACWI','META','AMZN','BTC-USD', '^TNX']
 optimizer = MeanVarianceOptimization(tickers)
 optimizer.summary()
 

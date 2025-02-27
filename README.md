@@ -1,6 +1,6 @@
 # 🚀 Portfolio Management Project
 
-Este proyecto tiene como objetivo proporcionar herramientas y modelos para gestionar carteras de inversión de manera eficiente.
+Este proyecto tiene como objetivo proporcionar herramientas y modelos para gestionar carteras de inversión de manera eficiente. Este proyecto utiliza la API de Yahoo Finance para descargar los datos históricos de precios de los activos. La API se accede a través de la biblioteca yfinance, que permite obtener los precios ajustados de cierre y realizar análisis de datos financieros.
 
 ## 🧑‍💻 Estructura del Proyecto
 
@@ -16,4 +16,22 @@ La estructura del repositorio se divide en varios módulos para cubrir diferente
 
 - **`Portfolio_Optimization.py`**: Implementación de técnicas de optimización para construir una cartera de inversión que maximice el rendimiento o minimice el riesgo, dependiendo del objetivo.
 
+## Requisitos 
 
+- **Python 3.x**
+
+Además, este proyecto depende de varias librerías en Python. A continuación, se detallan las librerías principales utilizadas:
+
+- **NumPy**: Para la manipulación eficiente de arrays y matrices.
+- **Pandas**: Para la manipulación de datos y análisis de series temporales.
+- **yfinance**: Para descargar los datos históricos de precios de activos desde Yahoo Finance.
+- **Matplotlib**: Para la creación de gráficos y visualizaciones.
+- **Seaborn**: Para mejorar las visualizaciones estadísticas.
+- **Scipy**: Para la optimización de la cartera y otros cálculos matemáticos.
+- **Pandas_ta**: Para indicadores técnicos adicionales como RSI, MACD, etc.
+
+## Instalación
+
+1. Clona este repositorio en tu máquina local:
+
+https://github.com/marcosherediapimienta/Portfolio-Management.git

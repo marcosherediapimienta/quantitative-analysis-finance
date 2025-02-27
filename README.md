@@ -1,7 +1,6 @@
 # 🚀 Portfolio Management Project
 
-Este proyecto tiene como objetivo proporcionar herramientas y modelos para gestionar carteras de inversión de manera eficiente. Se incluyen análisis fundamentales, riesgos del mercado, y optimización de carteras.
-
+Este proyecto tiene como objetivo proporcionar herramientas y modelos para gestionar carteras de inversión de manera eficiente.
 ## 🧑‍💻 Estructura del Proyecto
 
 La estructura del repositorio se divide en varios módulos para cubrir diferentes aspectos de la gestión de carteras:

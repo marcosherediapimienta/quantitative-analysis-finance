@@ -1,4 +1,4 @@
-# 🚀 Portfolio Management Project
+# 🚀 Portfolio Management 
 
 Este proyecto tiene como objetivo proporcionar herramientas y modelos para gestionar carteras de inversión de manera eficiente. Este proyecto utiliza la API de Yahoo Finance para descargar los datos históricos de precios de los activos. La API se accede a través de la biblioteca yfinance, que permite obtener los precios ajustados de cierre y realizar análisis de datos financieros.
 

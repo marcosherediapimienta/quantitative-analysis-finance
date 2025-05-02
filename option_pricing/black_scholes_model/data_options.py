@@ -34,8 +34,7 @@ def get_us_risk_free_rate() -> float:
     """
     tk = yf.Ticker('^IRX')
     hist = tk.history(period='1d')
-    if hist.empty:
-        return None
+    if hist.empty:i
     # Yahoo gives percentage points, divide by 100 to convert to decimal
     return hist['Close'].iloc[-1] / 100
 

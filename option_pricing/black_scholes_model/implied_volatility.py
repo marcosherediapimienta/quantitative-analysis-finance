@@ -162,10 +162,10 @@ def implied_volatility_brent(market_price, S, K, T, r, tol=1e-6):
 # Parameters
 ticker = "NVDA"  # Stock ticker
 S = 114.50  # Current stock price
-K = 114     # Strike price
+K = 105      # Strke price
 T = 33/365  # Time to expiration 
 r = 0.0432  # Risk-free rate 
-C_market = 7.85  # Market price of the call option
+C_market = 10.00 # Market price of the call option
 
 # Calculate historical volatility
 hist_vol = calculate_historical_volatility(ticker)

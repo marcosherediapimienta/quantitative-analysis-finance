@@ -7,7 +7,6 @@ import matplotlib.tri as tri
 import sys
 import os
 
-# Add the parent directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from black_scholes_model.implied_volatility import implied_volatility_newton, black_scholes_call_price
 
@@ -78,14 +77,61 @@ def calculate_volatility_surface(ticker: str, expirations: list = None) -> pd.Da
                         'Expiration': exp,
                         'Strike': row['strike'],
                         'IV': iv,
-                        'Moneyness': row['strike'] / current_price
+                        'Moneyness': row['strike'] / current_price,
+                        'Market Price': row['lastPrice'],
+                        'Days to Exp': (exp_date - today).days
                     })
             except:
                 continue
     
     return pd.DataFrame(data)
 
-def plot_volatility_surface(df: pd.DataFrame, save_path='volatility_surface.png'):
+def display_results(df: pd.DataFrame, ticker: str):
+    """
+    Display results in well-formatted tables.
+    
+    Args:
+        df: DataFrame containing volatility surface data
+        ticker: Stock ticker symbol
+    """
+    # Get current stock price
+    stock = yf.Ticker(ticker)
+    current_price = stock.info['regularMarketPrice']
+    
+    # Create summary table
+    summary_data = []
+    for exp in sorted(df['Expiration'].unique()):
+        exp_data = df[df['Expiration'] == exp]
+        days_to_exp = (pd.to_datetime(exp) - pd.Timestamp.today()).days
+        
+        summary_data.append({
+            'Expiration': exp,
+            'Days to Exp': days_to_exp,
+            'Min IV': f"{exp_data['IV'].min():.1%}",
+            'Max IV': f"{exp_data['IV'].max():.1%}",
+            'Avg IV': f"{exp_data['IV'].mean():.1%}",
+            'Total Strikes': len(exp_data['Strike'].unique())
+        })
+    
+    summary_df = pd.DataFrame(summary_data)
+    print("\n=== Call Options Volatility Surface Summary ===")
+    print(f"Ticker: {ticker}")
+    print(f"Current Price: ${current_price:.2f}")
+    print("\nSummary by Expiration:")
+    print(summary_df.to_string(index=False))
+    
+    # Create detailed table for each expiration
+    for exp in sorted(df['Expiration'].unique()):
+        exp_data = df[df['Expiration'] == exp].copy()
+        exp_data['Strike'] = exp_data['Strike'].map('${:.2f}'.format)
+        exp_data['IV'] = exp_data['IV'].map('{:.1%}'.format)
+        exp_data['Moneyness'] = exp_data['Moneyness'].map('{:.2f}'.format)
+        exp_data['Market Price'] = exp_data['Market Price'].map('${:.2f}'.format)
+        
+        print(f"\n=== Detailed Data for {exp} ===")
+        print(exp_data[['Strike', 'Moneyness', 'IV', 'Market Price', 'Days to Exp']].to_string(index=False))
+
+def plot_volatility_surface(df: pd.DataFrame, save_path='call_volatility_surface.png'):
     """
     Create 3D surface plot of implied volatility and save it to a file.
     
@@ -118,7 +164,7 @@ def plot_volatility_surface(df: pd.DataFrame, save_path='volatility_surface.png'
     ax.set_xlabel('Moneyness (K/S)')
     ax.set_ylabel('Time to Expiration')
     ax.set_zlabel('Implied Volatility')
-    ax.set_title('Volatility Surface')
+    ax.set_title('Call Options Volatility Surface')
     
     # Set y-axis ticks to show actual dates
     ax.set_yticks(exp_nums)
@@ -130,9 +176,8 @@ def plot_volatility_surface(df: pd.DataFrame, save_path='volatility_surface.png'
     # Save plot
     plt.savefig(save_path)
     plt.close()
-    print(f"Volatility surface plot saved to {save_path}")
 
-def plot_volatility_smile(df: pd.DataFrame, expiration: str = None, save_path='volatility_smile.png'):
+def plot_volatility_smile(df: pd.DataFrame, expiration: str = None, save_path='call_volatility_smile.png'):
     """
     Create 2D plot of volatility smile and save it to a file.
     
@@ -149,7 +194,7 @@ def plot_volatility_smile(df: pd.DataFrame, expiration: str = None, save_path='v
     
     # Create plot
     plt.figure(figsize=(10, 6))
-    plt.plot(exp_data['Moneyness'], exp_data['IV'], 'b-', label='Volatility Smile')
+    plt.plot(exp_data['Moneyness'], exp_data['IV'], 'b-', label='Call Options')
     plt.scatter(exp_data['Moneyness'], exp_data['IV'], c='blue', alpha=0.5)
     
     # Add vertical line at moneyness = 1 (at-the-money)
@@ -158,78 +203,26 @@ def plot_volatility_smile(df: pd.DataFrame, expiration: str = None, save_path='v
     # Customize plot
     plt.xlabel('Moneyness (K/S)')
     plt.ylabel('Implied Volatility')
-    plt.title(f'Volatility Smile - {expiration}')
+    plt.title(f'Call Options Volatility Smile - {expiration}')
     plt.legend()
     plt.grid(True)
     
     # Save plot
     plt.savefig(save_path)
     plt.close()
-    print(f"Volatility smile plot saved to {save_path}")
-
-def print_summary(df: pd.DataFrame, ticker: str):
-    """
-    Print and save a summary of the volatility analysis.
-    
-    Args:
-        df: DataFrame containing volatility surface data
-        ticker: Stock ticker symbol
-    """
-    # Get current stock price
-    stock = yf.Ticker(ticker)
-    current_price = stock.info['regularMarketPrice']
-    
-    # Create summary
-    summary = []
-    summary.append(f"Volatility Analysis Summary for {ticker}")
-    summary.append(f"Current Stock Price: ${current_price:.2f}")
-    summary.append("\nExpirations Used:")
-    
-    for exp in sorted(df['Expiration'].unique()):
-        exp_data = df[df['Expiration'] == exp]
-        days_to_exp = (pd.to_datetime(exp) - pd.Timestamp.today()).days
-        summary.append(f"\n{exp} (Days to Expiration: {days_to_exp})")
-        summary.append("Strikes analyzed:")
-        strikes = sorted(exp_data['Strike'].unique())
-        summary.append("  ITM Strikes: " + ", ".join([f"${k:.1f}" for k in strikes if k < current_price]))
-        summary.append("  ATM Strikes: " + ", ".join([f"${k:.1f}" for k in strikes if k == current_price]))
-        summary.append("  OTM Strikes: " + ", ".join([f"${k:.1f}" for k in strikes if k > current_price]))
-        summary.append(f"  Total strikes: {len(strikes)}")
-        
-        # Add IV range for this expiration
-        iv_min = exp_data['IV'].min()
-        iv_max = exp_data['IV'].max()
-        summary.append(f"  IV Range: {iv_min:.1%} - {iv_max:.1%}")
-    
-    # Print summary
-    print("\n".join(summary))
-    
-    # Save summary to file
-    with open('volatility_analysis_summary.txt', 'w') as f:
-        f.write("\n".join(summary))
-    print("\nSummary saved to volatility_analysis_summary.txt")
 
 def main():
     # Example usage
     ticker = "NVDA"
     
     # Calculate volatility surface
-    print(f"Calculating volatility surface for {ticker}...")
     vol_surface = calculate_volatility_surface(ticker)
     
-    # Print and save summary
-    print("\nAnalysis Summary:")
-    print_summary(vol_surface, ticker)
-    
-    # Save results to CSV
-    vol_surface.to_csv('volatility_data.csv', index=False)
-    print("\nVolatility data saved to volatility_data.csv")
+    # Display results in tables
+    display_results(vol_surface, ticker)
     
     # Plot and save results
-    print("\nCreating volatility surface plot...")
     plot_volatility_surface(vol_surface)
-    
-    print("\nCreating volatility smile plot...")
     plot_volatility_smile(vol_surface)
 
 if __name__ == "__main__":

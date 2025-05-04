@@ -29,13 +29,13 @@ def get_option_chain(ticker: str, expiration: str) -> tuple:
 
 def get_us_risk_free_rate() -> float:
     """
-    Fetches the current US 3-month T-Bill risk-free rate via Yahoo Finance ticker ^IRX.
-    Returns the rate as a decimal (e.g. 0.015 for 1.5%) or None if unavailable.
+    Fetches the current US 10-year Treasury yield via Yahoo Finance ticker ^TNX.
+    Returns the rate as a decimal (e.g. 0.0435 for 4.35%) or None if unavailable.
     """
-    tk = yf.Ticker('^IRX')
+    tk = yf.Ticker('^TNX')
     hist = tk.history(period='1d')
-    if hist.empty:i
-    # Yahoo gives percentage points, divide by 100 to convert to decimal
+    if hist.empty:
+        return None
     return hist['Close'].iloc[-1] / 100
 
 
@@ -44,7 +44,7 @@ def main():
     # Get and display current US risk-free rate
     rfr = get_us_risk_free_rate()
     if rfr is not None:
-        print(f"\nCurrent US risk-free rate (3M T-Bill): {rfr:.2%}\n")
+        print(f"\nCurrent US risk-free rate (10Y Treasury): {rfr:.2%}\n")
     else:
         print("\nCould not retrieve US risk-free rate.\n")
     expirations = get_expirations(ticker)

@@ -165,7 +165,7 @@ S = 114.50  # Current stock price
 K = 105      # Strke price
 T = 33/365  # Time to expiration 
 r = 0.0432  # Risk-free rate 
-C_market = 10.00 # Market price of the call option
+C_market = 13.10 # Market price of the call option
 
 # Calculate historical volatility
 hist_vol = calculate_historical_volatility(ticker)

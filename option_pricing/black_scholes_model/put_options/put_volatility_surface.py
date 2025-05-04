@@ -8,7 +8,7 @@ import sys
 import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from call_options.call_implied_volatility import implied_volatility_newton, black_scholes_call_price
+from put_options.put_implied_volatility import implied_volatility_newton, black_scholes_put_price
 
 def get_option_chain(ticker: str, expiration: str) -> tuple:
     """
@@ -59,11 +59,11 @@ def calculate_volatility_surface(ticker: str, expirations: list = None) -> pd.Da
         r = yf.Ticker('^TNX').history(period='1d')['Close'].iloc[-1] / 100
         
         # Filter options within reasonable moneyness range
-        calls = calls[(calls['strike'] >= current_price * 0.7) & 
-                     (calls['strike'] <= current_price * 1.3)]
+        puts = puts[(puts['strike'] >= current_price * 0.7) & 
+                   (puts['strike'] <= current_price * 1.3)]
         
         # Calculate implied volatility for each strike
-        for _, row in calls.iterrows():
+        for _, row in puts.iterrows():
             try:
                 iv = implied_volatility_newton(
                     market_price=row['lastPrice'],
@@ -114,7 +114,7 @@ def display_results(df: pd.DataFrame, ticker: str):
         })
     
     summary_df = pd.DataFrame(summary_data)
-    print("\n=== Call Options Volatility Surface Summary ===")
+    print("\n=== Put Options Volatility Surface Summary ===")
     print(f"Ticker: {ticker}")
     print(f"Current Price: ${current_price:.2f}")
     print("\nSummary by Expiration:")
@@ -131,7 +131,7 @@ def display_results(df: pd.DataFrame, ticker: str):
         print(f"\n=== Detailed Data for {exp} ===")
         print(exp_data[['Strike', 'Moneyness', 'IV', 'Market Price', 'Days to Exp']].to_string(index=False))
 
-def plot_volatility_surface(df: pd.DataFrame, save_path='call_volatility_surface.png'):
+def plot_volatility_surface(df: pd.DataFrame, save_path='put_volatility_surface.png'):
     """
     Create 3D surface plot of implied volatility and save it to a file.
     
@@ -164,7 +164,7 @@ def plot_volatility_surface(df: pd.DataFrame, save_path='call_volatility_surface
     ax.set_xlabel('Moneyness (K/S)')
     ax.set_ylabel('Time to Expiration')
     ax.set_zlabel('Implied Volatility')
-    ax.set_title('Call Options Volatility Surface')
+    ax.set_title('Put Options Volatility Surface')
     
     # Set y-axis ticks to show actual dates
     ax.set_yticks(exp_nums)
@@ -177,7 +177,7 @@ def plot_volatility_surface(df: pd.DataFrame, save_path='call_volatility_surface
     plt.savefig(save_path)
     plt.close()
 
-def plot_volatility_smile(df: pd.DataFrame, expiration: str = None, save_path='call_volatility_smile.png'):
+def plot_volatility_smile(df: pd.DataFrame, expiration: str = None, save_path='put_volatility_smile.png'):
     """
     Create 2D plot of volatility smile and save it to a file.
     
@@ -194,16 +194,16 @@ def plot_volatility_smile(df: pd.DataFrame, expiration: str = None, save_path='c
     
     # Create plot
     plt.figure(figsize=(10, 6))
-    plt.plot(exp_data['Moneyness'], exp_data['IV'], 'b-', label='Call Options')
-    plt.scatter(exp_data['Moneyness'], exp_data['IV'], c='blue', alpha=0.5)
+    plt.plot(exp_data['Moneyness'], exp_data['IV'], 'r-', label='Put Options')
+    plt.scatter(exp_data['Moneyness'], exp_data['IV'], c='red', alpha=0.5)
     
     # Add vertical line at moneyness = 1 (at-the-money)
-    plt.axvline(x=1, color='r', linestyle='--', label='At-the-money')
+    plt.axvline(x=1, color='b', linestyle='--', label='At-the-money')
     
     # Customize plot
     plt.xlabel('Moneyness (K/S)')
     plt.ylabel('Implied Volatility')
-    plt.title(f'Call Options Volatility Smile - {expiration}')
+    plt.title(f'Put Options Volatility Smile - {expiration}')
     plt.legend()
     plt.grid(True)
     

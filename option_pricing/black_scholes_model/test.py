@@ -80,8 +80,22 @@ class OptionsAcademicAnalysis:
                      greeks['Theta'], greeks['Vega'], greeks['Rho']]
         })
         
-        # Format values
-        analysis['Value'] = analysis['Value'].apply(lambda x: f"${x:.2f}" if x > 10 else f"{x:.4f}")
+        # Format values based on parameter type
+        def format_value(param, value):
+            if param in ['Stock Price', 'Strike Price', 'Option Price']:
+                return f"${value:.2f}"
+            elif param in ['Risk-free Rate', 'Volatility']:
+                return f"{value:.2%}"
+            elif param in ['Time to Exp']:
+                return f"{value:.4f} years"
+            elif param in ['Delta', 'Gamma']:
+                return f"{value:.4f}"
+            elif param in ['Theta', 'Vega', 'Rho']:
+                return f"{value:.4f} per 1% change"
+            else:
+                return f"{value:.4f}"
+        
+        analysis['Value'] = analysis.apply(lambda x: format_value(x['Parameter'], x['Value']), axis=1)
         
         return analysis
     
@@ -194,16 +208,16 @@ class OptionsAcademicAnalysis:
 
 def main():
     # Example usage with custom parameters
-    S = 105.0  # Stock price
+    S = 100 # Stock price
     r = 0.05   # Risk-free rate (5%)
-    sigma = 0.2  # Volatility (20%)
+    sigma = 0.3  # Volatility (20%)
     
     analysis = OptionsAcademicAnalysis(S, r, sigma)
     
     # Analyze a specific scenario
     option_type = 'call'
-    K = 100.0  # Strike price
-    T = 30/365    # Time to expiration (1 year)
+    K = 105.0  # Strike price
+    T = 1    # Time to expiration (1 year)
     
     # Print scenario analysis
     print("\nScenario Analysis:")

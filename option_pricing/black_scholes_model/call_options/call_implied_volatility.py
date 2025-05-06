@@ -3,6 +3,7 @@ import numpy as np
 from scipy.optimize import brentq
 import yfinance as yf
 import pandas as pd
+import matplotlib.pyplot as plt
 
 def calculate_historical_volatility(ticker: str, window: int = 252) -> float:
     """
@@ -159,10 +160,117 @@ def implied_volatility_brent(market_price, S, K, T, r, tol=1e-6):
     print("\nBrent's method failed to find a solution in any range")
     return None
 
+def calculate_greeks(S, K, T, r, sigma):
+    """
+    Calculate all option Greeks.
+    
+    Args:
+        S: Current stock price
+        K: Strike price
+        T: Time to expiration (in years)
+        r: Risk-free interest rate
+        sigma: Volatility
+    
+    Returns:
+        dict: Dictionary containing all Greeks
+    """
+    d1 = (np.log(S / K) + (r + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
+    d2 = d1 - sigma * np.sqrt(T)
+    
+    # Calculate Greeks
+    delta = norm.cdf(d1)
+    gamma = norm.pdf(d1) / (S * sigma * np.sqrt(T))
+    theta = (-S * sigma * norm.pdf(d1)) / (2 * np.sqrt(T)) - r * K * np.exp(-r * T) * norm.cdf(d2)
+    vega = S * np.sqrt(T) * norm.pdf(d1)
+    rho = K * T * np.exp(-r * T) * norm.cdf(d2)
+    
+    return {
+        'delta': delta,
+        'gamma': gamma,
+        'theta': theta,
+        'vega': vega,
+        'rho': rho
+    }
+
+def plot_greeks(S, K, T, r, sigma):
+    """
+    Plot all option Greeks against different parameters.
+    
+    Args:
+        S: Current stock price
+        K: Strike price
+        T: Time to expiration (in years)
+        r: Risk-free interest rate
+        sigma: Volatility
+    """
+    # Create figure with subplots
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 12))
+    
+    # 1. Delta and Gamma vs Stock Price
+    S_range = np.linspace(S * 0.5, S * 1.5, 100)
+    deltas = []
+    gammas = []
+    
+    for s in S_range:
+        greeks = calculate_greeks(s, K, T, r, sigma)
+        deltas.append(greeks['delta'])
+        gammas.append(greeks['gamma'])
+    
+    ax1.plot(S_range, deltas, label='Delta')
+    ax1.set_title('Delta vs Stock Price')
+    ax1.set_xlabel('Stock Price')
+    ax1.set_ylabel('Delta')
+    ax1.grid(True)
+    ax1.legend()
+    
+    ax2.plot(S_range, gammas, label='Gamma', color='orange')
+    ax2.set_title('Gamma vs Stock Price')
+    ax2.set_xlabel('Stock Price')
+    ax2.set_ylabel('Gamma')
+    ax2.grid(True)
+    ax2.legend()
+    
+    # 2. Theta vs Time to Expiration
+    T_range = np.linspace(0.01, T * 2, 100)
+    thetas = []
+    
+    for t in T_range:
+        greeks = calculate_greeks(S, K, t, r, sigma)
+        thetas.append(greeks['theta'])
+    
+    ax3.plot(T_range, thetas, label='Theta', color='green')
+    ax3.set_title('Theta vs Time to Expiration')
+    ax3.set_xlabel('Time to Expiration (years)')
+    ax3.set_ylabel('Theta')
+    ax3.grid(True)
+    ax3.legend()
+    
+    # 3. Vega and Rho vs Volatility
+    sigma_range = np.linspace(0.1, sigma * 2, 100)
+    vegas = []
+    rhos = []
+    
+    for s in sigma_range:
+        greeks = calculate_greeks(S, K, T, r, s)
+        vegas.append(greeks['vega'])
+        rhos.append(greeks['rho'])
+    
+    ax4.plot(sigma_range, vegas, label='Vega', color='red')
+    ax4.plot(sigma_range, rhos, label='Rho', color='purple')
+    ax4.set_title('Vega and Rho vs Volatility')
+    ax4.set_xlabel('Volatility')
+    ax4.set_ylabel('Value')
+    ax4.grid(True)
+    ax4.legend()
+    
+    plt.tight_layout()
+    plt.savefig('greeks_analysis.png')
+    plt.close()
+
 # Parameters
 ticker = "NVDA"  # Stock ticker
 S = 113.83  # Current stock price
-K = 100      # Strke price
+K = 100      # Strike price
 T = 31/365  # Time to expiration 
 r = 0.0432  # Risk-free rate 
 C_market = 16.80 # Market price of the call option
@@ -174,12 +282,22 @@ hist_vol = calculate_historical_volatility(ticker)
 print("\nStarting implied volatility calculation...")
 iv = implied_volatility_newton(C_market, S, K, T, r)
 
-# Calculate vega
+# Calculate all Greeks
 sigma = iv if iv is not None else 0.2  # Use calculated IV or initial value
-vega_value = vega(S, K, T, r, sigma)
+greeks = calculate_greeks(S, K, T, r, sigma)
 
 # Display results
 print(f"\nResults:")
 print(f"Historical Volatility: {hist_vol:.2%}")
 print(f"Implied Volatility: {iv:.2%}" if iv is not None else "Implied Volatility: No convergence")
-print(f"Vega: {vega_value:.8f}") 
+print("\nGreeks:")
+print(f"Delta: {greeks['delta']:.4f} (change in option price per $1 change in stock price)")
+print(f"Gamma: {greeks['gamma']:.4f} (change in delta per $1 change in stock price)")
+print(f"Theta: {greeks['theta']:.4f} (change in option price per day)")
+print(f"Vega: {greeks['vega']:.4f} (change in option price per 1% change in volatility)")
+print(f"Rho: {greeks['rho']:.4f} (change in option price per 1% change in interest rate)")
+
+# Plot Greeks
+print("\nGenerating Greeks plots...")
+plot_greeks(S, K, T, r, sigma)
+print("Plots saved as 'greeks_analysis.png'") 

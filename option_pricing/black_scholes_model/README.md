@@ -1,4 +1,4 @@
-# Black-Scholes Options Analysis Framework
+# Black-Scholes Options Analysis
 
 ## Table of Contents
 1. [Introduction](#introduction)

@@ -29,7 +29,7 @@ def heston_monte_carlo(S0, K, T, r, q, V0, kappa, theta, xi, rho, n_simulations,
     return S, V
 
 # Parámetros
-S0, K, T, r, q = 123, 120, 38/365, 0.0421, 0.04
+S0, K, T, r, q = 130, 120, 38/365, 0.0421, 0.04
 V0, kappa, theta, xi, rho = 0.04, 2.0, 0.0625, 0.3, -0.6
 n_simulations, n_steps = 50_000, 252  # 252 pasos (días bursátiles)
 

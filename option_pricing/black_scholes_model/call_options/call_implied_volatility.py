@@ -269,11 +269,11 @@ def plot_greeks(S, K, T, r, sigma):
 
 # Parameters
 ticker = "NVDA"  # Stock ticker
-S = 113.83  # Current stock price
-K = 100      # Strike price
-T = 31/365  # Time to expiration 
+S = 123  # Current stock price
+K = 120      # Strike price
+T = 38/365  # Time to expiration 
 r = 0.0432  # Risk-free rate 
-C_market = 16.80 # Market price of the call option
+C_market = 9.44 # Market price of the call option
 
 # Calculate historical volatility
 hist_vol = calculate_historical_volatility(ticker)

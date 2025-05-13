@@ -209,14 +209,14 @@ class OptionsAcademicAnalysis:
 def main():
     # Example usage with custom parameters
     S = 100 # Stock price
-    r = 0.05   # Risk-free rate (5%)
-    sigma = 0.3  # Volatility (20%)
+    r = 0.06   # Risk-free rate (5%)
+    sigma = 0.5  # Volatility (20%)
     
     analysis = OptionsAcademicAnalysis(S, r, sigma)
     
     # Analyze a specific scenario
     option_type = 'call'
-    K = 105.0  # Strike price
+    K = 120  # Strike price
     T = 1    # Time to expiration (1 year)
     
     # Print scenario analysis

@@ -241,10 +241,10 @@ def plot_greeks(S, K, T, r, sigma):
 # Parameters for put option
 ticker = "^SPX"  # Stock ticker
 S = 5886.55 # Current stock price
-K = 5550     # Strike price
-T = 31/365  # Time to expiration 
+K = 5900     # Strike price
+T = 32/365  # Time to expiration 
 r = 0.0421  # Risk-free rate 
-P_market = 24.95  # Market price of the put option (example value)
+P_market = 93.05  # Market price of the put option (example value)
 
 # Calculate historical volatility
 hist_vol = calculate_historical_volatility(ticker)

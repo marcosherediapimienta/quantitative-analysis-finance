@@ -241,10 +241,10 @@ def plot_greeks(S, K, T, r, sigma):
 # Parameters for call option
 ticker = "^SPX"  # Stock ticker
 S = 5886.55  # Current stock price
-K = 5730     # Strike price
-T = 31/365   # Time to expiration
+K = 5875     # Strike price
+T = 32/365   # Time to expiration
 r = 0.0421   # Risk-free rate 
-C_market = 237.50 # Market price of the call option (example value)
+C_market = 124.23 # Market price of the call option (example value)
 
 # Calculate historical volatility
 hist_vol = calculate_historical_volatility(ticker)

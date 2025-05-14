@@ -10,9 +10,8 @@ st.set_page_config(page_title="Option Pricing Dashboard", layout="wide")
 st.title("Option Pricing Dashboard")
 
 st.markdown("""
-This application calculates implied volatility for European options using the Black-Scholes model through numerical methods including Newton-Raphson and Brent's 
-algorithm. It also computes theoretical option prices via Monte Carlo simulation, modeling stochastic processes while specifically supporting 
-European-style exercise.
+This project calculates implied volatility for European options using the Black-Scholes model through numerical methods including Newton-Raphson and Brent's 
+algorithm. It also computes theoretical option prices via Monte Carlo simulation.
 
 *Developed by Marcos Heredia Pimienta*
 """)

@@ -15,29 +15,6 @@ This application allows you to calculate the implied volatility of financial opt
 *Developed by Marcos Heredia Pimienta*
 """)
 
-# Enhanced help section
-with st.sidebar.expander("ℹ️ Help & Instructions", expanded=False):
-    st.markdown("""
-    **How to use the app?**
-    - Enter the option parameters and the market price.
-    - Click the button to calculate the implied volatility.
-    - If an error occurs, the corresponding message will be displayed.
-    - You can reload the page to clear the output.
-    
-    **Requirements:**
-    - Python 3.8+
-    - Install dependencies with: `pip install streamlit numpy matplotlib pandas scipy`
-    - Run the app with: `streamlit run app.py`
-    """)
-    st.markdown("""
-    **Common issues?**
-    - If you see dependency errors, make sure they are installed.
-    """)
-    st.markdown("""
-    **Contact:**
-    - For support, contact your developer or check the project README.
-    """)
-
 # Project info section
 with st.sidebar.expander("ℹ️ About the project", expanded=False):
     st.markdown("""

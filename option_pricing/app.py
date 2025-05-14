@@ -29,7 +29,7 @@ with st.sidebar.expander("ℹ️ About the project", expanded=False):
     st.markdown("""
     ---
     **Author:** Marcos Heredia Pimienta  
-    **Role:** Quantitative Analyst
+    **Role:** Quantitative Risk Analyst
     """)
 
 # Personal brand section in the sidebar

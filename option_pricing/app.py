@@ -12,9 +12,7 @@ st.title("Option Pricing Dashboard")
 st.markdown("""
 This application calculates implied volatility for European options using the Black-Scholes model through numerical methods including Newton-Raphson and Brent's 
 algorithm. It also computes theoretical option prices via Monte Carlo simulation, modeling stochastic processes while specifically supporting 
-European-style exercise. The tool provides complete Greeks analysis (Delta, Gamma, Vega, Theta, Rho) with customizable parameters for strikes, 
-expirations, and risk-free rates.
-
+European-style exercise.
 
 *Developed by Marcos Heredia Pimienta*
 """)

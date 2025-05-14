@@ -188,7 +188,7 @@ def plot_greeks(S, K, T, r, sigma):
         gammas.append(greeks['gamma'])
     
     ax1.plot(S_range, deltas, label='Delta')
-    ax1.set_title('Call Delta vs Stock Price')
+    ax1.set_title('Delta vs Stock Price')
     ax1.set_xlabel('Stock Price')
     ax1.set_ylabel('Delta')
     ax1.grid(True)
@@ -210,7 +210,7 @@ def plot_greeks(S, K, T, r, sigma):
         thetas.append(greeks['theta'])
     
     ax3.plot(T_range, thetas, label='Theta', color='green')
-    ax3.set_title('Call Theta vs Time to Expiration')
+    ax3.set_title('Theta vs Time to Expiration')
     ax3.set_xlabel('Time to Expiration (years)')
     ax3.set_ylabel('Theta')
     ax3.grid(True)

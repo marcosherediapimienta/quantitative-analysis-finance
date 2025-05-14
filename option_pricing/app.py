@@ -100,7 +100,9 @@ if st.button("Calculate Implied Volatility", key="iv_btn"):
             call_iv.plot_greeks(S, K, T, r, iv)
             img_path = os.path.join(APP_DIR, "call_greeks_analysis.png")
             if os.path.exists(img_path):
-                st.image(img_path, caption="Greeks plots (Call)", use_column_width=True)
+                st.image(img_path, caption="Greeks plots (Call)", use_container_width=True)
+            else:
+                st.info("No Greeks plot found for Call option.")
         else:
             st.error("Could not calculate implied volatility (did not converge)")
     else:
@@ -114,7 +116,9 @@ if st.button("Calculate Implied Volatility", key="iv_btn"):
             put_iv.plot_greeks(S, K, T, r, iv)
             img_path = os.path.join(APP_DIR, "put_greeks_analysis.png")
             if os.path.exists(img_path):
-                st.image(img_path, caption="Greeks plots (Put)", use_column_width=True)
+                st.image(img_path, caption="Greeks plots (Put)", use_container_width=True)
+            else:
+                st.info("No Greeks plot found for Put option.")
         else:
             st.error("Could not calculate implied volatility (did not converge)")
 

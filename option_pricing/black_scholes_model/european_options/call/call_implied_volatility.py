@@ -228,7 +228,7 @@ def plot_greeks(S, K, T, r, sigma):
     
     ax4.plot(sigma_range, vegas, label='Vega', color='red')
     ax4.plot(sigma_range, rhos, label='Rho', color='purple')
-    ax4.set_title('Vega and Call Rho vs Volatility')
+    ax4.set_title('Vega and Rho vs Volatility')
     ax4.set_xlabel('Volatility')
     ax4.set_ylabel('Value')
     ax4.grid(True)

@@ -1,5 +1,5 @@
 """
-Monte Carlo simulation for European Call Option Pricing using Black-Scholes model
+Monte Carlo simulation for European Put Option Pricing using Black-Scholes model
 """
 import numpy as np
 import yfinance as yf
@@ -7,18 +7,18 @@ from datetime import datetime
 from scipy.stats import norm
 from scipy.optimize import brentq
 
-def monte_carlo_european_call(S0, K, T, r, sigma, n_simulations=10000):
+def monte_carlo_european_put(S0, K, T, r, sigma, n_simulations=10000):
     """
-    Monte Carlo pricing for a European call option under Black-Scholes assumptions.
+    Monte Carlo pricing for a European put option under Black-Scholes assumptions.
     """
     np.random.seed(42)
     Z = np.random.standard_normal(n_simulations)
     ST = S0 * np.exp((r - 0.5 * sigma ** 2) * T + sigma * np.sqrt(T) * Z)
-    payoff = np.maximum(ST - K, 0)
+    payoff = np.maximum(K - ST, 0)
     price = np.exp(-r * T) * np.mean(payoff)
     return price
 
-def get_option_data_yahoo(ticker, expiry, strike, option_type='call', r=0.0421):
+def get_option_data_yahoo(ticker, expiry, strike, option_type='put', r=0.0421):
     """
     Fetches option data from Yahoo Finance using yfinance.
     Returns dict: S0, K, T, r, market_price
@@ -26,7 +26,7 @@ def get_option_data_yahoo(ticker, expiry, strike, option_type='call', r=0.0421):
     stock = yf.Ticker(ticker)
     S0 = stock.history(period='1d')['Close'].iloc[-1]
     options = stock.option_chain(expiry)
-    df = options.calls if option_type == 'call' else options.puts
+    df = options.puts if option_type == 'put' else options.calls
     row = df[df['strike'] == strike]
     if row.empty:
         raise ValueError('Strike not found in options chain')
@@ -42,26 +42,25 @@ def get_option_data_yahoo(ticker, expiry, strike, option_type='call', r=0.0421):
         'market_price': market_price
     }
 
-def implied_volatility_newton(market_price, S, K, T, r, tol=1e-6, max_iter=25):
+def implied_volatility_newton_put(market_price, S, K, T, r, tol=1e-6, max_iter=25):
     """
-    Calculate implied volatility using the Newton-Raphson method for calls.
+    Calculate implied volatility for a European put using the Newton-Raphson method.
     Returns float: Implied volatility or None if it doesn't converge
     """
-    
-    def black_scholes_call_price(S, K, T, r, sigma):
+    def black_scholes_put_price(S, K, T, r, sigma):
         d1 = (np.log(S / K) + (r + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
         d2 = d1 - sigma * np.sqrt(T)
-        return S * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)
+        return K * np.exp(-r * T) * norm.cdf(-d2) - S * norm.cdf(-d1)
     def vega(S, K, T, r, sigma):
         d1 = (np.log(S / K) + (r + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
         return S * norm.pdf(d1) * np.sqrt(T)
     sigma = 0.2
     for _ in range(max_iter):
-        price = black_scholes_call_price(S, K, T, r, sigma)
+        price = black_scholes_put_price(S, K, T, r, sigma)
         v = vega(S, K, T, r, sigma)
         if abs(v) < 1e-8:
             def objective(sigma_):
-                return black_scholes_call_price(S, K, T, r, sigma_) - market_price
+                return black_scholes_put_price(S, K, T, r, sigma_) - market_price
             try:
                 return brentq(objective, 0.0001, 5.0, xtol=tol)
             except Exception:
@@ -73,7 +72,7 @@ def implied_volatility_newton(market_price, S, K, T, r, tol=1e-6, max_iter=25):
         if sigma <= 0:
             sigma = 0.0001
     def objective(sigma_):
-        return black_scholes_call_price(S, K, T, r, sigma_) - market_price
+        return black_scholes_put_price(S, K, T, r, sigma_) - market_price
     try:
         return brentq(objective, 0.0001, 5.0, xtol=tol)
     except Exception:
@@ -83,11 +82,11 @@ if __name__ == "__main__":
     # Configuración de ejemplo
     ticker = '^SPX'
     expiry = '2025-06-13'
-    option_type = 'call'
+    option_type = 'put'
     # Mostrar strikes disponibles antes de pedir el strike
     stock = yf.Ticker(ticker)
     options = stock.option_chain(expiry)
-    strikes = options.calls['strike'].values
+    strikes = options.puts['strike'].values
     print("\nStrikes disponibles para este vencimiento:")
     print(strikes)
     # Permitir al usuario elegir el strike
@@ -102,7 +101,7 @@ if __name__ == "__main__":
     print(f"  Tasa libre de riesgo (r):    {data['r']*100:.2f}%")
     print(f"  Precio de mercado opción:    {data['market_price']:.4f}")
     print("\nCalculando volatilidad implícita...")
-    iv = implied_volatility_newton(
+    iv = implied_volatility_newton_put(
         data['market_price'], data['S0'], data['K'], data['T'], data['r']
     )
     if iv is not None:
@@ -111,8 +110,8 @@ if __name__ == "__main__":
         print("  Volatilidad implícita (IV):   No convergió")
     print("\nCalculando precio con Monte Carlo...")
     n_sim = 10000
-    price = monte_carlo_european_call(
+    price = monte_carlo_european_put(
         data['S0'], data['K'], data['T'], data['r'], iv, n_sim
     )
-    print(f"  Precio opción call europea (Monte Carlo, IV): {price:.4f}")
+    print(f"  Precio opción put europea (Monte Carlo, IV): {price:.4f}")
     print("="*50 + "\n")

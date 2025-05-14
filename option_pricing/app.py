@@ -20,7 +20,6 @@ algorithm. It also computes theoretical option prices via Monte Carlo simulation
 with st.sidebar.expander("ℹ️ About the project", expanded=False):
     st.markdown("""
     Quantitative analysis project for financial options.
-    Includes implied volatility calculation using the Black-Scholes model.
     """)
     st.markdown("Repository: [GitHub](https://github.com/marcosherediapimienta/quantitative-analysis-finance)")
     st.markdown("""

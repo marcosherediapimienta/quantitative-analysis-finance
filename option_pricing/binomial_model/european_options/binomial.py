@@ -94,7 +94,9 @@ def get_input(prompt, default, cast_func, validator=None):
 
 if __name__ == "__main__":
     print("\nBinomial Model European Option Pricing (Cox-Ross-Rubinstein)")
-    # Ticker input
+    # 1. Option type first
+    option_type = input("Option type ('call' or 'put') [call]: ").strip().lower() or 'call'
+    # 2. Ticker input
     while True:
         ticker = input("Enter stock ticker (e.g., ^SPX) [default: ^SPX]: ").strip().upper()
         if ticker == '':
@@ -126,8 +128,11 @@ if __name__ == "__main__":
                 expiration = expirations[exp_idx]
                 break
             opt_chain = ticker_obj.option_chain(expiration)
-            strikes = opt_chain.calls['strike'].values
-            print(f"\nAvailable strikes for {expiration}:")
+            if option_type == 'call':
+                strikes = opt_chain.calls['strike'].values
+            else:
+                strikes = opt_chain.puts['strike'].values
+            print(f"\nAvailable strikes for {expiration} ({option_type}s):")
             for i, strike in enumerate(strikes):
                 print(f"  {i+1}. {strike}")
             while True:
@@ -161,7 +166,6 @@ if __name__ == "__main__":
             print(f"Could not fetch data for this ticker. Error: {e}\nPlease try again.")
     S = S_default
     r = get_input("Enter risk-free rate (e.g., 0.0421 for 4.21%)", 0.0421, float, lambda x: x >= 0)
-    option_type = input("Option type ('call' or 'put') [call]: ").strip().lower() or 'call'
     # Get market price from Yahoo for selected option
     if option_type == 'call':
         row = opt_chain.calls[opt_chain.calls['strike'] == K]

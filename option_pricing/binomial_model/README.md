@@ -44,12 +44,6 @@ Below is a sample diagram of a binomial tree for the underlying asset price evol
 
 For larger N, the tree grows in width and depth. The script also generates and saves a graphical plot of the binomial tree as `binomial_tree.png` each time you run it, using your selected parameters.
 
-![Binomial Tree Example](binomial_tree.png)
-
-## Notes
-- The model is for **European options** only (no early exercise).
-- Increasing the number of steps (N) improves accuracy but increases computation time.
-- The script is robust to missing data and will prompt for manual input if needed.
 
 ## References
 - Cox, J.C., Ross, S.A., & Rubinstein, M. (1979). Option Pricing: A Simplified Approach. Journal of Financial Economics, 7(3), 229-263.

@@ -80,39 +80,44 @@ def implied_volatility_newton(market_price, S, K, T, r, tol=1e-6, max_iter=25):
         return None
 
 if __name__ == "__main__":
-    # Configuración de ejemplo
-    ticker = '^SPX'
-    expiry = '2025-06-13'
-    option_type = 'call'
-    # Mostrar strikes disponibles antes de pedir el strike
+    print("\nEuropean Call Option Pricing (Monte Carlo + Implied Volatility)")
+    print("="*60)
+    ticker = input("Enter the ticker (e.g., ^SPX): ").strip()
     stock = yf.Ticker(ticker)
+    expirations = stock.options
+    print("\nAvailable expiration dates:")
+    for i, exp in enumerate(expirations):
+        print(f"  [{i}] {exp}")
+    idx = int(input("\nSelect the number of the expiration date you want to use: "))
+    expiry = expirations[idx]
     options = stock.option_chain(expiry)
     strikes = options.calls['strike'].values
-    print("\nStrikes disponibles para este vencimiento:")
+    print("\nAvailable strikes for this expiration:")
     print(strikes)
-    # Permitir al usuario elegir el strike
-    strike = float(input("\nIntroduce el strike que deseas usar (de la lista mostrada): "))
-    data = get_option_data_yahoo(ticker, expiry, strike, option_type)
+    strike = float(input("\nEnter the strike you want to use (from the list above): "))
+    r = input("\nEnter the risk-free rate (e.g., 0.0421 for 4.21%) [default 0.0421]: ").strip()
+    r = float(r) if r else 0.0421
+    data = get_option_data_yahoo(ticker, expiry, strike, 'call', r)
     print("\n" + "="*50)
-    print(f"  DATOS DE LA OPCIÓN ({ticker} {option_type.upper()})")
+    print(f"  OPTION DATA ({ticker} CALL)")
     print("="*50)
-    print(f"  Subyacente actual (S0):     {data['S0']:.2f}")
+    print(f"  Current underlying (S0):     {data['S0']:.2f}")
     print(f"  Strike (K):                  {data['K']:.2f}")
-    print(f"  Tiempo a vencimiento (T):    {data['T']*365:.0f} días ({data['T']:.4f} años)")
-    print(f"  Tasa libre de riesgo (r):    {data['r']*100:.2f}%")
-    print(f"  Precio de mercado opción:    {data['market_price']:.4f}")
-    print("\nCalculando volatilidad implícita...")
+    print(f"  Time to maturity (T):         {data['T']*365:.0f} days ({data['T']:.4f} years)")
+    print(f"  Risk-free rate (r):           {data['r']*100:.2f}%")
+    print(f"  Option market price:          {data['market_price']:.4f}")
+    print("\nCalculating implied volatility...")
     iv = implied_volatility_newton(
         data['market_price'], data['S0'], data['K'], data['T'], data['r']
     )
     if iv is not None:
-        print(f"  Volatilidad implícita (IV):   {iv*100:.2f}%")
+        print(f"  Implied volatility (IV):       {iv*100:.2f}%")
     else:
-        print("  Volatilidad implícita (IV):   No convergió")
-    print("\nCalculando precio con Monte Carlo...")
+        print("  Implied volatility (IV):       Did not converge")
+    print("\nCalculating price with Monte Carlo...")
     n_sim = 10000
     price = monte_carlo_european_call(
         data['S0'], data['K'], data['T'], data['r'], iv, n_sim
     )
-    print(f"  Precio opción call europea (Monte Carlo, IV): {price:.4f}")
+    print(f"  European call option price (Monte Carlo, IV): {price:.4f}")
     print("="*50 + "\n")

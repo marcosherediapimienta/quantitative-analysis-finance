@@ -208,14 +208,12 @@ if __name__ == "__main__":
     print(f"Risk-free rate:    {r*100:.2f}%")
     print(f"Volatility (σ):    {sigma*100:.2f}%")
     print(f"Steps (N):         {N}")
-    print(f"dt:                {dt:.6f}")
     print(f"u (up factor):     {u:.6f}")
     print(f"d (down factor):   {d:.6f}")
     print(f"p (risk-neutral):  {p:.6f}")
     if market_price is not None:
         print(f"Market price:      {market_price:.4f}")
         print(f"Model price:       {price:.4f}")
-        print(f"Difference:        {price - market_price:+.4f}")
     else:
         print(f"Model price:       {price:.4f}")
     print("="*50)

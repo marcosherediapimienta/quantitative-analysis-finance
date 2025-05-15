@@ -7,7 +7,7 @@ from datetime import datetime
 from scipy.stats import norm
 from scipy.optimize import brentq
 
-def monte_carlo_european_call(S0, K, T, r, sigma, n_simulations=10000):
+def monte_carlo_european_call(S0, K, T, r, sigma, n_simulations=100000):
     """
     Monte Carlo pricing for a European call option under Black-Scholes assumptions.
     """
@@ -17,6 +17,40 @@ def monte_carlo_european_call(S0, K, T, r, sigma, n_simulations=10000):
     payoff = np.maximum(ST - K, 0)
     price = np.exp(-r * T) * np.mean(payoff)
     return price
+
+def monte_carlo_greeks_call(S0, K, T, r, sigma, n_simulations=10000, h=1e-2):
+    """
+    Estimate Delta, Gamma, Vega, Theta, Rho for a European call option using Monte Carlo.
+    This function uses numerical finite differences (bumping) on the price estimated by Monte Carlo simulations.
+    For each parameter (S0, sigma, T, r), the option price is calculated with a small change (h) and the finite difference formula is used to approximate the derivative:
+    For example, for Delta:
+        Delta ≈ (C(S0+h) - C(S0-h)) / (2h)
+    where C(x) is the price estimated by Monte Carlo.
+    """
+    # Delta
+    price_up = monte_carlo_european_call(S0 + h, K, T, r, sigma, n_simulations)
+    price_down = monte_carlo_european_call(S0 - h, K, T, r, sigma, n_simulations)
+    price = monte_carlo_european_call(S0, K, T, r, sigma, n_simulations)
+    delta = (price_up - price_down) / (2 * h)
+    gamma = (price_up - 2 * price + price_down) / (h ** 2)
+    # Vega
+    price_vega_up = monte_carlo_european_call(S0, K, T, r, sigma + h, n_simulations)
+    price_vega_down = monte_carlo_european_call(S0, K, T, r, sigma - h, n_simulations)
+    vega = (price_vega_up - price_vega_down) / (2 * h)
+    # Theta (backward difference)
+    price_theta = monte_carlo_european_call(S0, K, T - h, r, sigma, n_simulations)
+    theta = (price_theta - price) / h
+    # Rho
+    price_rho_up = monte_carlo_european_call(S0, K, T, r + h, sigma, n_simulations)
+    price_rho_down = monte_carlo_european_call(S0, K, T, r - h, sigma, n_simulations)
+    rho = (price_rho_up - price_rho_down) / (2 * h)
+    return {
+        'delta': delta,
+        'gamma': gamma,
+        'vega': vega,
+        'theta': theta,
+        'rho': rho
+    }
 
 def get_option_data_yahoo(ticker, expiry, strike, option_type='call', r=0.0421):
     """
@@ -120,4 +154,8 @@ if __name__ == "__main__":
         data['S0'], data['K'], data['T'], data['r'], iv, n_sim
     )
     print(f"  European call option price (Monte Carlo, IV): {price:.4f}")
+    greeks = monte_carlo_greeks_call(data['S0'], data['K'], data['T'], data['r'], iv, n_sim)
+    print("\n  Greeks (Monte Carlo estimates):")
+    for greek, value in greeks.items():
+        print(f"    {greek.capitalize():<6}: {value:.4f}")
     print("="*50 + "\n")

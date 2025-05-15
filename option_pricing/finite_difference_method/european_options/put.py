@@ -82,6 +82,41 @@ def implied_volatility_put(market_price, S, K, T, r, tol=1e-6, max_iter=100, tra
             return None, iterations
         return None
 
+def finite_difference_greeks_put(S0, K, T, r, sigma, Smax=3, M=100, N=1000, bump=1e-5, debug=False):
+    """
+    Calculate Greeks for a European put option using finite differences (bumping) on the finite difference price.
+    Returns a dict with Delta, Gamma, Vega, Theta, Rho.
+    """
+    # Delta
+    dS = S0 * bump
+    price_up = finite_difference_european_put(S0 + dS, K, T, r, sigma, Smax, M, N)
+    price_down = finite_difference_european_put(S0 - dS, K, T, r, sigma, Smax, M, N)
+    price = finite_difference_european_put(S0, K, T, r, sigma, Smax, M, N)
+    delta = (price_up - price_down) / (2 * dS)
+    gamma = (price_up - 2 * price + price_down) / (dS ** 2)
+    # Vega
+    dsigma = bump
+    price_vega = finite_difference_european_put(S0, K, T, r, sigma + dsigma, Smax, M, N)
+    vega = (price_vega - price) / dsigma
+    # Theta (should be negative for puts)
+    dT = min(bump, T/10) if T > 0.01 else 1e-6
+    if T - dT > 0:
+        price_theta = finite_difference_european_put(S0, K, T - dT, r, sigma, Smax, M, N)
+        theta = (price_theta - price) / dT
+    else:
+        theta = float('nan')
+    # Rho
+    dr = bump
+    price_rho = finite_difference_european_put(S0, K, T, r + dr, sigma, Smax, M, N)
+    rho = (price_rho - price) / dr
+    return {
+        'Delta': delta,
+        'Gamma': gamma,
+        'Vega': vega,
+        'Theta': theta,
+        'Rho': rho
+    }
+
 if __name__ == "__main__":
     ticker = input("Enter the ticker (e.g., ^SPX): ")
     stock = yf.Ticker(ticker)
@@ -115,3 +150,9 @@ if __name__ == "__main__":
         print("Could not calculate implied volatility")
     price = finite_difference_european_put(S0, strike, T, r, sigma)
     print(f"European put option price (Finite Differences, IV): {price:.4f}")
+
+    # Calculate and print Greeks
+    greeks = finite_difference_greeks_put(S0, strike, T, r, sigma, debug=True)
+    print("\nGreeks (Finite Difference, bumping):")
+    for greek, value in greeks.items():
+        print(f"  {greek}: {value:.4f}")

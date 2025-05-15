@@ -36,6 +36,36 @@ def binomial_european_option_price(S, K, T, r, sigma, N=100, option_type='call')
         payoff = discount * (p * payoff[:-1] + (1 - p) * payoff[1:])
     return payoff[0]
 
+def binomial_greeks_european_option(S, K, T, r, sigma, N=100, option_type='call', h=1e-2):
+    """
+    Estimate Delta, Gamma, Vega, Theta, Rho for a European option using the binomial model.
+    Uses finite differences (bumping) on the binomial price.
+    """
+    # Delta
+    price_up = binomial_european_option_price(S + h, K, T, r, sigma, N, option_type)
+    price_down = binomial_european_option_price(S - h, K, T, r, sigma, N, option_type)
+    price = binomial_european_option_price(S, K, T, r, sigma, N, option_type)
+    delta = (price_up - price_down) / (2 * h)
+    gamma = (price_up - 2 * price + price_down) / (h ** 2)
+    # Vega
+    price_vega_up = binomial_european_option_price(S, K, T, r, sigma + h, N, option_type)
+    price_vega_down = binomial_european_option_price(S, K, T, r, sigma - h, N, option_type)
+    vega = (price_vega_up - price_vega_down) / (2 * h)
+    # Theta (backward difference)
+    price_theta = binomial_european_option_price(S, K, T - h, r, sigma, N, option_type)
+    theta = (price_theta - price) / h
+    # Rho
+    price_rho_up = binomial_european_option_price(S, K, T, r + h, sigma, N, option_type)
+    price_rho_down = binomial_european_option_price(S, K, T, r - h, sigma, N, option_type)
+    rho = (price_rho_up - price_rho_down) / (2 * h)
+    return {
+        'delta': delta,
+        'gamma': gamma,
+        'vega': vega,
+        'theta': theta,
+        'rho': rho
+    }
+
 def black_scholes_call_price(S, K, T, r, sigma):
     d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
     d2 = d1 - sigma * np.sqrt(T)
@@ -216,4 +246,8 @@ if __name__ == "__main__":
         print(f"Model price:       {price:.4f}")
     else:
         print(f"Model price:       {price:.4f}")
+    greeks = binomial_greeks_european_option(S, K, T, r, sigma, N, option_type)
+    print("\nGreeks (Binomial estimates):")
+    for greek, value in greeks.items():
+        print(f"  {greek.capitalize():<6}: {value:.4f}")
     print("="*50)

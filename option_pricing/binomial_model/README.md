@@ -28,7 +28,6 @@ The Cox-Ross-Rubinstein binomial model relies on several key assumptions:
 - Volatility (`sigma`) is constant and known (or implied from market prices).
 - Trading of the underlying asset and option is continuous, and short selling is allowed.
 - There are no arbitrage opportunities.
-- The option is European style: it can only be exercised at expiration.
 
 ## Example: Binomial Tree Diagram
 Below is a sample diagram of a binomial tree for the underlying asset price evolution (for N=3 steps):

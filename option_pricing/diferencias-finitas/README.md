@@ -61,11 +61,6 @@ $$
 
 where $M$ is the number of price steps.
 
-## 7. References
-- Hull, J. C. "Options, Futures, and Other Derivatives"
-- Wilmott, P. "Paul Wilmott Introduces Quantitative Finance"
-- https://en.wikipedia.org/wiki/Finite_difference_method_for_option_pricing
-
 ## 8. Effect of T, M, and N
 
 - **T (Time to maturity):**
@@ -89,6 +84,11 @@ where $M$ is the number of price steps.
 - Increase M and N until results stabilize (do a convergence test).
 - For larger T, you may need larger N to keep $\Delta t$ small and maintain stability.
 - For high volatility ($\sigma$), you may also need larger N for stability.
+
+## 7. References
+- Hull, J. C. "Options, Futures, and Other Derivatives"
+- Wilmott, P. "Paul Wilmott Introduces Quantitative Finance"
+- https://en.wikipedia.org/wiki/Finite_difference_method_for_option_pricing
 
 ---
 

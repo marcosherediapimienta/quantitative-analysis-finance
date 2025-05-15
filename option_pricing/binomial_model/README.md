@@ -3,12 +3,6 @@
 ## Overview
 This module implements the Cox-Ross-Rubinstein (CRR) binomial tree model for pricing European call and put options. The binomial model is a discrete-time approach that models the evolution of the underlying asset price over a series of time steps, allowing for flexible and intuitive option pricing.
 
-## Key Features
-- **Interactive script**: Prompts the user for ticker, expiry, strike, and fetches spot and market price from Yahoo Finance.
-- **Automatic implied volatility**: Calculates implied volatility (IV) from market price using Newton-Raphson and Brent's method. Uses IV by default in pricing.
-- **User input fallback**: Only asks for volatility if IV cannot be calculated.
-- **Professional output**: Displays all relevant parameters, binomial factors (u, d, p, dt), and compares model price to market price.
-- **Robust error handling**: Handles missing data and invalid input gracefully.
 
 ## Theoretical Background
 The binomial model assumes that at each time step, the underlying asset price can move up by a factor `u` or down by a factor `d`. The risk-neutral probability `p` is used to discount expected payoffs back to present value. As the number of steps increases, the binomial model converges to the Black-Scholes price for European options.
@@ -24,50 +18,33 @@ Where:
 - `T`: time to maturity (years)
 - `N`: number of steps
 
-## Usage
-Run the script `binomial.py` interactively:
+## Model Assumptions
+The Cox-Ross-Rubinstein binomial model relies on several key assumptions:
 
-```bash
-python binomial.py
+- The underlying asset price follows a multiplicative binomial process (can move up by factor `u` or down by factor `d` at each step).
+- No dividends are paid during the life of the option (unless explicitly modeled).
+- Markets are frictionless: no transaction costs or taxes, and assets are perfectly divisible.
+- The risk-free interest rate (`r`) is constant and known for the duration of the option.
+- Volatility (`sigma`) is constant and known (or implied from market prices).
+- Trading of the underlying asset and option is continuous, and short selling is allowed.
+- There are no arbitrage opportunities.
+- The option is European style: it can only be exercised at expiration.
+
+## Example: Binomial Tree Diagram
+Below is a sample diagram of a binomial tree for the underlying asset price evolution (for N=3 steps):
+
+```
+        S
+       / \
+    uS   dS
+    / \   / \
+ u^2S d u dS d^2S
+   ...   ...
 ```
 
-You will be prompted for:
-- Stock ticker (e.g., ^SPX)
-- Expiration date (choose from available)
-- Strike price (choose from available)
-- Risk-free rate (default provided)
-- Option type (call or put)
-- Number of steps (N, default: days to expiry)
+For larger N, the tree grows in width and depth. The script also generates and saves a graphical plot of the binomial tree as `binomial_tree.png` each time you run it, using your selected parameters.
 
-The script will:
-- Fetch spot price and option chain from Yahoo Finance
-- Retrieve market price for the selected option
-- Calculate implied volatility (IV) if possible
-- Use IV in the binomial model (or ask for volatility if IV is unavailable)
-- Display all parameters, binomial factors, and compare model price to market price
-
-## Output Example
-```
-==================================================
-European Call Option Pricing (Binomial Model)
-==================================================
-Underlying:        ^SPX
-Spot price (S):    5000.00
-Strike (K):        5050.00
-Expiration:        2025-06-21
-Time to expiry:    37 days (0.1014 years)
-Risk-free rate:    4.21%
-Volatility (σ):    18.23%
-Steps (N):         37
-dt:                0.002740
-u (up factor):     1.010563
-d (down factor):   0.989553
-p (risk-neutral):  0.507123
-Market price:      75.3200
-Model price:       75.3012
-Difference:        -0.0188
-==================================================
-```
+![Binomial Tree Example](binomial_tree.png)
 
 ## Notes
 - The model is for **European options** only (no early exercise).
@@ -79,8 +56,3 @@ Difference:        -0.0188
 - Hull, J. C. (Options, Futures, and Other Derivatives)
 - [Wikipedia: Binomial options pricing model](https://en.wikipedia.org/wiki/Binomial_options_pricing_model)
 
-## File Structure
-- `binomial.py`: Main interactive script for pricing European options using the binomial model.
-
----
-For questions or improvements, contact the project maintainer.

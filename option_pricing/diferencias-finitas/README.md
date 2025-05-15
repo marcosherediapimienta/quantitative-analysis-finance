@@ -66,6 +66,30 @@ where $M$ is the number of price steps.
 - Wilmott, P. "Paul Wilmott Introduces Quantitative Finance"
 - https://en.wikipedia.org/wiki/Finite_difference_method_for_option_pricing
 
+## 8. Effect of T, M, and N
+
+- **T (Time to maturity):**
+    - T determines the time horizon over which the option is priced.
+    - A larger T means the grid is extended further in time, and the option has more time value.
+    - The time step size is $\Delta t = T / N$. For a fixed N, increasing T increases $\Delta t$, which can affect stability and accuracy.
+
+- **M (Number of price steps):**
+    - M controls the granularity of the asset price grid (S axis).
+    - Higher M means a finer grid, which generally increases accuracy but also computational cost.
+    - Too low M can lead to inaccurate results due to coarse discretization.
+    - The spatial step is $\Delta S = S_{max} / M$.
+
+- **N (Number of time steps):**
+    - N controls the granularity of the time grid.
+    - Higher N means smaller time steps ($\Delta t$), which improves stability and accuracy for the explicit method.
+    - Too low N can make the method unstable (see the stability condition above).
+    - For the explicit method, it is important that N is large enough to satisfy the stability condition: $\Delta t < 1 / (\sigma^2 M^2)$.
+
+**Practical advice:**
+- Increase M and N until results stabilize (do a convergence test).
+- For larger T, you may need larger N to keep $\Delta t$ small and maintain stability.
+- For high volatility ($\sigma$), you may also need larger N for stability.
+
 ---
 
 This folder contains Python scripts implementing the above method for European call and put options, including implied volatility calculation and comparison with Black-Scholes analytical prices.

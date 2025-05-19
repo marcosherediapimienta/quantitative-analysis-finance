@@ -25,8 +25,8 @@ fd_put_mod = import_from_path('fd_put', os.path.join(base, 'finite_difference_me
 # Nota: T es el tiempo a vencimiento expresado en años (usando 365 días naturales).
 # Por ejemplo, para 26 días naturales hasta vencimiento: T = 26/365
 portfolio = [
-    {'ticker': '^SPX','type': 'call','K': 5955,'T': 0.0712,'contracts': 15},
-    {'ticker': '^SPX','type': 'put','K': 5960,'T': 0.0712,'contracts': 10},   
+    {'ticker': '^SPX','type': 'call','K': 7400,'T': 0.0712,'contracts': 15},
+    {'ticker': '^SPX','type': 'put','K': 2600,'T': 0.0712,'contracts': 10},   
 ]
 
 # --- FUNCIÓN GENERAL DE PRICING ---
@@ -118,7 +118,7 @@ print(f"Valor teórico total de la cartera (Black-Scholes): {total_market_value:
 
 # --- PASO 4: Simulación de escenarios de precios futuros (GBM) ---
 # HORIZONTE DE VAR/ES (en años): 1 día bursátil = 1/252, 1 semana = 5/252, etc.
-HORIZONTE_VAR = 1/252 
+HORIZONTE_VAR = 15/252 
 N_SIMULATIONS = 1000
 r = 0.0421  # tasa libre de riesgo
 simulated_prices = {}

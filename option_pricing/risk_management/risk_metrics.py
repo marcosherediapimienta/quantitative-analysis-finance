@@ -12,7 +12,7 @@ def import_from_path(module_name, file_path):
     return module
 
 # --- RUTAS A MODELOS DE PRICING ---
-base = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..', 'quantitative-analysis-finance/option_pricing'))
+base = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 bs_call_mod = import_from_path('bs_call', os.path.join(base, 'black_scholes_model/european_options/call_implied_volatility.py'))
 bs_put_mod = import_from_path('bs_put', os.path.join(base, 'black_scholes_model/european_options/put_implied_volatility.py'))
 binomial_mod = import_from_path('binomial', os.path.join(base, 'binomial_model/european_options/binomial.py'))
@@ -22,8 +22,11 @@ fd_call_mod = import_from_path('fd_call', os.path.join(base, 'finite_difference_
 fd_put_mod = import_from_path('fd_put', os.path.join(base, 'finite_difference_method/european_options/put.py'))
 
 # --- DEFINICIÓN DE LA CARTERA (puedes modificarla manualmente) ---
+# Nota: T es el tiempo a vencimiento expresado en años (usando 365 días naturales).
+# Por ejemplo, para 26 días naturales hasta vencimiento: T = 26/365
 portfolio = [
-    {'ticker': '^SPX','type': 'call','K': 5955,'T': 0.0712,'contracts': 15},  
+    {'ticker': '^SPX','type': 'call','K': 5955,'T': 0.0712,'contracts': 15},
+    {'ticker': '^SPX','type': 'put','K': 5960,'T': 0.0712,'contracts': 10},   
 ]
 
 # --- FUNCIÓN GENERAL DE PRICING ---
@@ -114,15 +117,17 @@ for opt in portfolio:
 print(f"Valor teórico total de la cartera (Black-Scholes): {total_market_value:.2f}\n")
 
 # --- PASO 4: Simulación de escenarios de precios futuros (GBM) ---
+# HORIZONTE DE VAR/ES (en años): 1 día bursátil = 1/252, 1 semana = 5/252, etc.
+HORIZONTE_VAR = 1/252 
 N_SIMULATIONS = 1000
 r = 0.0421  # tasa libre de riesgo
 simulated_prices = {}
 for opt in portfolio:
     S0 = opt['S0']
     sigma = opt['sigma']
-    T = opt['T']
+    # Simula el precio a 1 día, no hasta vencimiento
     Z = np.random.standard_normal(N_SIMULATIONS)
-    ST = S0 * np.exp((r - 0.5 * sigma ** 2) * T + sigma * np.sqrt(T) * Z)
+    ST = S0 * np.exp((r - 0.5 * sigma ** 2) * HORIZONTE_VAR + sigma * np.sqrt(HORIZONTE_VAR) * Z)
     simulated_prices[opt['ticker']] = ST
 
 # --- PASO 5: Calcular valor del portafolio en cada escenario y modelo ---
@@ -135,16 +140,27 @@ for i in range(N_SIMULATIONS):
         for opt in portfolio:
             S = simulated_prices[opt['ticker']][i]
             K = opt['K']
-            T = opt['T']
+            # El tiempo restante al vencimiento en el escenario futuro
+            T_futuro = max(opt['T'] - HORIZONTE_VAR, 0)
             sigma = opt['sigma']
             contracts = opt['contracts']
-            price = get_option_price(model, opt['type'], S, K, T, r, sigma)
+            price = get_option_price(model, opt['type'], S, K, T_futuro, r, sigma)
             port_value += contracts * price
         results[model].append(port_value)
 
 # --- PASO 6: Calcular VaR y ES para cada modelo ---
+# Calcula el valor actual de la cartera para cada modelo (V0) usando el vencimiento real
+V0_dict = {}
 for model in models:
-    pnl = np.array(results[model]) - np.mean(results[model])
+    V0 = 0
+    for opt in portfolio:
+        used_vol = opt.get('implied_vol', None) or opt['sigma']
+        price = get_option_price(model, opt['type'], opt['S0'], opt['K'], opt['T'], r, used_vol)
+        V0 += opt['contracts'] * price
+    V0_dict[model] = V0
+
+for model in models:
+    pnl = np.array(results[model]) - V0_dict[model]
     pnl = pnl[np.isfinite(pnl)]
     if len(pnl) == 0:
         print(f"Modelo: {model}")
@@ -161,7 +177,7 @@ fig, axs = plt.subplots(2, 2, figsize=(14, 10))
 axs = axs.flatten()
 plot_idx = 0
 for model in models:
-    pnl = np.array(results[model]) - np.mean(results[model])
+    pnl = np.array(results[model]) - V0_dict[model]
     pnl = pnl[np.isfinite(pnl)]
     if len(pnl) == 0:
         print(f"No se puede graficar el modelo {model} (sin datos válidos).")
@@ -178,5 +194,99 @@ for model in models:
     plot_idx += 1
 plt.tight_layout()
 plt.savefig('risk_metrics_results.png')
-plt.show()
 print('Gráfico guardado como risk_metrics_results.png')
+
+# --- VISUALIZACIÓN EXTRA: Distribución de precios simulados para cada subyacente ---
+fig2, axs2 = plt.subplots(1, len(simulated_prices), figsize=(7*len(simulated_prices), 5))
+if len(simulated_prices) == 1:
+    axs2 = [axs2]
+for idx, (ticker, prices_sim) in enumerate(simulated_prices.items()):
+    axs2[idx].hist(prices_sim, bins=50, color='lightgreen', edgecolor='k', alpha=0.7)
+    axs2[idx].set_title(f"Distribución de precios simulados: {ticker}")
+    axs2[idx].set_xlabel('Precio simulado')
+    axs2[idx].set_ylabel('Frecuencia')
+plt.tight_layout()
+plt.savefig('simulated_prices_distribution.png')
+print('Gráfico de distribución de precios simulados guardado como simulated_prices_distribution.png')
+
+# --- VISUALIZACIÓN EXTRA: Distribución logarítmica (log-precios) ---
+fig3, axs3 = plt.subplots(1, len(simulated_prices), figsize=(7*len(simulated_prices), 5))
+if len(simulated_prices) == 1:
+    axs3 = [axs3]
+for idx, (ticker, prices_sim) in enumerate(simulated_prices.items()):
+    log_prices = np.log(prices_sim)
+    axs3[idx].hist(log_prices, bins=50, color='orange', edgecolor='k', alpha=0.7)
+    axs3[idx].set_title(f"Distribución de log-precios simulados: {ticker}")
+    axs3[idx].set_xlabel('log(Precio simulado)')
+    axs3[idx].set_ylabel('Frecuencia')
+plt.tight_layout()
+plt.savefig('simulated_logprices_distribution.png')
+print('Gráfico de distribución de log-precios simulados guardado como simulated_logprices_distribution.png')
+
+# --- CÁLCULO DE DELTA TOTAL DE LA CARTERA (Black-Scholes) ---
+def black_scholes_delta(option_type, S, K, T, r, sigma):
+    from scipy.stats import norm
+    if T == 0 or sigma == 0:
+        # Opción expirada o volatilidad nula
+        if option_type == 'call':
+            return 1.0 if S > K else 0.0
+        else:
+            return -1.0 if S < K else 0.0
+    d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
+    if option_type == 'call':
+        return norm.cdf(d1)
+    else:
+        return norm.cdf(d1) - 1
+
+delta_total = 0
+for opt in portfolio:
+    used_vol = opt.get('implied_vol', None) or opt['sigma']
+    delta = black_scholes_delta(opt['type'], opt['S0'], opt['K'], opt['T'], r, used_vol)
+    delta_total += opt['contracts'] * delta
+print(f"\nDelta total de la cartera (Black-Scholes): {delta_total:.4f}")
+
+# --- SIMULACIÓN DE P&L DELTA-HEDGEADO ---
+pnl_hedged = {model: [] for model in models}
+S0 = portfolio[0]['S0']  # Asumimos un solo subyacente para el hedge
+for i in range(N_SIMULATIONS):
+    for model in models:
+        port_value = 0
+        for opt in portfolio:
+            S = simulated_prices[opt['ticker']][i]
+            K = opt['K']
+            T_futuro = max(opt['T'] - HORIZONTE_VAR, 0)
+            sigma = opt['sigma']
+            contracts = opt['contracts']
+            price = get_option_price(model, opt['type'], S, K, T_futuro, r, sigma)
+            port_value += contracts * price
+        # P&L de la posición delta-hedgeada: restamos la variación del subyacente multiplicada por el delta inicial
+        spot_pnl = (simulated_prices[portfolio[0]['ticker']][i] - S0) * (-delta_total)
+        pnl_hedged[model].append(port_value + spot_pnl)
+
+# --- CÁLCULO Y VISUALIZACIÓN DE VaR/ES DELTA-HEDGEADO ---
+print("\n--- VaR y ES para la cartera delta-hedgeada (neutralizada al spot inicial) ---")
+fig4, axs4 = plt.subplots(2, 2, figsize=(14, 10))
+axs4 = axs4.flatten()
+plot_idx = 0
+for model in models:
+    pnl = np.array(pnl_hedged[model]) - V0_dict[model]
+    pnl = pnl[np.isfinite(pnl)]
+    if len(pnl) == 0:
+        print(f"No se puede graficar el modelo {model} (sin datos válidos para delta-hedge).")
+        continue
+    var = np.percentile(pnl, (1-CONFIDENCE_LEVEL)*100)
+    es = pnl[pnl <= var].mean()
+    print(f"Modelo: {model}")
+    print(f"  Value at Risk (VaR) delta-hedgeado al {CONFIDENCE_LEVEL*100:.1f}%: {var:.2f}")
+    print(f"  Expected Shortfall (ES) delta-hedgeado al {CONFIDENCE_LEVEL*100:.1f}%: {es:.2f}\n")
+    axs4[plot_idx].hist(pnl, bins=40, color='lightcoral', edgecolor='k', alpha=0.7)
+    axs4[plot_idx].axvline(var, color='red', linestyle='--', label=f'VaR ({var:.2f})')
+    axs4[plot_idx].axvline(es, color='orange', linestyle='--', label=f'ES ({es:.2f})')
+    axs4[plot_idx].set_title(f"Modelo: {model} (delta-hedge)")
+    axs4[plot_idx].set_xlabel('P&L simulado (delta-hedge)')
+    axs4[plot_idx].set_ylabel('Frecuencia')
+    axs4[plot_idx].legend()
+    plot_idx += 1
+plt.tight_layout()
+plt.savefig('risk_metrics_results_delta_hedge.png')
+print('Gráfico delta-hedge guardado como risk_metrics_results_delta_hedge.png')

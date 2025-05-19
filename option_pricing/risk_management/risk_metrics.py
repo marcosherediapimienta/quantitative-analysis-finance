@@ -4,14 +4,12 @@ import os
 import importlib.util
 import matplotlib.pyplot as plt
 
-# --- UTILITY: Import pricing modules from absolute paths ---
 def import_from_path(module_name, file_path):
     spec = importlib.util.spec_from_file_location(module_name, file_path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
 
-# --- PATHS TO PRICING MODELS ---
 base = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 bs_call_mod = import_from_path('bs_call', os.path.join(base, 'black_scholes_model/european_options/call_implied_volatility.py'))
 bs_put_mod = import_from_path('bs_put', os.path.join(base, 'black_scholes_model/european_options/put_implied_volatility.py'))
@@ -23,7 +21,6 @@ fd_put_mod = import_from_path('fd_put', os.path.join(base, 'finite_difference_me
 
 # --- PORTFOLIO DEFINITION (you can modify it manually) ---
 # Note: T is the time to maturity expressed in years (using 365 calendar days).
-# For example, for 26 calendar days to maturity: T = 26/365
 portfolio = [
     {'ticker': '^SPX','type': 'call','K': 7400,'T': 0.0712,'contracts': 15},
     {'ticker': '^SPX','type': 'put','K': 2600,'T': 0.0712,'contracts': 10},   

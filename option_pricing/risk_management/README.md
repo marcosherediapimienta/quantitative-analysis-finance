@@ -7,7 +7,7 @@ This script calculates the Value at Risk (VaR) and Expected Shortfall (ES) of a 
 ## 1. What is Value at Risk (VaR)?
 **Value at Risk (VaR)** is a risk measure that estimates the maximum potential loss of a portfolio over a specific time horizon and at a given confidence level.
 
-- Example: A 1-day 99% VaR of $100,000 means there is a 1% probability of losing more than $100,000 in one day.
+- Example: A 1-day 99% VaR of 100.000€ means there is a 1% probability of losing more than 100.000€ in one day.
 
 **Mathematical Definition:**
 

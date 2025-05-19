@@ -23,7 +23,7 @@ where $L$ is the portfolio loss and $\alpha$ is the confidence level.
 **Mathematical Definition:**
 
 $$
-\mathrm{ES}_{\alpha}(L) = \mathbb{E}\left[L\;|\;L > \mathrm{VaR}_{\alpha}(L)\right]
+\mathrm{ES}_{\alpha}(L) = \mathbb{E}\left[L\mid L > \mathrm{VaR}_{\alpha}(L)\right]
 $$
 
 ## 3. How are VaR and ES calculated in practice?

@@ -23,7 +23,7 @@ where $L$ is the portfolio loss and $\alpha$ is the confidence level.
 **Mathematical Definition:**
 
 $$
-\mathrm{ES}_{\alpha}(L) = \mathbb{E}[L \mid L > \mathrm{VaR}_{\alpha}(L)]
+\mathrm{ES}_{\alpha}(L) = \mathbb{E}\left[L\;|\;L > \mathrm{VaR}_{\alpha}(L)\right]
 $$
 
 ## 3. How are VaR and ES calculated in practice?
@@ -103,12 +103,6 @@ The script automatically produces several visualizations to facilitate risk anal
 ### 4. Distribution of Simulated Log-Prices
 - The distribution of the logarithm of simulated prices is plotted, which should approximate a normal distribution under GBM.
 - Output file: `simulated_logprices_distribution.png`
-
-#### Example Plots
-- ![Simulated P&L Histogram](risk_metrics_results.png)
-- ![Delta-Hedged P&L Histogram](risk_metrics_results_delta_hedge.png)
-- ![Simulated Prices Distribution](simulated_prices_distribution.png)
-- ![Simulated Log-Prices Distribution](simulated_logprices_distribution.png)
 
 Each plot helps visually interpret the portfolio's risk profile and the validity of the simulation. It is recommended to review especially the P&L and delta-hedged histograms to understand the impact of hedging and residual risk exposure.
 

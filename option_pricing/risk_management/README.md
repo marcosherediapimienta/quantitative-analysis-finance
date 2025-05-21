@@ -1,119 +1,98 @@
-# Risk Metrics: Value at Risk (VaR) and Expected Shortfall (ES) for Portfolios of European Options
+# Risk Metrics for Portfolios of European Options
 
-This script calculates the Value at Risk (VaR) and Expected Shortfall (ES) of a portfolio of European options (calls and puts) using pricing models and price simulation under the Black-Scholes dynamics.
-
-# Theory: VaR and ES Explained Step by Step
-
-## 1. What is Value at Risk (VaR)?
-**Value at Risk (VaR)** is a risk measure that estimates the maximum potential loss of a portfolio over a specific time horizon and at a given confidence level.
-
-- Example: A 1-day 99% VaR of 100.000€ means there is a 1% probability of losing more than 100.000€ in one day.
-
-**Mathematical Definition:**
-
-$$
-\mathrm{VaR}_{\alpha}(L) = \inf \{ l \in \mathbb{R} : P(L > l) \leq 1-\alpha \}
-$$
-
-where $L$ is the portfolio loss and $\alpha$ is the confidence level.
-
-## 2. What is Expected Shortfall (ES) or Conditional VaR?
-**Expected Shortfall (ES)** is the average loss in the worst cases, i.e., when the loss exceeds the VaR. It is a coherent risk measure and better captures tail risk.
-
-**Mathematical Definition:**
-
-$$
-\mathrm{ES}_{\alpha}(L) = \mathbb{E}\left[L\mid L > \mathrm{VaR}_{\alpha}(L)\right]
-$$
-
-## 3. How are VaR and ES calculated in practice?
-- The distribution of portfolio profit and loss (P&L) is simulated under future scenarios.
-- VaR is computed as the corresponding percentile of the P&L distribution.
-- ES is the mean of losses exceeding the VaR.
-
-## 4. Why is the time horizon important?
-- VaR/ES always refers to a specific horizon (e.g., 1 day, 10 days).
-- For derivatives, the value of options depends on time to maturity, so in simulated scenarios, the horizon must be subtracted from the real maturity.
-
-## 5. Why use simulation?
-- For derivative portfolios, the P&L distribution is neither normal nor symmetric.
-- Simulation captures non-linearity and the effect of time decay (theta decay).
-
-## 6. Graphical Interpretation
-- VaR is the left-tail percentile of the P&L histogram.
-- ES is the mean of the most extreme losses (beyond VaR).
-
-# Script Logic: Step by Step
-
-1. **Portfolio Definition**
-   - The portfolio is defined manually as a list of options, each with ticker, type (call/put), strike, time to maturity (T, in years), and number of contracts.
-   - Example:
-     ```python
-     portfolio = [
-         {'ticker': '^SPX','type': 'call','K': 5955,'T': 0.0712,'contracts': 15},
-         {'ticker': '^SPX','type': 'put','K': 5960,'T': 0.0712,'contracts': 10},
-     ]
-     ```
-
-2. **Download of Prices and Calculation of Historical Volatility**
-   - Historical prices for each underlying are downloaded using yfinance.
-   - Annualized historical volatility is computed for each underlying.
-
-3. **Implied Volatility Calculation**
-   - The user may input the market price of each option.
-   - Implied volatility is calculated using the Black-Scholes model.
-   - If not provided, historical volatility is used.
-
-4. **Simulation of Future Prices (GBM)**
-   - N scenarios of future underlying prices are simulated using Geometric Brownian Motion (GBM) for a defined horizon (e.g., 1 day: `HORIZON_VAR = 1/252`).
-
-5. **Valuation of the Portfolio in Simulated Scenarios**
-   - For each scenario and pricing model (Black-Scholes, Binomial, Monte Carlo, Finite Differences), the portfolio is valued:
-     - The current value (V₀) is calculated using the real maturity of each option.
-     - In each scenario, the time to maturity is `T_future = max(opt['T'] - HORIZON_VAR, 0)`.
-
-6. **Calculation of P&L, VaR, and ES**
-   - P&L is computed as the difference between the simulated and current portfolio value.
-   - VaR is the left-tail percentile of the P&L distribution (e.g., 1% for 99% VaR).
-   - ES is the mean of losses exceeding the VaR.
-
-7. **Visualization of Results**
-   - Histograms of simulated P&L are plotted, marking VaR and ES for each model.
-   - The distribution of simulated prices and log-prices is also plotted to validate the simulation.
-
-# Delta Hedging and Delta-Hedged VaR/ES
-
-## Total Delta Calculation
-The script calculates the **total portfolio delta** using the Black-Scholes formula for each option (weighted by contracts). This provides the portfolio's sensitivity to movements in the underlying asset.
-
-## Simulation of Delta-Hedged VaR/ES
-- The P&L of the portfolio is simulated assuming a static delta hedge at the start of the simulation horizon.
-- In each scenario, the change in the underlying is multiplied by the initial total delta, simulating hedging with the underlying asset.
-- VaR and Expected Shortfall (ES) of the delta-hedged portfolio are calculated and visualized for each pricing model.
-- Output file: `risk_metrics_results_delta_hedge.png`.
-
-## Interpretation and Warnings
-- **Delta hedging is most relevant and effective for portfolios with ATM or ITM options**, where delta is significant. For portfolios with OTM options, delta is low and the hedge has little impact.
-- **Under normal conditions**, the delta-hedged VaR/ES should be smaller in magnitude (less negative) than the original VaR/ES, as directional spot risk is eliminated.
-- **In extreme volatility scenarios, negative gamma, or very large spot moves**, the delta-hedged VaR/ES may be more negative than the original. The script warns about this behavior and recommends reviewing the portfolio composition and simulation parameters.
-
-## Example Output
-```
-Total portfolio delta (Black-Scholes): 2.0936
-
---- VaR and ES for the delta-hedged portfolio (neutralized to initial spot) ---
-Model: black_scholes
-  Value at Risk (VaR) delta-hedged at 99.0%: -3542.53
-  Expected Shortfall (ES) delta-hedged at 99.0%: -3698.83
-...
-```
-
-## Usage Recommendations
-- To analyze the real effect of delta hedging, test with portfolios including ATM or ITM options and realistic volatilities.
-- If the delta-hedged VaR/ES is more negative than the original, review volatility, simulation horizon, and portfolio composition.
+This README provides the theoretical background and logic behind the script `risk_metrics.py`, which calculates advanced risk metrics for portfolios of European options, including VaR, ES, stress testing, and Greeks analysis.
 
 ---
 
-**References:**
+## 1. Introduction: Why Measure Risk in Options?
+
+Options are nonlinear financial instruments, and their risk cannot be measured with traditional statistics alone. It is essential to quantify the portfolio's sensitivity to market movements (spot, volatility, rates) and estimate potential extreme losses.
+
+---
+
+## 2. Main Risk Metrics
+
+### Value at Risk (VaR)
+- **Definition:** VaR at confidence level α is the maximum expected loss over a given time horizon under normal market conditions.
+- **Formula:**
+  $$
+  \mathrm{VaR}_{\alpha}(L) = \inf \{ l \in \mathbb{R} : P(L > l) \leq 1-\alpha \}
+  $$
+- **Interpretation:** A 1-day 99% VaR of €10,000 means there is a 1% probability of losing more than €10,000 in one day.
+
+### Expected Shortfall (ES)
+- **Definition:** ES (or CVaR) is the average loss in the worst cases, i.e., when the loss exceeds the VaR.
+- **Formula:**
+  $$
+  \mathrm{ES}_{\alpha}(L) = \mathbb{E}[L\mid L > \mathrm{VaR}_{\alpha}(L)]
+  $$
+- **Advantage:** It is a coherent risk measure and better captures tail risk.
+
+---
+
+## 3. Simulation and Valuation of Option Portfolios
+
+### Price Simulation
+- Future scenarios for the underlying are simulated using Geometric Brownian Motion (GBM):
+  $$
+  S_T = S_0 \exp\left((r - 0.5\sigma^2)T + \sigma\sqrt{T}Z\right)
+  $$
+  where $Z \sim N(0,1)$.
+
+### Option Valuation
+- Several models are used: Black-Scholes, Binomial, Monte Carlo, and Finite Differences.
+- The portfolio value is calculated by summing the value of each option under each scenario.
+
+### P&L Calculation
+- The P&L for each scenario is the difference between the simulated and current portfolio value.
+- VaR and ES are calculated from the P&L distribution.
+
+---
+
+## 4. Greeks: Portfolio Sensitivities
+
+- **Delta:** Sensitivity to spot.
+- **Gamma:** Sensitivity of delta to spot.
+- **Vega:** Sensitivity to volatility.
+- **Theta:** Sensitivity to time decay.
+- **Rho:** Sensitivity to interest rates.
+
+The script calculates the aggregated Greeks for the portfolio to understand its global exposure.
+
+---
+
+## 5. Stress Testing
+
+- The impact of extreme shocks in spot, volatility, and rates is evaluated.
+- The P&L is calculated under each scenario and compared to the base value.
+- Results are reported both with and without delta hedge (static directional hedge).
+
+---
+
+## 6. Delta Hedging
+
+- Delta hedge simulates the coverage of the initial directional exposure of the portfolio.
+- The delta-hedged P&L subtracts the impact of the underlying movement multiplied by the initial total delta.
+- This isolates non-directional risk (gamma, vega, etc.).
+
+---
+
+## 7. Limitations and Extensions
+
+- The script does **not** implement vega-hedge or rho-hedge, but it does calculate the necessary Greeks for such extensions.
+- The framework is extensible to other Greeks and stress scenarios.
+
+---
+
+## 8. References
+- Hull, J. (2018). Options, Futures, and Other Derivatives.
 - Jorion, P. (2007). Value at Risk: The New Benchmark for Managing Financial Risk.
-- Hull, J. (2018). Risk Management and Financial Institutions.
+- McDonald, R. (2013). Derivatives Markets.
+
+---
+
+## 9. Recommended Usage
+- Define your portfolio in the script.
+- Run the analysis to obtain VaR, ES, Greeks, and stress testing.
+- Analyze the results to understand the sensitivity and extreme risk of your options portfolio.
+

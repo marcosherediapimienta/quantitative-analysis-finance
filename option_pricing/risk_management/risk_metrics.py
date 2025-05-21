@@ -22,8 +22,8 @@ fd_put_mod = import_from_path('fd_put', os.path.join(base, 'finite_difference_me
 # --- PORTFOLIO DEFINITION (you can modify it manually) ---
 # Note: T is the time to maturity expressed in years (using 365 calendar days).
 portfolio = [
-    {'ticker': '^SPX','type': 'call','K': 7400,'T': 0.0712,'contracts': 15},
-    {'ticker': '^SPX','type': 'put','K': 2600,'T': 0.0712,'contracts': 10},   
+    {'ticker': '^SPX','type': 'call','K': 5945,'T': 0.0712,'contracts': 10},
+    {'ticker': '^SPX','type': 'put','K': 5945,'T': 0.0712,'contracts': 10},   
 ]
 
 # --- GENERAL PRICING FUNCTION ---
@@ -115,7 +115,7 @@ print(f"Total theoretical portfolio value (Black-Scholes): {total_market_value:.
 
 # --- STEP 4: Simulate future price scenarios (GBM) ---
 # VAR/ES HORIZON (in years): 1 trading day = 1/252, 1 week = 5/252, etc.
-HORIZON_VAR = 15/252 
+HORIZON_VAR = 10/252 
 N_SIMULATIONS = 1000
 r = 0.0421  # risk-free rate
 simulated_prices = {}

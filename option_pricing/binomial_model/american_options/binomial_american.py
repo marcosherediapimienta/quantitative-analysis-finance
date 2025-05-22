@@ -1,5 +1,5 @@
 """
-Valoración de opciones americanas (call y put) usando el modelo binomial.
+Pricing American options (call and put) using the binomial model.
 """
 
 import numpy as np
@@ -10,7 +10,7 @@ from scipy.optimize import brentq
 
 def binomial_american_option(S, K, T, r, sigma, N, option_type="call"):
     """
-    Valora una opción americana usando el modelo binomial de forma numéricamente estable (log-space, numpy).
+    Prices an American option (call or put) using the binomial model in a numerically stable way (log-space, numpy).
     """
     import numpy as np
     dt = T / N
@@ -19,7 +19,7 @@ def binomial_american_option(S, K, T, r, sigma, N, option_type="call"):
     p = (np.exp(r * dt) - d) / (u - d)
     discount = np.exp(-r * dt)
 
-    # Precios al vencimiento 
+    # Terminal prices
     j = np.arange(N + 1)
     ST = S * (u ** j) * (d ** (N - j))
     if option_type == "call":
@@ -27,10 +27,10 @@ def binomial_american_option(S, K, T, r, sigma, N, option_type="call"):
     else:
         values = np.maximum(K - ST, 0)
 
-    # Backward induction (vectorizado y estable)
-    exercise_nodes = []  # Guarda los nodos donde es óptimo ejercer en cada paso
+    # Backward induction (vectorized and stable)
+    exercise_nodes = []  # Store nodes where early exercise is optimal at each step
     for i in range(N - 1, -1, -1):
-        ST = ST[:i+1] / u  # Precios en el nodo anterior
+        ST = ST[:i+1] / u  # Prices at the previous node
         values_hold = discount * (p * values[1:i+2] + (1 - p) * values[:i+1])
         if option_type == "call":
             intrinsic = np.maximum(ST - K, 0)
@@ -39,17 +39,17 @@ def binomial_american_option(S, K, T, r, sigma, N, option_type="call"):
         values = np.maximum(values_hold, intrinsic)
         exercised = intrinsic > values_hold
         exercise_nodes.append(exercised)
-    # Mostrar solo fechas únicas en que sería óptimo ejercer anticipadamente
+    # Show only unique dates where early exercise is optimal
     from datetime import datetime, timedelta
     today = datetime.now().date()
     dt_years = T / N
-    fechas_mostradas = set()
+    shown_dates = set()
     for step, nodes in enumerate(reversed(exercise_nodes), 1):
         if np.any(nodes):
-            fecha = today + timedelta(days=round(step * dt_years * 365))
-            if fecha not in fechas_mostradas:
-                print(f"En la fecha {fecha}, ejercer anticipadamente es óptimo.")
-                fechas_mostradas.add(fecha)
+            date = today + timedelta(days=round(step * dt_years * 365))
+            if date not in shown_dates:
+                print(f"On date {date}, early exercise is optimal.")
+                shown_dates.add(date)
     return values[0]
 
 def get_input(prompt, default, cast_func, validator=None):
@@ -109,7 +109,7 @@ def implied_volatility_option(market_price, S, K, T, r, option_type='call', tol=
 
 def implied_volatility_american_option(market_price, S, K, T, r, N, option_type='call', tol=1e-6, max_iter=100):
     """
-    Calcula la volatilidad implícita usando el modelo binomial americano.
+    Calculates implied volatility using the American binomial model.
     """
     def objective(sigma):
         return binomial_american_option(S, K, T, r, sigma, N, option_type) - market_price
@@ -201,7 +201,7 @@ if __name__ == "__main__":
         market_price = None
         print("No market price found for this option.")
     if market_price is not None:
-        # Usar volatilidad implícita americana
+        # Use implied volatility for American options
         N = get_input("Enter number of steps (e.g., 100)", 100, int, lambda x: x > 0)
         iv = implied_volatility_american_option(market_price, S, K, T, r, N, option_type)
         if iv is not None:

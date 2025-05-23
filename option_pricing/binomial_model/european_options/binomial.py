@@ -3,6 +3,7 @@ import yfinance as yf
 from datetime import datetime
 import scipy.stats as stats
 from scipy.optimize import brentq
+import matplotlib.pyplot as plt
 
 def binomial_european_option_price(S, K, T, r, sigma, N=100, option_type='call'):
     """
@@ -122,6 +123,44 @@ def get_input(prompt, default, cast_func, validator=None):
             return value
         except Exception:
             print("Invalid input. Please try again.")
+
+def plot_binomial_tree_summary(S, u, d, N, prefix='binomial_tree_summary'):
+    """
+    For large N, save the normalized (probability) distribution of asset prices at maturity and the evolution of min/max/mean price at each step as PNG files.
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+    prices_by_step = []
+    for i in range(N+1):
+        prices = S * (u ** np.arange(i+1)) * (d ** (i - np.arange(i+1)))
+        prices_by_step.append(prices)
+    mins = [np.min(p) for p in prices_by_step]
+    maxs = [np.max(p) for p in prices_by_step]
+    means = [np.mean(p) for p in prices_by_step]
+    plt.figure(figsize=(10,5))
+    plt.plot(mins, label='Min price')
+    plt.plot(maxs, label='Max price')
+    plt.plot(means, label='Mean price')
+    plt.xlabel('Step')
+    plt.ylabel('Asset Price')
+    plt.title('Evolution of Asset Price in Binomial Tree')
+    plt.legend()
+    plt.grid(True)
+    fname1 = f'{prefix}_evolution.png'
+    plt.savefig(fname1, bbox_inches='tight')
+    print(f"Evolution plot saved to {fname1}")
+    plt.close()
+    # Normalized histogram (probability)
+    plt.figure(figsize=(10,5))
+    plt.hist(prices_by_step[-1], bins=50, color='skyblue', edgecolor='k', density=True)
+    plt.xlabel('Asset Price at Maturity')
+    plt.ylabel('Probability')
+    plt.title(f'Asset Price Probability Distribution at Maturity (N={N})')
+    plt.grid(True)
+    fname2 = f'{prefix}_maturity_hist.png'
+    plt.savefig(fname2, bbox_inches='tight')
+    print(f"Maturity probability distribution plot saved to {fname2}")
+    plt.close()
 
 if __name__ == "__main__":
     print("\nBinomial Model European Option Pricing (Cox-Ross-Rubinstein)")
@@ -252,3 +291,7 @@ if __name__ == "__main__":
     for greek, value in greeks.items():
         print(f"  {greek.capitalize():<6}: {value:.4f}")
     print("="*50)
+    # Ask if user wants to plot the binomial tree summary (for any N)
+    plot_tree = input("Plot binomial tree summary? (y/n) [n]: ").strip().lower() or 'n'
+    if plot_tree == 'y':
+        plot_binomial_tree_summary(S, u, d, N)

@@ -188,7 +188,7 @@ def plot_binomial_tree(S, u, d, N, filename=None):
 
 def plot_binomial_tree_summary(S, u, d, N, prefix='binomial_tree_summary'):
     """
-    For large N, save the distribution of asset prices at maturity and the evolution of min/max/mean price at each step as PNG files.
+    For large N, save the normalized (probability) distribution of asset prices at maturity and the evolution of min/max/mean price at each step as PNG files.
     """
     import matplotlib.pyplot as plt
     import numpy as np
@@ -212,15 +212,16 @@ def plot_binomial_tree_summary(S, u, d, N, prefix='binomial_tree_summary'):
     plt.savefig(fname1, bbox_inches='tight')
     print(f"Evolution plot saved to {fname1}")
     plt.close()
+    # Normalized histogram (probability)
     plt.figure(figsize=(10,5))
-    plt.hist(prices_by_step[-1], bins=50, color='skyblue', edgecolor='k')
+    plt.hist(prices_by_step[-1], bins=50, color='skyblue', edgecolor='k', density=True)
     plt.xlabel('Asset Price at Maturity')
-    plt.ylabel('Frequency')
-    plt.title(f'Asset Price Distribution at Maturity (N={N})')
+    plt.ylabel('Probability')
+    plt.title(f'Asset Price Probability Distribution at Maturity (N={N})')
     plt.grid(True)
     fname2 = f'{prefix}_maturity_hist.png'
     plt.savefig(fname2, bbox_inches='tight')
-    print(f"Maturity distribution plot saved to {fname2}")
+    print(f"Maturity probability distribution plot saved to {fname2}")
     plt.close()
 
 if __name__ == "__main__":

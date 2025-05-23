@@ -6,7 +6,7 @@ from scipy.optimize import brentq
 
 def binomial_european_option_price(S, K, T, r, sigma, N=100, option_type='call'):
     """
-    Price a European option using the Cox-Ross-Rubinstein binomial tree.
+    Price a European option using the Cox-Ross-Rubinstein binomial tree (vectorized, numerically stable).
     Args:
         S: Spot price
         K: Strike price
@@ -24,16 +24,17 @@ def binomial_european_option_price(S, K, T, r, sigma, N=100, option_type='call')
     p = (np.exp(r * dt) - d) / (u - d)
     discount = np.exp(-r * dt)
 
-    # Stock prices at maturity
-    ST = S * u ** np.arange(N, -1, -1) * d ** np.arange(0, N + 1, 1)
+    # Vectorized calculation of terminal stock prices
+    j = np.arange(N + 1)
+    ST = S * (u ** j) * (d ** (N - j))
     if option_type == 'call':
         payoff = np.maximum(ST - K, 0)
     else:
         payoff = np.maximum(K - ST, 0)
 
-    # Backward induction
+    # Backward induction (vectorized)
     for _ in range(N):
-        payoff = discount * (p * payoff[:-1] + (1 - p) * payoff[1:])
+        payoff = discount * (p * payoff[1:] + (1 - p) * payoff[:-1])
     return payoff[0]
 
 def binomial_greeks_european_option(S, K, T, r, sigma, N=100, option_type='call', h=1e-2):

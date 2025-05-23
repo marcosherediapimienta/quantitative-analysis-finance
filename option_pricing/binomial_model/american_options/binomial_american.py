@@ -7,6 +7,8 @@ import yfinance as yf
 from datetime import datetime
 import scipy.stats as stats
 from scipy.optimize import brentq
+import matplotlib.pyplot as plt
+import networkx as nx
 
 def binomial_american_option(S, K, T, r, sigma, N, option_type="call"):
     """
@@ -151,6 +153,76 @@ def binomial_american_greeks(S, K, T, r, sigma, N, option_type="call", h=1e-4):
         'Rho': rho
     }
 
+def plot_binomial_tree(S, u, d, N, filename=None):
+    """
+    Plots the binomial tree for the underlying asset price.
+    Only practical for small N (e.g., N <= 5).
+    If filename is given, saves the plot to that file instead of showing it.
+    """
+    G = nx.DiGraph()
+    pos = {}
+    labels = {}
+    for i in range(N+1):
+        for j in range(i+1):
+            price = S * (u**j) * (d**(i-j))
+            node = (i, j)
+            G.add_node(node)
+            pos[node] = (i, -j + i/2)
+            labels[node] = f"{price:.2f}"
+            if i > 0:
+                if j > 0:
+                    G.add_edge((i-1, j-1), node)
+                if j < i:
+                    G.add_edge((i-1, j), node)
+    plt.figure(figsize=(2*N+2, N+2))
+    nx.draw(G, pos, with_labels=False, node_size=1200, node_color='lightblue', arrows=False)
+    nx.draw_networkx_labels(G, pos, labels, font_size=10)
+    plt.title(f"Binomial Tree (N={N})")
+    plt.axis('off')
+    if filename:
+        plt.savefig(filename, bbox_inches='tight')
+        print(f"Binomial tree saved to {filename}")
+        plt.close()
+    else:
+        plt.show()
+
+def plot_binomial_tree_summary(S, u, d, N, prefix='binomial_tree_summary'):
+    """
+    For large N, save the distribution of asset prices at maturity and the evolution of min/max/mean price at each step as PNG files.
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+    prices_by_step = []
+    for i in range(N+1):
+        prices = S * (u ** np.arange(i+1)) * (d ** (i - np.arange(i+1)))
+        prices_by_step.append(prices)
+    mins = [np.min(p) for p in prices_by_step]
+    maxs = [np.max(p) for p in prices_by_step]
+    means = [np.mean(p) for p in prices_by_step]
+    plt.figure(figsize=(10,5))
+    plt.plot(mins, label='Min price')
+    plt.plot(maxs, label='Max price')
+    plt.plot(means, label='Mean price')
+    plt.xlabel('Step')
+    plt.ylabel('Asset Price')
+    plt.title('Evolution of Asset Price in Binomial Tree')
+    plt.legend()
+    plt.grid(True)
+    fname1 = f'{prefix}_evolution.png'
+    plt.savefig(fname1, bbox_inches='tight')
+    print(f"Evolution plot saved to {fname1}")
+    plt.close()
+    plt.figure(figsize=(10,5))
+    plt.hist(prices_by_step[-1], bins=50, color='skyblue', edgecolor='k')
+    plt.xlabel('Asset Price at Maturity')
+    plt.ylabel('Frequency')
+    plt.title(f'Asset Price Distribution at Maturity (N={N})')
+    plt.grid(True)
+    fname2 = f'{prefix}_maturity_hist.png'
+    plt.savefig(fname2, bbox_inches='tight')
+    print(f"Maturity distribution plot saved to {fname2}")
+    plt.close()
+
 if __name__ == "__main__":
     print("\nBinomial Model American Option Pricing (Cox-Ross-Rubinstein)")
     option_type = input("Option type ('call' or 'put') [call]: ").strip().lower() or 'call'
@@ -276,3 +348,11 @@ if __name__ == "__main__":
     for greek, value in greeks.items():
         print(f"{greek:<8}: {value: .6f}")
     print("="*50)
+    # Ask if user wants to plot the binomial tree (for any N)
+    plot_tree = input("Plot binomial tree? (y/n) [n]: ").strip().lower() or 'n'
+    if plot_tree == 'y':
+        if N <= 5:
+            plot_binomial_tree(S, u, d, N, filename=f'binomial_tree_N{N}.png')
+        else:
+            print("N is large, saving summary visualizations as PNG files instead.")
+            plot_binomial_tree_summary(S, u, d, N)

@@ -162,6 +162,19 @@ def plot_binomial_tree_summary(S, u, d, N, prefix='binomial_tree_summary'):
     print(f"Maturity probability distribution plot saved to {fname2}")
     plt.close()
 
+def get_historical_volatility(ticker, window=252):
+    """
+    Calcula la volatilidad histórica anualizada usando precios de cierre diarios de Yahoo Finance.
+    """
+    try:
+        data = yf.Ticker(ticker).history(period=f"{window+1}d")['Close']
+        returns = np.log(data / data.shift(1)).dropna()
+        hist_vol = returns.std() * np.sqrt(252)
+        return float(hist_vol)
+    except Exception as e:
+        print(f"Error calculating historical volatility for {ticker}: {e}")
+        return 0.2  # fallback
+
 if __name__ == "__main__":
     print("\nBinomial Model European Option Pricing (Cox-Ross-Rubinstein)")
     # 1. Option type first
@@ -255,11 +268,13 @@ if __name__ == "__main__":
             print(f"Implied volatility: {iv*100:.2f}% (used in binomial model)")
             sigma = iv
         else:
-            print("Could not calculate implied volatility from market price.")
-            sigma = get_input("Enter volatility (e.g., 0.2 for 20%)", 0.2, float, lambda x: x > 0)
+            print("Could not calculate implied volatility from market price. Using historical volatility instead.")
+            sigma = get_historical_volatility(ticker)
+            print(f"Historical volatility (used): {sigma*100:.2f}%")
     else:
-        print("No market price available, using input volatility.")
-        sigma = get_input("Enter volatility (e.g., 0.2 for 20%)", 0.2, float, lambda x: x > 0)
+        print("No market price available, using historical volatility.")
+        sigma = get_historical_volatility(ticker)
+        print(f"Historical volatility (used): {sigma*100:.2f}%")
 
     N = get_input("Enter number of steps (e.g., 100)", 100, int, lambda x: x > 0)
     dt = T / N

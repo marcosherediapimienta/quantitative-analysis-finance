@@ -118,6 +118,39 @@ def implied_volatility_american_option(market_price, S, K, T, r, N, option_type=
     except Exception:
         return None
 
+def binomial_american_greeks(S, K, T, r, sigma, N, option_type="call", h=1e-4):
+    """
+    Approximates the Greeks for an American option using finite differences on the binomial model.
+    Returns a dictionary with Delta, Gamma, Theta, Vega, Rho.
+    """
+    # Delta
+    price_up = binomial_american_option(S + h, K, T, r, sigma, N, option_type)
+    price_down = binomial_american_option(S - h, K, T, r, sigma, N, option_type)
+    price = binomial_american_option(S, K, T, r, sigma, N, option_type)
+    delta = (price_up - price_down) / (2 * h)
+    # Gamma
+    gamma = (price_up - 2 * price + price_down) / (h ** 2)
+    # Theta
+    dt = 1/365  # One day
+    if T - dt > 0:
+        price_theta = binomial_american_option(S, K, T - dt, r, sigma, N, option_type)
+        theta = (price_theta - price) / dt
+    else:
+        theta = float('nan')
+    # Vega
+    price_vega = binomial_american_option(S, K, T, r, sigma + h, N, option_type)
+    vega = (price_vega - price) / h
+    # Rho
+    price_rho = binomial_american_option(S, K, T, r + h, sigma, N, option_type)
+    rho = (price_rho - price) / h
+    return {
+        'Delta': delta,
+        'Gamma': gamma,
+        'Theta': theta,
+        'Vega': vega,
+        'Rho': rho
+    }
+
 if __name__ == "__main__":
     print("\nBinomial Model American Option Pricing (Cox-Ross-Rubinstein)")
     option_type = input("Option type ('call' or 'put') [call]: ").strip().lower() or 'call'
@@ -218,6 +251,7 @@ if __name__ == "__main__":
     d = 1 / u
     p = (np.exp(r * dt) - d) / (u - d)
     price = binomial_american_option(S, K, T, r, sigma, N, option_type)
+    greeks = binomial_american_greeks(S, K, T, r, sigma, N, option_type)
     print("\n" + "="*50)
     print(f"American {option_type.capitalize()} Option Pricing (Binomial Model)")
     print("="*50)
@@ -237,4 +271,8 @@ if __name__ == "__main__":
         print(f"Model price:       {price:.4f}")
     else:
         print(f"Model price:       {price:.4f}")
+    print("-"*50)
+    print("Greeks (finite difference, binomial):")
+    for greek, value in greeks.items():
+        print(f"{greek:<8}: {value: .6f}")
     print("="*50)

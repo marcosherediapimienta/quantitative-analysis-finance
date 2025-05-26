@@ -33,10 +33,7 @@ def american_option_lsmc(S0, K, T, r, sigma, N=50, M=10000, option_type='put'):
         z = np.random.randn(M)
         S[:,t] = S[:,t-1] * np.exp((r - 0.5 * sigma**2) * dt + sigma * np.sqrt(dt) * z)
     # Payoff matrix
-    if option_type == 'call':
-        payoff = np.maximum(S - K, 0)
-    else:
-        payoff = np.maximum(K - S, 0)
+    payoff = np.maximum(S - K, 0) if option_type == 'call' else np.maximum(K - S, 0)
     V = payoff[:,-1].copy()
     # Backward induction
     for t in range(N-1, 0, -1):
@@ -57,8 +54,7 @@ def american_option_lsmc(S0, K, T, r, sigma, N=50, M=10000, option_type='put'):
 
 def implied_vol_lsmc(market_price, S0, K, T, r, N, M, option_type, sigma_bounds=(0.01, 3.0), tol=1e-4, maxiter=50):
     """
-    Calcula la volatilidad implícita usando LSMC y método de bisección.
-    Si no converge, devuelve None.
+    Calculate implied volatility using LSMC and bisection method.
     """
     def objective(sigma):
         price = american_option_lsmc(S0, K, T, r, sigma, N, M, option_type)
@@ -68,7 +64,8 @@ def implied_vol_lsmc(market_price, S0, K, T, r, N, M, option_type, sigma_bounds=
             warnings.simplefilter("ignore")
             imp_vol = bisect(objective, sigma_bounds[0], sigma_bounds[1], xtol=tol, maxiter=maxiter)
         return imp_vol
-    except Exception:
+    except Exception as e:
+        print(f"Error calculating implied volatility: {e}")
         return None
 
 def find_optimal_steps(S0, K, T, r, sigma, M, option_type, tol=1e-3, max_N=500, step=50):
@@ -124,58 +121,61 @@ if __name__ == "__main__":
     print("--- American Option LSMC (Longstaff-Schwartz) ---")
     ticker = input("Ticker symbol (e.g. AAPL): ").strip().upper()
     option_type = input("Option type ('call' or 'put') [put]: ").strip().lower() or 'put'
-    stock = yf.Ticker(ticker)
-    expiries = stock.options
-    print("Available expiries:")
-    for i, exp in enumerate(expiries):
-        print(f"  [{i}] {exp}")
-    expiry_idx = int(input("Select expiry by number: "))
-    expiry = expiries[expiry_idx]
-    opt_chain = stock.option_chain(expiry)
-    opt_df = opt_chain.puts if option_type == 'put' else opt_chain.calls
-    strikes = list(opt_df['strike'])
-    print("Available strikes:")
-    for i, strike in enumerate(strikes):
-        print(f"  [{i}] {strike}")
-    strike_idx = int(input("Select strike by number: "))
-    K = float(strikes[strike_idx])
-    S0 = stock.history(period='1d')['Close'].iloc[-1]
-    today = datetime.now().date()
-    expiry_date = datetime.strptime(expiry, '%Y-%m-%d').date()
-    T = (expiry_date - today).days / 365.0
-    r = float(input("Risk-free rate (e.g. 0.05): "))
-    M = int(input("Number of paths (e.g. 10000): "))
-    N = int(input("Number of time steps (e.g. 50): "))
-    # Try to get market price for the selected option
-    market_price = opt_df.iloc[strike_idx]['lastPrice'] if 'lastPrice' in opt_df.columns else None
-    sigma = None
-    if market_price and market_price > 0:
-        print(f"\n[INFO] Market price for selected option: {market_price:.4f}")
-        print("[INFO] Calculating implied volatility using LSMC (may take a while)...")
-        sigma = implied_vol_lsmc(market_price, S0, K, T, r, N, M//5, option_type)  # Fewer paths for IV for speed
-        if sigma:
-            print(f"[RESULT] Implied volatility (LSMC): {sigma:.4f}\n")
-        else:
-            print("[WARN] Implied volatility could not be found, using historical volatility.\n")
-    if not sigma:
-        hist = stock.history(period='1y')['Close']
-        logret = np.log(hist / hist.shift(1)).dropna()
-        sigma = np.std(logret) * np.sqrt(252)
-        print(f"[INFO] Using historical volatility: {sigma:.4f}\n")
-    print("========== OPTION INPUTS ==========")
-    print(f"Spot price (S0):     {S0:.4f}")
-    print(f"Strike (K):          {K:.4f}")
-    print(f"Time to maturity:    {T:.6f} years")
-    print(f"Risk-free rate (r):  {r:.4f}")
-    print(f"Volatility (sigma):  {sigma:.4f}")
-    print(f"Type:                {option_type}")
-    print(f"Steps (N):           {N}")
-    print(f"Paths (M):           {M}")
-    print("===================================\n")
-    price = american_option_lsmc(S0, K, T, r, sigma, N, M, option_type)
-    greeks = lsmc_greeks(S0, K, T, r, sigma, N, M, option_type)
-    print(f"[RESULT] American {option_type} option price (LSMC): {price:.4f}\n")
-    print("========== LSMC GREEKS (finite diff) ==========")
-    for greek, value in greeks.items():
-        print(f"{greek:>8}: {value: .6f}")
-    print("==============================================\n")
+    try:
+        stock = yf.Ticker(ticker)
+        expiries = stock.options
+        print("Available expiries:")
+        for i, exp in enumerate(expiries):
+            print(f"  [{i}] {exp}")
+        expiry_idx = int(input("Select expiry by number: "))
+        expiry = expiries[expiry_idx]
+        opt_chain = stock.option_chain(expiry)
+        opt_df = opt_chain.puts if option_type == 'put' else opt_chain.calls
+        strikes = list(opt_df['strike'])
+        print("Available strikes:")
+        for i, strike in enumerate(strikes):
+            print(f"  [{i}] {strike}")
+        strike_idx = int(input("Select strike by number: "))
+        K = float(strikes[strike_idx])
+        S0 = stock.history(period='1d')['Close'].iloc[-1]
+        today = datetime.now().date()
+        expiry_date = datetime.strptime(expiry, '%Y-%m-%d').date()
+        T = (expiry_date - today).days / 365.0
+        r = float(input("Risk-free rate (e.g. 0.05): "))
+        M = int(input("Number of paths (e.g. 10000): "))
+        N = int(input("Number of time steps (e.g. 50): "))
+        # Try to get market price for the selected option
+        market_price = opt_df.iloc[strike_idx]['lastPrice'] if 'lastPrice' in opt_df.columns else None
+        sigma = None
+        if market_price and market_price > 0:
+            print(f"\n[INFO] Market price for selected option: {market_price:.4f}")
+            print("[INFO] Calculating implied volatility using LSMC (may take a while)...")
+            sigma = implied_vol_lsmc(market_price, S0, K, T, r, N, M//5, option_type)  # Fewer paths for IV for speed
+            if sigma:
+                print(f"[RESULT] Implied volatility (LSMC): {sigma:.4f}\n")
+            else:
+                print("[WARN] Implied volatility could not be found, using historical volatility.\n")
+        if not sigma:
+            hist = stock.history(period='1y')['Close']
+            logret = np.log(hist / hist.shift(1)).dropna()
+            sigma = np.std(logret) * np.sqrt(252)
+            print(f"[INFO] Using historical volatility: {sigma:.4f}\n")
+        print("========== OPTION INPUTS ==========")
+        print(f"Spot price (S0):     {S0:.4f}")
+        print(f"Strike (K):          {K:.4f}")
+        print(f"Time to maturity:    {T:.6f} years")
+        print(f"Risk-free rate (r):  {r:.4f}")
+        print(f"Volatility (sigma):  {sigma:.4f}")
+        print(f"Type:                {option_type}")
+        print(f"Steps (N):           {N}")
+        print(f"Paths (M):           {M}")
+        print("===================================\n")
+        price = american_option_lsmc(S0, K, T, r, sigma, N, M, option_type)
+        greeks = lsmc_greeks(S0, K, T, r, sigma, N, M, option_type)
+        print(f"[RESULT] American {option_type} option price (LSMC): {price:.4f}\n")
+        print("========== LSMC GREEKS (finite diff) ==========")
+        for greek, value in greeks.items():
+            print(f"{greek:>8}: {value: .6f}")
+        print("==============================================\n")
+    except Exception as e:
+        print(f"Error during execution: {e}")

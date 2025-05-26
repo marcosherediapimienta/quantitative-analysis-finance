@@ -4,7 +4,52 @@ import pandas as pd
 from scipy.stats import norm
 from scipy.optimize import brentq
 
-# Black-Scholes call price (para IV)
+# Longstaff-Schwartz para Americanas
+
+def american_option_longstaff_schwartz(S, K, T, r, sigma, n_sim=10000, n_steps=50, option_type='call'):
+    dt = T / n_steps
+    discount = np.exp(-r * dt)
+    S_paths = np.zeros((n_sim, n_steps + 1))
+    S_paths[:, 0] = S
+    for t in range(1, n_steps + 1):
+        Z = np.random.standard_normal(n_sim)
+        S_paths[:, t] = S_paths[:, t-1] * np.exp((r - 0.5 * sigma**2) * dt + sigma * np.sqrt(dt) * Z)
+    if option_type == 'call':
+        payoff = np.maximum(S_paths - K, 0)
+    else:
+        payoff = np.maximum(K - S_paths, 0)
+    V = payoff[:, -1]
+    for t in range(n_steps - 1, 0, -1):
+        itm = payoff[:, t] > 0
+        if np.any(itm):
+            X = S_paths[itm, t]
+            Y = V[itm] * discount
+            A = np.vstack([np.ones_like(X), X, X**2]).T
+            coeffs = np.linalg.lstsq(A, Y, rcond=None)[0]
+            continuation = coeffs[0] + coeffs[1] * X + coeffs[2] * X**2
+            exercise = payoff[itm, t]
+            exercise_now = exercise > continuation
+            idx = np.where(itm)[0][exercise_now]
+            V[idx] = exercise[exercise_now]
+        V = V * discount
+    price = np.mean(V)
+    return price
+
+def get_input(prompt, default, cast_func, validator=None):
+    while True:
+        try:
+            user_input = input(f"{prompt} [default: {default}]: ").strip()
+            if user_input == '':
+                value = default
+            else:
+                value = cast_func(user_input)
+            if validator and not validator(value):
+                print("Invalid value. Please try again.")
+                continue
+            return value
+        except Exception:
+            print("Invalid input. Please try again.")
+
 def black_scholes_call_price(S, K, T, r, sigma):
     d1 = (np.log(S / K) + (r + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
     d2 = d1 - sigma * np.sqrt(T)
@@ -27,7 +72,6 @@ def implied_volatility_call(S, K, T, r, market_price, tol=1e-6, max_iter=25):
         sigma = sigma - diff / v
         if sigma <= 0:
             sigma = 0.0001
-    # Brent's method fallback
     def objective(s):
         return black_scholes_call_price(S, K, T, r, s) - market_price
     try:
@@ -35,41 +79,40 @@ def implied_volatility_call(S, K, T, r, market_price, tol=1e-6, max_iter=25):
     except:
         return None
 
-def monte_carlo_european_option(S, K, T, r, sigma, n_sim=10000, option_type='call'):
-    Z = np.random.standard_normal(n_sim)
-    ST = S * np.exp((r - 0.5 * sigma**2) * T + sigma * np.sqrt(T) * Z)
-    if option_type == 'call':
-        payoff = np.maximum(ST - K, 0)
+def american_mc_greeks(S, K, T, r, sigma, n_sim, n_steps, option_type='call'):
+    rng = np.random.default_rng()
+    Z = rng.standard_normal((n_sim, n_steps))
+    # Delta/Gamma
+    eps_S = S * 0.01
+    price_up = american_option_longstaff_schwartz(S + eps_S, K, T, r, sigma, n_sim, n_steps, option_type)
+    price_down = american_option_longstaff_schwartz(S - eps_S, K, T, r, sigma, n_sim, n_steps, option_type)
+    price = american_option_longstaff_schwartz(S, K, T, r, sigma, n_sim, n_steps, option_type)
+    delta = (price_up - price_down) / (2 * eps_S)
+    gamma = (price_up - 2 * price + price_down) / (eps_S ** 2)
+    # Vega
+    eps_sigma = 0.01
+    price_vega_up = american_option_longstaff_schwartz(S, K, T, r, sigma + eps_sigma, n_sim, n_steps, option_type)
+    price_vega_down = american_option_longstaff_schwartz(S, K, T, r, sigma - eps_sigma, n_sim, n_steps, option_type)
+    vega = (price_vega_up - price_vega_down) / (2 * eps_sigma)
+    # Theta
+    dt = 1/365
+    if T - dt > 0:
+        price_Tdt = american_option_longstaff_schwartz(S, K, T - dt, r, sigma, n_sim, n_steps, option_type)
+        theta = (price_Tdt - price) / dt
     else:
-        payoff = np.maximum(K - ST, 0)
-    price = np.exp(-r * T) * np.mean(payoff)
-    return price
-
-def monte_carlo_european_option_common(S, K, T, r, sigma, Z, option_type='call'):
-    ST = S * np.exp((r - 0.5 * sigma**2) * T + sigma * np.sqrt(T) * Z)
-    if option_type == 'call':
-        payoff = np.maximum(ST - K, 0)
-    else:
-        payoff = np.maximum(K - ST, 0)
-    price = np.exp(-r * T) * np.mean(payoff)
-    return price
-
-def get_input(prompt, default, cast_func, validator=None):
-    while True:
-        try:
-            user_input = input(f"{prompt} [default: {default}]: ").strip()
-            if user_input == '':
-                value = default
-            else:
-                value = cast_func(user_input)
-            if validator and not validator(value):
-                print("Invalid value. Please try again.")
-                continue
-            return value
-        except Exception:
-            print("Invalid input. Please try again.")
-
-# Black-Scholes Greeks
+        theta = float('nan')
+    # Rho
+    dr = 0.01
+    price_rho_up = american_option_longstaff_schwartz(S, K, T, r + dr, sigma, n_sim, n_steps, option_type)
+    price_rho_down = american_option_longstaff_schwartz(S, K, T, r - dr, sigma, n_sim, n_steps, option_type)
+    rho = (price_rho_up - price_rho_down) / (2 * dr)
+    return {
+        'delta': delta,
+        'gamma': gamma,
+        'vega': vega,
+        'theta': theta,
+        'rho': rho
+    }
 
 def calculate_greeks(S, K, T, r, sigma, option_type='call'):
     d1 = (np.log(S / K) + (r + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
@@ -92,55 +135,8 @@ def calculate_greeks(S, K, T, r, sigma, option_type='call'):
         'rho': rho
     }
 
-# Griegas por diferencias finitas usando Monte Carlo
-
-def mc_greeks(S, K, T, r, sigma, n_sim, option_type='call'):
-    rng = np.random.default_rng()
-    # Common random numbers
-    Z = rng.standard_normal(n_sim)
-    # Delta/Gamma: paso de 1% del spot
-    eps_S = S * 0.01
-    price_up = monte_carlo_european_option_common(S + eps_S, K, T, r, sigma, Z, option_type)
-    price_down = monte_carlo_european_option_common(S - eps_S, K, T, r, sigma, Z, option_type)
-    price = monte_carlo_european_option_common(S, K, T, r, sigma, Z, option_type)
-    delta = (price_up - price_down) / (2 * eps_S)
-    gamma = (price_up - 2 * price + price_down) / (eps_S ** 2)
-    # Vega: paso de 0.01 en sigma (1 punto de volatilidad)
-    eps_sigma = 0.01
-    price_vega_up = monte_carlo_european_option_common(S, K, T, r, sigma + eps_sigma, Z, option_type)
-    price_vega_down = monte_carlo_european_option_common(S, K, T, r, sigma - eps_sigma, Z, option_type)
-    vega = (price_vega_up - price_vega_down) / (2 * eps_sigma)
-    # Theta: paso de 1 día, usando descuento correcto y mismos paths
-    dt = 1/365
-    if T - dt > 0:
-        ST_T = S * np.exp((r - 0.5 * sigma**2) * T + sigma * np.sqrt(T) * Z)
-        ST_Tdt = S * np.exp((r - 0.5 * sigma**2) * (T - dt) + sigma * np.sqrt(T - dt) * Z)
-        if option_type == 'call':
-            payoff_T = np.maximum(ST_T - K, 0)
-            payoff_Tdt = np.maximum(ST_Tdt - K, 0)
-        else:
-            payoff_T = np.maximum(K - ST_T, 0)
-            payoff_Tdt = np.maximum(K - ST_Tdt, 0)
-        price_T = np.exp(-r * T) * np.mean(payoff_T)
-        price_Tdt = np.exp(-r * (T - dt)) * np.mean(payoff_Tdt)
-        theta = (price_Tdt - price_T) / dt
-    else:
-        theta = float('nan')
-    # Rho: paso de 0.01 (1%), resultado por 1% rate change
-    dr = 0.01
-    price_rho_up = monte_carlo_european_option_common(S, K, T, r + dr, sigma, Z, option_type)
-    price_rho_down = monte_carlo_european_option_common(S, K, T, r - dr, sigma, Z, option_type)
-    rho = (price_rho_up - price_rho_down) / (2 * dr)
-    return {
-        'delta': delta,
-        'gamma': gamma,
-        'vega': vega,
-        'theta': theta,
-        'rho': rho
-    }
-
 if __name__ == "__main__":
-    print("\nEuropean Option Pricing via Monte Carlo (con datos de Yahoo Finance)")
+    print("\nAmerican Option Pricing via Monte Carlo (Longstaff-Schwartz, datos Yahoo Finance)")
     # Preguntar tipo de opción
     while True:
         option_type = input("¿Qué tipo de opción quieres analizar? (call/put) [default: call]: ").strip().lower()
@@ -220,6 +216,7 @@ if __name__ == "__main__":
     T = T_days / 365
     r = get_input("Enter risk-free rate (as decimal, e.g., 0.0421 for 4.21%)", 0.0421, float, lambda x: x >= 0)
     n_sim = get_input("Number of Monte Carlo simulations", 10000, int, lambda x: x > 0)
+    n_steps = get_input("Number of time steps (Longstaff-Schwartz)", 50, int, lambda x: x > 1)
     # Market price
     try:
         call_row = opt_chain.calls[opt_chain.calls['strike'] == K]
@@ -235,25 +232,19 @@ if __name__ == "__main__":
     except Exception:
         C_market = 1.0
         P_market = 1.0
-    # Implied volatility
-    if option_type == 'call':
-        iv = implied_volatility_call(S, K, T, r, C_market)
-        market_price = C_market
-    else:
-        # Para put, usar paridad put-call para estimar IV si se quiere, pero aquí usamos la call IV para ambos
-        iv = implied_volatility_call(S, K, T, r, C_market)
-        market_price = P_market
+    # Implied volatility (call)
+    iv = implied_volatility_call(S, K, T, r, C_market)
     if iv is None:
         print("No implied volatility found, using 20% as fallback.")
         iv = 0.2
     print(f"\nImplied Volatility (call): {iv:.2%}")
     # Monte Carlo pricing
-    mc_price = monte_carlo_european_option(S, K, T, r, iv, n_sim, option_type=option_type)
-    # Cálculo de griegas (analítico Black-Scholes)
+    mc_price = american_option_longstaff_schwartz(S, K, T, r, iv, n_sim, n_steps, option_type=option_type)
+    # Cálculo de griegas analíticas (Black-Scholes)
     greeks = calculate_greeks(S, K, T, r, iv, option_type=option_type)
     # Cálculo de griegas por Monte Carlo (diferencias finitas)
-    n_sim_greeks = max(100000, n_sim)  # Usar al menos 100,000 simulaciones para griegas
-    mc_greek_vals = mc_greeks(S, K, T, r, iv, n_sim_greeks, option_type=option_type)
+    n_sim_greeks = max(100000, n_sim)
+    mc_greek_vals = american_mc_greeks(S, K, T, r, iv, n_sim_greeks, n_steps, option_type=option_type)
     print("\n" + "="*50)
     print(f"{'RESULTS':^50}")
     print("="*50)
@@ -263,7 +254,7 @@ if __name__ == "__main__":
     print(f"{'Expiration:':<25}{expiration}")
     print(f"{'Time to Expiration:':<25}{T*365:.0f} days ({T:.4f} years)")
     print(f"{'Risk-free Rate:':<25}{r:.2%}")
-    print(f"{'Market Price:':<25}${market_price:.2f}")
+    print(f"{'Market Price:':<25}${C_market if option_type=='call' else P_market:.2f}")
     print(f"{'Implied Volatility:':<25}{iv:.2%}")
     print(f"{'MC Price:':<25}${mc_price:.2f}")
     print("-"*50)

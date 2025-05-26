@@ -27,7 +27,7 @@ def american_option_longstaff_schwartz(S, K, T, r, sigma, n_sim=10000, n_steps=5
             A = np.vstack([np.ones_like(X), X, X**2]).T
             coeffs = np.linalg.lstsq(A, Y, rcond=None)[0]
             continuation = coeffs[0] + coeffs[1] * X + coeffs[2] * X**2
-            exercise = payoff[itm, t]
+            exercise = payof f[itm, t]
             exercise_now = exercise > continuation
             idx = np.where(itm)[0][exercise_now]
             V[idx] = exercise[exercise_now]
@@ -72,7 +72,7 @@ def implied_volatility_call(S, K, T, r, market_price, tol=1e-6, max_iter=25):
         sigma = sigma - diff / v
         if sigma <= 0:
             sigma = 0.0001
-    def objective(s):
+    def objective(s): 
         return black_scholes_call_price(S, K, T, r, s) - market_price
     try:
         return brentq(objective, 0.0001, 5.0, xtol=tol)
@@ -85,7 +85,7 @@ def american_mc_greeks(S, K, T, r, sigma, n_sim, n_steps, option_type='call'):
     # Delta/Gamma
     eps_S = S * 0.01
     price_up = american_option_longstaff_schwartz(S + eps_S, K, T, r, sigma, n_sim, n_steps, option_type)
-    price_down = american_option_longstaff_schwartz(S - eps_S, K, T, r, sigma, n_sim, n_steps, option_type)
+    price_down = american_optio n_longstaff_schwartz(S - eps_S, K, T, r, sigma, n_sim, n_steps, option_type)
     price = american_option_longstaff_schwartz(S, K, T, r, sigma, n_sim, n_steps, option_type)
     delta = (price_up - price_down) / (2 * eps_S)
     gamma = (price_up - 2 * price + price_down) / (eps_S ** 2)

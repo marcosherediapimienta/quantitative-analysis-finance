@@ -358,6 +358,9 @@ if __name__ == "__main__":
     sigma = iv if iv is not None else hist_vol
     greeks = calculate_greeks(S, K, T, r, sigma)
 
+    # Calcula el precio teórico usando la volatilidad seleccionada
+    theoretical_price = black_scholes_call_price(S, K, T, r, sigma)
+
     # Display results
     print("\n" + "="*50)
     print(f"{'RESULTS':^50}")
@@ -369,6 +372,7 @@ if __name__ == "__main__":
     print(f"{'Time to Expiration:':<25}{T*365:.0f} days ({T:.4f} years)")
     print(f"{'Risk-free Rate:':<25}{r:.2%}")
     print(f"{'Market Call Price:':<25}${C_market:.2f}")
+    print(f"{'Theoretical Call Price:':<25}${theoretical_price:.2f}")
     print(f"{'Historical Volatility:':<25}{hist_vol:.2%}")
     if iv is not None:
         print(f"{'Implied Volatility:':<25}{iv:.2%}")

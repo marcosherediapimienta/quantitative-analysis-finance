@@ -121,8 +121,10 @@ def get_input(prompt, default, cast_func, validator=None):
                 print("Invalid value. Please try again.")
                 continue
             return value
-        except Exception:
-            print("Invalid input. Please try again.")
+        except ValueError:
+            print("Invalid input type. Please enter a valid value.")
+        except Exception as e:
+            print(f"Unexpected error: {e}. Please try again.")
 
 def plot_binomial_tree_summary(S, u, d, N, prefix='binomial_tree_summary'):
     """
@@ -164,7 +166,7 @@ def plot_binomial_tree_summary(S, u, d, N, prefix='binomial_tree_summary'):
 
 def get_historical_volatility(ticker, window=252):
     """
-    Calcula la volatilidad histórica anualizada usando precios de cierre diarios de Yahoo Finance.
+    Calculate annualized historical volatility using daily closing prices from Yahoo Finance.
     """
     try:
         data = yf.Ticker(ticker).history(period=f"{window+1}d")['Close']
@@ -177,9 +179,7 @@ def get_historical_volatility(ticker, window=252):
 
 if __name__ == "__main__":
     print("\nBinomial Model European Option Pricing (Cox-Ross-Rubinstein)")
-    # 1. Option type first
     option_type = input("Option type ('call' or 'put') [call]: ").strip().lower() or 'call'
-    # 2. Ticker input
     while True:
         ticker = input("Enter stock ticker (e.g., ^SPX) [default: ^SPX]: ").strip().upper()
         if ticker == '':
@@ -205,8 +205,8 @@ if __name__ == "__main__":
                         if exp_idx < 0 or exp_idx >= len(expirations):
                             print("Invalid selection. Try again.")
                             continue
-                    except Exception:
-                        print("Invalid input. Try again.")
+                    except ValueError:
+                        print("Invalid input. Please enter a number.")
                         continue
                 expiration = expirations[exp_idx]
                 break
@@ -234,8 +234,8 @@ if __name__ == "__main__":
                         K = float(strikes[strike_idx])
                         print(f"Selected strike: {K}")
                         break
-                    except Exception:
-                        print("Invalid input. Try again.")
+                    except ValueError:
+                        print("Invalid input. Please enter a number.")
                         continue
             today = datetime.now().date()
             expiry_date = datetime.strptime(expiration, "%Y-%m-%d").date()
@@ -249,7 +249,6 @@ if __name__ == "__main__":
             print(f"Could not fetch data for this ticker. Error: {e}\nPlease try again.")
     S = S_default
     r = get_input("Enter risk-free rate (e.g., 0.0421 for 4.21%)", 0.0421, float, lambda x: x >= 0)
-    # Get market price from Yahoo for selected option
     if option_type == 'call':
         row = opt_chain.calls[opt_chain.calls['strike'] == K]
     else:
@@ -260,8 +259,6 @@ if __name__ == "__main__":
     else:
         market_price = None
         print("No market price found for this option.")
-
-    # Calculate implied volatility if possible, otherwise ask user
     if market_price is not None:
         iv = implied_volatility_option(market_price, S, K, T, r, option_type)
         if iv is not None:
@@ -275,7 +272,6 @@ if __name__ == "__main__":
         print("No market price available, using historical volatility.")
         sigma = get_historical_volatility(ticker)
         print(f"Historical volatility (used): {sigma*100:.2f}%")
-
     N = get_input("Enter number of steps (e.g., 100)", 100, int, lambda x: x > 0)
     dt = T / N
     u = np.exp(sigma * np.sqrt(dt))
@@ -306,7 +302,6 @@ if __name__ == "__main__":
     for greek, value in greeks.items():
         print(f"  {greek.capitalize():<6}: {value:.4f}")
     print("="*50)
-    # Ask if user wants to plot the binomial tree summary (for any N)
     plot_tree = input("Plot binomial tree summary? (y/n) [n]: ").strip().lower() or 'n'
     if plot_tree == 'y':
         plot_binomial_tree_summary(S, u, d, N)

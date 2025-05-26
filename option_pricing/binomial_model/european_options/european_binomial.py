@@ -5,7 +5,7 @@ import scipy.stats as stats
 from scipy.optimize import brentq
 import matplotlib.pyplot as plt
 
-def binomial_european_option_price(S, K, T, r, sigma, N=100, option_type='call'):
+def binomial_european_option_price(S, K, T, r, sigma, N=1000, option_type='call'):
     """
     Price a European option using the Cox-Ross-Rubinstein binomial tree (vectorized, numerically stable).
     Args:
@@ -38,7 +38,7 @@ def binomial_european_option_price(S, K, T, r, sigma, N=100, option_type='call')
         payoff = discount * (p * payoff[1:] + (1 - p) * payoff[:-1])
     return payoff[0]
 
-def binomial_greeks_european_option(S, K, T, r, sigma, N=100, option_type='call', h=1e-2):
+def binomial_greeks_european_option(S, K, T, r, sigma, N=1000, option_type='call', h=1e-2):
     """
     Estimate Delta, Gamma, Vega, Theta, Rho for a European option using the binomial model.
     Uses finite differences (bumping) on the binomial price.

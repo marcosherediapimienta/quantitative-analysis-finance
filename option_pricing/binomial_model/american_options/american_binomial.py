@@ -5,40 +5,8 @@ import scipy.stats as stats
 from scipy.optimize import brentq
 import matplotlib.pyplot as plt
 
-def binomial_european_option_price(S, K, T, r, sigma, N=100, option_type='call'):
-    """
-    Price a European option using the Cox-Ross-Rubinstein binomial tree (vectorized, numerically stable).
-    Args:
-        S: Spot price
-        K: Strike price
-        T: Time to maturity (years)
-        r: Risk-free rate
-        sigma: Volatility
-        N: Number of time steps
-        option_type: 'call' or 'put'
-    Returns:
-        Option price (float)
-    """
-    dt = T / N
-    u = np.exp(sigma * np.sqrt(dt))
-    d = 1 / u
-    p = (np.exp(r * dt) - d) / (u - d)
-    discount = np.exp(-r * dt)
 
-    # Vectorized calculation of terminal stock prices
-    j = np.arange(N + 1)
-    ST = S * (u ** j) * (d ** (N - j))
-    if option_type == 'call':
-        payoff = np.maximum(ST - K, 0)
-    else:
-        payoff = np.maximum(K - ST, 0)
-
-    # Backward induction (vectorized)
-    for _ in range(N):
-        payoff = discount * (p * payoff[1:] + (1 - p) * payoff[:-1])
-    return payoff[0]
-
-def binomial_american_option_price(S, K, T, r, sigma, N=100, option_type='call'):
+def binomial_american_option_price(S, K, T, r, sigma, N=1000, option_type='call'):
     """
     Price an American option using the Cox-Ross-Rubinstein binomial tree.
     Args:
@@ -79,37 +47,8 @@ def binomial_american_option_price(S, K, T, r, sigma, N=100, option_type='call')
     
     return payoff[0]
 
-def binomial_greeks_european_option(S, K, T, r, sigma, N=100, option_type='call', h=1e-2):
-    """
-    Estimate Delta, Gamma, Vega, Theta, Rho for a European option using the binomial model.
-    Uses finite differences (bumping) on the binomial price.
-    """
-    # Delta
-    price_up = binomial_european_option_price(S + h, K, T, r, sigma, N, option_type)
-    price_down = binomial_european_option_price(S - h, K, T, r, sigma, N, option_type)
-    price = binomial_european_option_price(S, K, T, r, sigma, N, option_type)
-    delta = (price_up - price_down) / (2 * h)
-    gamma = (price_up - 2 * price + price_down) / (h ** 2)
-    # Vega
-    price_vega_up = binomial_european_option_price(S, K, T, r, sigma + h, N, option_type)
-    price_vega_down = binomial_european_option_price(S, K, T, r, sigma - h, N, option_type)
-    vega = (price_vega_up - price_vega_down) / (2 * h)
-    # Theta (backward difference)
-    price_theta = binomial_european_option_price(S, K, T - h, r, sigma, N, option_type)
-    theta = (price_theta - price) / h
-    # Rho
-    price_rho_up = binomial_european_option_price(S, K, T, r + h, sigma, N, option_type)
-    price_rho_down = binomial_european_option_price(S, K, T, r - h, sigma, N, option_type)
-    rho = (price_rho_up - price_rho_down) / (2 * h)
-    return {
-        'delta': delta,
-        'gamma': gamma,
-        'vega': vega,
-        'theta': theta,
-        'rho': rho
-    }
 
-def binomial_greeks_american_option(S, K, T, r, sigma, N=100, option_type='call', h=1e-2):
+def binomial_greeks_american_option(S, K, T, r, sigma, N=1000, option_type='call', h=1e-2):
     """
     Estimate Delta, Gamma, Vega, Theta, Rho for an American option using the binomial model.
     Uses finite differences (bumping) on the binomial price.

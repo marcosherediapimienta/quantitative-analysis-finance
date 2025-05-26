@@ -12,11 +12,12 @@ def import_from_path(module_name, file_path):
     return module
 
 base = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-bs_call_mod = import_from_path('bs_call', os.path.join(base, 'black_scholes_model/european_options/call_implied_volatility.py'))
-bs_put_mod = import_from_path('bs_put', os.path.join(base, 'black_scholes_model/european_options/put_implied_volatility.py'))
-binomial_mod = import_from_path('binomial', os.path.join(base, 'binomial_model/european_options/binomial.py'))
-mc_call_mod = import_from_path('mc_call', os.path.join(base, 'monte-carlo/european_options/call.py'))
-mc_put_mod = import_from_path('mc_put', os.path.join(base, 'monte-carlo/european_options/put.py'))
+bs_call_mod = import_from_path('bs_call', os.path.join(base, 'black_scholes_model/european_options/Call_BS.py'))
+bs_put_mod = import_from_path('bs_put', os.path.join(base, 'black_scholes_model/european_options/Put_BS.py'))
+binomial_eur_mod = import_from_path('binomial_eur', os.path.join(base, 'binomial_model/european_options/european_binomial.py'))
+binomial_ame_mod = import_from_path('binomial_ame', os.path.join(base, 'binomial_model/american_options/american_binomial.py'))
+mc_eur_mod = import_from_path('mc_eur', os.path.join(base, 'monte_carlo/european_options/european_MC.py'))
+mc_ame_mod = import_from_path('mc_ame', os.path.join(base, 'monte_carlo/american_options/american_MC.py'))
 fd_call_mod = import_from_path('fd_call', os.path.join(base, 'finite_difference_method/european_options/call.py'))
 fd_put_mod = import_from_path('fd_put', os.path.join(base, 'finite_difference_method/european_options/put.py'))
 
@@ -47,25 +48,32 @@ def get_portfolio_spot(portfolio):
 
 # --- PORTFOLIO DEFINITION ---
 portfolio = [
-    {'ticker': '^SPX','type': 'call','K': 5940,'T': 0.0849,'contracts': 10},
-    {'ticker': '^SPX','type': 'put','K': 5940,'T': 0.0849,'contracts': 10},   
+    {'ticker': '^SPX','type': 'call','K': 5800,'T': 0.0876,'contracts': 10, 'style': 'european'},
+    {'ticker': '^SPX','type': 'put','K': 5800,'T': 0.0876,'contracts': 10, 'style': 'european'},   
 ]
 
 # --- GENERAL PRICING FUNCTION ---
-def get_option_price(model, option_type, S, K, T, r, sigma):
+def get_option_price(model, option_type, S, K, T, r, sigma, style='european'):
     try:
         if model == 'black_scholes':
             return bs_call_mod.black_scholes_call_price(S, K, T, r, sigma) if option_type == 'call' else bs_put_mod.black_scholes_put_price(S, K, T, r, sigma)
         elif model == 'binomial':
-            return binomial_mod.binomial_european_option_price(S, K, T, r, sigma, N=100, option_type=option_type)
+            if style == 'american':
+                return binomial_ame_mod.binomial_american_option_price(S, K, T, r, sigma, N=1000, option_type=option_type)
+            else:
+                return binomial_eur_mod.binomial_european_option_price(S, K, T, r, sigma, N=1000, option_type=option_type)
         elif model == 'monte_carlo':
-            return mc_call_mod.monte_carlo_european_call(S, K, T, r, sigma, n_simulations=10000) if option_type == 'call' else mc_put_mod.monte_carlo_european_put(S, K, T, r, sigma, n_simulations=10000)
+            if style == 'american':
+                return mc_ame_mod.american_option_longstaff_schwartz(S, K, T, r, sigma, n_sim=10000, n_steps=50, option_type=option_type)
+            else:
+                return mc_eur_mod.monte_carlo_european_option(S, K, T, r, sigma, n_sim=10000, option_type=option_type)
         elif model == 'finite_difference':
             price = fd_call_mod.finite_difference_european_call(S, K, T, r, sigma) if option_type == 'call' else fd_put_mod.finite_difference_european_put(S, K, T, r, sigma)
             return price if np.isfinite(price) and abs(price) <= 1e6 else np.nan
         else:
             raise ValueError('Model not supported')
-    except Exception:
+    except Exception as e:
+        print(f"Error in get_option_price: {e}")
         return np.nan
 
 # --- DOWNLOAD PRICES AND HISTORICAL VOLATILITY ---
@@ -84,18 +92,38 @@ for opt in portfolio:
 # --- IMPLIED VOLATILITY IMPUTATION ---
 for opt in portfolio:
     try:
-        user_input = input(f"Enter the market price of the option {opt['ticker']} {opt['type']} (K={opt['K']}, T={opt['T']}) to calculate implied volatility (leave blank if not available): ")
-        if user_input.strip() != '':
-            market_price = float(user_input)
-            implied_vol = bs_call_mod.implied_volatility_newton(market_price, opt['S0'], opt['K'], opt['T'], 0.0421) if opt['type'] == 'call' else bs_put_mod.implied_volatility_newton(market_price, opt['S0'], opt['K'], opt['T'], 0.0421)
-            if np.isnan(implied_vol) or implied_vol <= 0 or implied_vol > 3:
-                opt['implied_vol'] = None
-                print(f"Warning: Implied volatility not available or invalid for {opt['ticker']} {opt['type']}.")
-            else:
-                opt['implied_vol'] = implied_vol
-                print(f"Implied volatility calculated: {implied_vol:.2%}")
-        else:
+        # Buscar el strike más cercano si no hay coincidencia exacta
+        ticker_obj = yf.Ticker(opt['ticker'])
+        expirations = ticker_obj.options
+        if not expirations:
             opt['implied_vol'] = None
+            continue
+        expiration = expirations[0]  # Por defecto, la primera expiración
+        opt_chain = ticker_obj.option_chain(expiration)
+        strikes = opt_chain.calls['strike'].values
+        closest_idx = (np.abs(strikes - opt['K'])).argmin()
+        K_yahoo = float(strikes[closest_idx])
+        if opt['type'] == 'call':
+            row = opt_chain.calls[opt_chain.calls['strike'] == K_yahoo]
+        else:
+            row = opt_chain.puts[opt_chain.puts['strike'] == K_yahoo]
+        if not row.empty:
+            market_price = float(row['lastPrice'].values[0])
+            print(f"Market price for {opt['ticker']} {opt['type']} (K={K_yahoo}): {market_price}")
+        else:
+            user_input = input(f"Enter the market price of the option {opt['ticker']} {opt['type']} (K={opt['K']}, T={opt['T']}) to calculate implied volatility (leave blank if not available): ")
+            if user_input.strip() != '':
+                market_price = float(user_input)
+            else:
+                opt['implied_vol'] = None
+                continue
+        implied_vol = bs_call_mod.implied_volatility_newton(market_price, opt['S0'], opt['K'], opt['T'], 0.0421) if opt['type'] == 'call' else bs_put_mod.implied_volatility_newton(market_price, opt['S0'], opt['K'], opt['T'], 0.0421)
+        if np.isnan(implied_vol) or implied_vol <= 0 or implied_vol > 3:
+            opt['implied_vol'] = None
+            print(f"Warning: Implied volatility not available or invalid for {opt['ticker']} {opt['type']}.")
+        else:
+            opt['implied_vol'] = implied_vol
+            print(f"Implied volatility calculated: {implied_vol:.2%}")
     except Exception as e:
         opt['implied_vol'] = None
         print(f"Warning: Error calculating implied volatility: {e}")
@@ -114,7 +142,7 @@ def print_portfolio_info(portfolio):
             print(f"  Implied volatility not available, using historical: {opt['sigma']:.2%}")
             used_vol = opt['sigma']
         try:
-            price = get_option_price('black_scholes', opt['type'], opt['S0'], opt['K'], opt['T'], 0.0421, used_vol)
+            price = get_option_price('black_scholes', opt['type'], opt['S0'], opt['K'], opt['T'], 0.0421, used_vol, style=opt.get('style', 'european'))
         except Exception as e:
             price = np.nan
             print(f"Warning: Error calculating theoretical price: {e}")
@@ -154,8 +182,24 @@ def print_portfolio_greeks(portfolio, r):
     for g in total:
         print(f"Total {g.capitalize()}: {total[g]:.4f}")
 
+def print_portfolio_greeks_binomial(portfolio, r):
+    total = {'delta': 0, 'gamma': 0, 'vega': 0, 'theta': 0, 'rho': 0}
+    for opt in portfolio:
+        used_vol = opt.get('implied_vol', None) or opt['sigma']
+        style = opt.get('style', 'european')
+        if style == 'american':
+            greeks = binomial_ame_mod.binomial_greeks_american_option(opt['S0'], opt['K'], opt['T'], r, used_vol, N=100, option_type=opt['type'])
+        else:
+            greeks = binomial_eur_mod.binomial_greeks_european_option(opt['S0'], opt['K'], opt['T'], r, used_vol, N=100, option_type=opt['type'])
+        for g in total:
+            total[g] += opt['contracts'] * greeks[g]
+    print("\n--- PORTFOLIO GREEKS (Binomial) ---")
+    for g in total:
+        print(f"Total {g.capitalize()}: {total[g]:.4f}")
+
 r = 0.0421  # risk-free rate
 print_portfolio_greeks(portfolio, r)
+print_portfolio_greeks_binomial(portfolio, r)
 
 HORIZON_VAR = 10/252 
 N_SIMULATIONS = 1000
@@ -213,7 +257,8 @@ def calc_pnl_hedged(portfolio, models, simulated_prices, N_SIMULATIONS, HORIZON_
                 T_future = max(opt['T'] - HORIZON_VAR, 0)
                 sigma = opt['sigma']
                 contracts = opt['contracts']
-                price = get_option_price(model, opt['type'], S, K, T_future, r, sigma)
+                style = opt.get('style', 'european')
+                price = get_option_price(model, opt['type'], S, K, T_future, r, sigma, style=style)
                 port_value += contracts * price
             spot_pnl = (simulated_prices[portfolio[0]['ticker']][i] - S0) * (-delta_total)
             pnl_hedged[model].append(port_value + spot_pnl)
@@ -221,7 +266,7 @@ def calc_pnl_hedged(portfolio, models, simulated_prices, N_SIMULATIONS, HORIZON_
 
 pnl_hedged = calc_pnl_hedged(portfolio, models, simulated_prices, N_SIMULATIONS, HORIZON_VAR, r, delta_total)
 
-V0_dict = {model: sum(opt['contracts'] * get_option_price(model, opt['type'], opt['S0'], opt['K'], opt['T'], r, opt.get('implied_vol', None) or opt['sigma']) for opt in portfolio) for model in models}
+V0_dict = {model: sum(opt['contracts'] * get_option_price(model, opt['type'], opt['S0'], opt['K'], opt['T'], r, opt.get('implied_vol', None) or opt['sigma'], style=opt.get('style', 'european')) for opt in portfolio) for model in models}
 
 results = {model: [] for model in models}
 for i in range(N_SIMULATIONS):
@@ -233,7 +278,8 @@ for i in range(N_SIMULATIONS):
             T_future = max(opt['T'] - HORIZON_VAR, 0)
             sigma = opt['sigma']
             contracts = opt['contracts']
-            price = get_option_price(model, opt['type'], S, K, T_future, r, sigma)
+            style = opt.get('style', 'european')
+            price = get_option_price(model, opt['type'], S, K, T_future, r, sigma, style=style)
             port_value += contracts * price
         results[model].append(port_value)
 
@@ -299,7 +345,7 @@ def plot_simulated_distributions(simulated_prices, prefix):
     print(f'Simulated log-prices distribution plot saved as {prefix}_simulated_logprices_distribution.png')
 
 plot_simulated_distributions(simulated_prices, 'risk_metrics')
-
+m
 # --- STRESS TESTING / SCENARIOS ---
 def stress_test_scenarios(portfolio, models, V0_dict, shocks, r):
     print("\n--- STRESS TESTING / SCENARIOS ---")
@@ -324,7 +370,8 @@ def stress_test_scenarios(portfolio, models, V0_dict, shocks, r):
                 )
                 T = opt['T']
                 r_stress = r + shock.get('r_shift', 0.0)
-                price = get_option_price(model, opt['type'], S, opt['K'], T, r_stress, sigma_stress)
+                style = opt.get('style', 'european')
+                price = get_option_price(model, opt['type'], S, opt['K'], T, r_stress, sigma_stress, style=style)
                 stressed_value += opt['contracts'] * price
             pnl = stressed_value - V0_dict[model]
             S_stress = S0 * shock.get('spot_mult', 1.0)

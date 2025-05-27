@@ -3,8 +3,10 @@ from scipy.optimize import brentq
 from scipy.stats import norm
 import matplotlib.pyplot as plt
 
-from binomial_model.american_options.american_binomial import binomial_american_option_price, binomial_greeks_american_option
+from binomial_model.american_options.american_binomial import binomial_american_option_price, binomial_greeks_american_option, get_historical_volatility
 from binomial_model.european_options.european_binomial import binomial_european_option_price, binomial_greeks_european_option
+from monte_carlo.american_options.american_MC import american_option_longstaff_schwartz, american_mc_greeks
+from monte_carlo.european_options.european_MC import monte_carlo_european_option, mc_greeks
 
 # Estructura de una opción en la cartera:
 # {
@@ -75,7 +77,7 @@ def portfolio_value(portfolio, N=100):
         value += price * opt['qty']
     return value
 
-def simulate_portfolio(portfolio, n_sims=100000, N=100, horizon=None):
+def simulate_portfolio(portfolio, n_sims=10000, N=100, horizon=None):
     # Simula escenarios de precios del subyacente usando GBM y la volatilidad implícita de cada opción
     # horizon: horizonte de simulación en años (si None, usa el vencimiento de cada opción)
     base_val = portfolio_value(portfolio, N)
@@ -136,33 +138,94 @@ def gamma_bs(S, K, T, r, sigma):
     d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
     return norm.pdf(d1) / (S * sigma * np.sqrt(T))
 
-# Ejemplo de uso:
+def price_option_mc(opt, n_sim=10000, n_steps=50):
+    # Usa Monte Carlo para precio de opción con volatilidad implícita o histórica
+    iv = implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
+    if iv is None:
+        ticker = opt.get('ticker', None)
+        if ticker is not None:
+            iv = get_historical_volatility(ticker)
+        else:
+            iv = 0.2
+    if opt['style'] == 'american':
+        price = american_option_longstaff_schwartz(opt['S'], opt['K'], opt['T'], opt['r'], iv, n_sim, n_steps, opt['type'])
+    else:
+        price = monte_carlo_european_option(opt['S'], opt['K'], opt['T'], opt['r'], iv, n_sim, opt['type'])
+    return price
+
+def option_greeks_mc(opt, n_sim=10000, n_steps=50):
+    # Usa Monte Carlo para griegas con volatilidad implícita o histórica
+    iv = implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
+    if iv is None:
+        ticker = opt.get('ticker', None)
+        if ticker is not None:
+            iv = get_historical_volatility(ticker)
+        else:
+            iv = 0.2
+    if opt['style'] == 'american':
+        greeks = american_mc_greeks(opt['S'], opt['K'], opt['T'], opt['r'], iv, n_sim, n_steps, opt['type'])
+    else:
+        greeks = mc_greeks(opt['S'], opt['K'], opt['T'], opt['r'], iv, n_sim, opt['type'])
+    return greeks
+
+def portfolio_greeks_mc(portfolio, n_sim=10000, n_steps=50):
+    total = {'delta': 0, 'gamma': 0, 'vega': 0, 'theta': 0, 'rho': 0}
+    for opt in portfolio:
+        greeks = option_greeks_mc(opt, n_sim, n_steps)
+        for g in total:
+            total[g] += greeks[g] * opt['qty']
+    return total
+
+def simulate_portfolio_mc_pricing(portfolio, n_sims=1000, n_steps=50, horizon=None):
+    # Simula escenarios de precios del subyacente usando GBM y valora opciones con MC
+    base_val = sum(price_option_mc(opt, n_sim=1000, n_steps=n_steps) * opt['qty'] for opt in portfolio)
+    pnl = []
+    for _ in range(n_sims):
+        shocked_portfolio = []
+        for opt in portfolio:
+            iv = implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
+            if iv is None:
+                ticker = opt.get('ticker', None)
+                if ticker is not None:
+                    iv = get_historical_volatility(ticker)
+                else:
+                    iv = 0.2
+            T_sim = horizon if horizon is not None else opt['T']
+            Z = np.random.normal(0, 1)
+            S_T = opt['S'] * np.exp((opt['r'] - 0.5 * iv ** 2) * T_sim + iv * np.sqrt(T_sim) * Z)
+            shocked_opt = opt.copy()
+            shocked_opt['S'] = S_T
+            shocked_portfolio.append(shocked_opt)
+        shocked_val = sum(price_option_mc(opt, n_sim=500, n_steps=n_steps) * opt['qty'] for opt in shocked_portfolio)
+        pnl.append(shocked_val - base_val)
+    return np.array(pnl)
+
+# ===========================
+# Ejemplo de uso principal
+# ===========================
 if __name__ == "__main__":
-    # Cartera de ejemplo
+    # --- Definición de la cartera de ejemplo ---
     portfolio = [
         {'type': 'call', 'style': 'european', 'S': 5802.82, 'K': 5800, 'T': 0.0849, 'r': 0.0421, 'qty': 10, 'market_price': 152.80},
         {'type': 'put',  'style': 'european', 'S': 5802.82, 'K': 5810, 'T': 0.0849, 'r': 0.0421, 'qty': -5, 'market_price': 91.76}
     ]
-    horizonte_dias = 10 / 252  # 10 días de trading
+    horizonte_dias = 10 / 252  # 15 días de trading
     N_steps = 1000
-    pnl = simulate_portfolio(portfolio, n_sims=10000, N=N_steps, horizon=horizonte_dias)
-    var, es = var_es(pnl, alpha=0.01)
-    value = portfolio_value(portfolio, N=N_steps)
-    greeks_total = portfolio_greeks(portfolio, N=N_steps)
 
+    # ===========================
+    # ANÁLISIS BINOMIAL
+    # ===========================
     print("\n" + "="*60)
-    print("RESUMEN DE LA CARTERA DE OPCIONES")
+    print("RESUMEN DE LA CARTERA DE OPCIONES USANDO BINOMIAL")
     print("="*60)
-    greeks_list = []
-    exposures = []
-    labels = []
+    pnl_binomial = simulate_portfolio(portfolio, n_sims=10000, N=N_steps, horizon=horizonte_dias)
+    var_binomial, es_binomial = var_es(pnl_binomial, alpha=0.01)
+    value_binomial = portfolio_value(portfolio, N=N_steps)
+    greeks_total_binomial = portfolio_greeks(portfolio, N=N_steps)
     for i, opt in enumerate(portfolio, 1):
         price, iv = price_option(opt, N=N_steps)
         greeks = option_greeks(opt, N=N_steps)
         gamma_bs_val = gamma_bs(opt['S'], opt['K'], opt['T'], opt['r'], iv)
-        greeks_list.append(greeks)
-        exposures.append(abs(price * opt['qty']))
-        labels.append(f"{opt['type'].capitalize()} {i}")
         print(f"Opción #{i}:")
         print(f"  Tipo:     {opt['type'].capitalize()}   |  Estilo: {opt['style'].capitalize()}   |  Cantidad: {opt['qty']}")
         print(f"  Spot:     {opt['S']:.2f}   |  Strike: {opt['K']:.2f}   |  Vencimiento (años): {opt['T']:.4f}")
@@ -177,24 +240,73 @@ if __name__ == "__main__":
         print(f"    Gamma Black-Scholes: {gamma_bs_val:.8f}")
         print("-"*60)
     print("\nGriegas agregadas de la cartera:")
-    for g, v in greeks_total.items():
+    for g, v in greeks_total_binomial.items():
         print(f"  {g.capitalize():<6}: {v:.4f}")
-    print(f"\nValor actual de la cartera: {value:.2f}")
-    print(f"\nVaR histórico (simulación MC, horizonte {horizonte_dias*252:.0f} días, 99%): {var:.2f}")
-    print(f"ES histórico (simulación MC, 99%): {es:.2f}")
+    print(f"\nValor actual de la cartera: {value_binomial:.2f}")
+    print(f"\nVaR histórico (simulación MC, BINOMIAL, horizonte {horizonte_dias*252:.0f} días, 99%): {var_binomial:.2f}")
+    print(f"ES histórico (simulación MC, BINOMIAL, 99%): {es_binomial:.2f}")
     print("="*60)
-
-    # --- GRAFICOS ---
-    # 1. Histograma de P&L simulados con líneas de VaR y ES
     plt.figure(figsize=(14,8))
-    plt.hist(pnl, bins=50, color='skyblue', edgecolor='k', alpha=0.7, density=True)
-    plt.axvline(-var, color='red', linestyle='--', label=f'VaR ({-var:.2f})')
-    plt.axvline(-es, color='orange', linestyle='--', label=f'ES ({-es:.2f})')
-    plt.title('Distribución de P&L simulados de la cartera')
+    plt.hist(pnl_binomial, bins=50, color='skyblue', edgecolor='k', alpha=0.7, density=True)
+    plt.axvline(-var_binomial, color='red', linestyle='--', label=f'VaR ({-var_binomial:.2f})')
+    plt.axvline(-es_binomial, color='orange', linestyle='--', label=f'ES ({-es_binomial:.2f})')
+    plt.title('Distribución de P&L simulados de la cartera (BINOMIAL)')
     plt.xlabel('P&L')
     plt.ylabel('Densidad')
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig('histograma_pnl_cartera.png')
+    plt.savefig('histograma_pnl_cartera_binomial.png')
+    plt.close()
+
+    # ===========================
+    # ANÁLISIS MONTE CARLO (usando tus modelos MC de pricing)
+    # ===========================
+    print("\n" + "="*60)
+    print("RESUMEN DE LA CARTERA DE OPCIONES USANDO MONTE CARLO (MODELOS MC)")
+    print("="*60)
+    pnl_mc = simulate_portfolio_mc_pricing(portfolio, n_sims=1000, n_steps=50, horizon=horizonte_dias)
+    var_mc, es_mc = var_es(pnl_mc, alpha=0.01)
+    value_mc = sum(price_option_mc(opt, n_sim=10000, n_steps=50) * opt['qty'] for opt in portfolio)
+    greeks_total_mc = portfolio_greeks_mc(portfolio, n_sim=10000, n_steps=50)
+    for i, opt in enumerate(portfolio, 1):
+        price_mc = price_option_mc(opt, n_sim=10000, n_steps=50)
+        greeks_mc = option_greeks_mc(opt, n_sim=10000, n_steps=50)
+        iv_mc = implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
+        if iv_mc is None:
+            ticker = opt.get('ticker', None)
+            if ticker is not None:
+                iv_mc = get_historical_volatility(ticker)
+            else:
+                iv_mc = 0.2
+        print(f"Opción #{i} (MC):")
+        print(f"  Tipo:     {opt['type'].capitalize()}   |  Estilo: {opt['style'].capitalize()}   |  Cantidad: {opt['qty']}")
+        print(f"  Spot:     {opt['S']:.2f}   |  Strike: {opt['K']:.2f}   |  Vencimiento (años): {opt['T']:.4f}")
+        print(f"  Precio mercado: {opt['market_price']:.2f}   |  Precio modelo (MC): {price_mc:.2f}")
+        print(f"  Volatilidad usada: {iv_mc*100:.2f}%")
+        print("  Griegas MC:")
+        for g, v in greeks_mc.items():
+            if g == 'gamma':
+                print(f"    {g.capitalize():<6}: {v:.8f}")
+            else:
+                print(f"    {g.capitalize():<6}: {v:.4f}")
+        print("-"*60)
+    print("\nGriegas agregadas de la cartera (MC):")
+    for g, v in greeks_total_mc.items():
+        print(f"  {g.capitalize():<6}: {v:.4f}")
+    print(f"\nValor actual de la cartera (MC): {value_mc:.2f}")
+    print(f"\nVaR histórico (simulación MC, PRICING MC, horizonte {horizonte_dias*252:.0f} días, 99%): {var_mc:.2f}")
+    print(f"ES histórico (simulación MC, PRICING MC, 99%): {es_mc:.2f}")
+    print("="*60)
+    plt.figure(figsize=(14,8))
+    plt.hist(pnl_mc, bins=50, color='lightgreen', edgecolor='k', alpha=0.7, density=True)
+    plt.axvline(-var_mc, color='red', linestyle='--', label=f'VaR MC ({-var_mc:.2f})')
+    plt.axvline(-es_mc, color='orange', linestyle='--', label=f'ES MC ({-es_mc:.2f})')
+    plt.title('Distribución de P&L simulados de la cartera (PRICING MC)')
+    plt.xlabel('P&L')
+    plt.ylabel('Densidad')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig('histograma_pnl_cartera_mc.png')
     plt.close()

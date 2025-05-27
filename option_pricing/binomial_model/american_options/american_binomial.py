@@ -48,32 +48,33 @@ def binomial_american_option_price(S, K, T, r, sigma, N=1000, option_type='call'
     return payoff[0]
 
 
-def binomial_greeks_american_option(S, K, T, r, sigma, N=1000, option_type='call', h=1e-2):
+def binomial_greeks_american_option(S, K, T, r, sigma, N=1000, option_type='call', h=None):
     """
     Estimate Delta, Gamma, Vega, Theta, Rho for an American option using the binomial model.
     Uses finite differences (bumping) on the binomial price.
     """
+    if h is None:
+        h = max(0.01 * S, 0.01)  # 1% del spot, pero nunca menor que 0.01
     # Delta
     price_up = binomial_american_option_price(S + h, K, T, r, sigma, N, option_type)
     price_down = binomial_american_option_price(S - h, K, T, r, sigma, N, option_type)
     price = binomial_american_option_price(S, K, T, r, sigma, N, option_type)
     delta = (price_up - price_down) / (2 * h)
     gamma = (price_up - 2 * price + price_down) / (h ** 2)
-    
     # Vega
-    price_vega_up = binomial_american_option_price(S, K, T, r, sigma + h, N, option_type)
-    price_vega_down = binomial_american_option_price(S, K, T, r, sigma - h, N, option_type)
-    vega = (price_vega_up - price_vega_down) / (2 * h)
-    
+    vega_bump = 0.01
+    price_vega_up = binomial_american_option_price(S, K, T, r, sigma + vega_bump, N, option_type)
+    price_vega_down = binomial_american_option_price(S, K, T, r, sigma - vega_bump, N, option_type)
+    vega = (price_vega_up - price_vega_down) / (2 * vega_bump)
     # Theta (backward difference)
-    price_theta = binomial_american_option_price(S, K, T - h, r, sigma, N, option_type)
-    theta = (price_theta - price) / h
-    
+    theta_bump = 0.01
+    price_theta = binomial_american_option_price(S, K, T - theta_bump, r, sigma, N, option_type)
+    theta = (price_theta - price) / theta_bump
     # Rho
-    price_rho_up = binomial_american_option_price(S, K, T, r + h, sigma, N, option_type)
-    price_rho_down = binomial_american_option_price(S, K, T, r - h, sigma, N, option_type)
-    rho = (price_rho_up - price_rho_down) / (2 * h)
-    
+    rho_bump = 0.01
+    price_rho_up = binomial_american_option_price(S, K, T, r + rho_bump, sigma, N, option_type)
+    price_rho_down = binomial_american_option_price(S, K, T, r - rho_bump, sigma, N, option_type)
+    rho = (price_rho_up - price_rho_down) / (2 * rho_bump)
     return {
         'delta': delta,
         'gamma': gamma,

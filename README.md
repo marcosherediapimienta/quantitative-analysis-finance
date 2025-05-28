@@ -36,6 +36,8 @@ A comprehensive Python toolkit for quantitative finance, focused on option prici
 
 - **Streamlit App** for visual exploration and comparison of models
 - User-friendly interface for both beginners and professionals
+- **Automated Sensitivity Analysis**: For Black-Scholes, Binomial, and Monte Carlo models, the app allows you to generate and visualize sensitivity analysis for Spot, interest rate (r), and Volatility with a single click. Results are saved as both PNG plots and CSV summary tables, which are displayed directly in the app for all models.
+- **Hedging & Sensitivity Section**: Analyze the impact of Delta, Delta+Gamma, and Vega hedging on your portfolio, and browse the corresponding risk and sensitivity outputs interactively.
 
 ---
 
@@ -72,8 +74,9 @@ A comprehensive Python toolkit for quantitative finance, focused on option prici
 
 - Launch the interactive app:
   ```bash
-  streamlit run option_pricing/app.py
+  streamlit run app.py
   ```
+- **Note:** The app supports full workflow for Black-Scholes, Binomial, and Monte Carlo models, including automated generation and display of sensitivity analysis (plots and tables) for all key risk factors.
 
 ---
 

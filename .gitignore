@@ -1,0 +1,10 @@
+# Ignorar la carpeta de tests y archivos de referencia de regresión
+/tests/
+*.json
+
+# Ignorar cachés de Python y pytest
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.cache/ 

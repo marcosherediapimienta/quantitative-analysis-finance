@@ -3,6 +3,12 @@ from scipy.stats import norm
 from scipy.optimize import brentq
 import matplotlib.pyplot as plt
 import copy
+import os
+import pandas as pd
+
+# Definir ruta robusta para visualizaciones
+VIS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "visualizations")
+os.makedirs(VIS_DIR, exist_ok=True)
 
 # =============================
 # Black-Scholes Functions
@@ -132,7 +138,7 @@ def simulate_portfolio(portfolio, n_sims=10000, horizon=None, vol_shock_sigma=0.
             shocked_opt = p.copy()
             shocked_opt['S'] = S_T
             shocked_portfolio.append(shocked_opt)
-        shocked_val = portfolio_value(shocked_portfolio, sigma_overrides=sigma_shocks)
+        shocked_val = portfolio_value(shocked_portfolio)
         pnl.append(shocked_val - base_val)
     return {'pnl': np.array(pnl), 'shocks': shocks_dict}
 
@@ -141,6 +147,138 @@ def var_es(pnl, alpha=0.01):
     var = -np.percentile(pnl_sorted, alpha*100)
     es = -pnl_sorted[pnl_sorted <= -var].mean()
     return var, es
+
+def run_sensitivity_analysis_bs(portfolio, vis_dir):
+    hedge_strategies = [
+        ('Original', portfolio),
+        ('Delta Hedge', portfolio + [{
+            'type': 'call', 'S': portfolio[0]['S'], 'K': portfolio[0]['K'], 'T': portfolio[0]['T'], 'r': portfolio[0]['r'], 'qty': -portfolio_greeks(portfolio)['delta'], 'market_price': portfolio[0]['market_price']
+        }]),
+    ]
+    # 1. Sensibilidad Spot (±10%)
+    spot_base = portfolio[0]['S']
+    spot_range = np.linspace(spot_base*0.9, spot_base*1.1, 21)
+    spot_idx_low = 0
+    spot_idx_base = 10
+    spot_idx_high = 20
+    plt.figure(figsize=(12,7))
+    spot_rows = []
+    for name, port in hedge_strategies:
+        values = []
+        for S in spot_range:
+            port_mod = copy.deepcopy(port)
+            for opt in port_mod:
+                opt['S'] = S
+            values.append(portfolio_value(port_mod))
+        plt.plot(spot_range, values, label=name)
+        base = values[spot_idx_base]
+        low = values[spot_idx_low]
+        high = values[spot_idx_high]
+        dlow = low - base
+        dhigh = high - base
+        spot_rows.append({
+            'Strategy': name,
+            'Base': base,
+            '-10%': low,
+            '+10%': high,
+            'Δ-10%': dlow,
+            'Δ+10%': dhigh
+        })
+    df_spot = pd.DataFrame(spot_rows)
+    df_spot.to_csv(os.path.join(vis_dir, 'sensitivity_spot_all_bs.csv'), index=False)
+    plt.xlabel('Spot')
+    plt.ylabel('Portfolio Value')
+    plt.title('Sensitivity to Spot - All Strategies (BS)')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(os.path.join(vis_dir, 'sensitivity_spot_all_bs.png'))
+    plt.close()
+    # 2. Sensibilidad tipo de interés (±1%)
+    r_base = portfolio[0]['r']
+    r_range = np.linspace(r_base-0.01, r_base+0.01, 21)
+    r_idx_low = 0
+    r_idx_base = 10
+    r_idx_high = 20
+    plt.figure(figsize=(12,7))
+    r_rows = []
+    for name, port in hedge_strategies:
+        values = []
+        for r in r_range:
+            port_mod = copy.deepcopy(port)
+            for opt in port_mod:
+                opt['r'] = r
+            values.append(portfolio_value(port_mod))
+        plt.plot(r_range, values, label=name)
+        base = values[r_idx_base]
+        low = values[r_idx_low]
+        high = values[r_idx_high]
+        dlow = low - base
+        dhigh = high - base
+        r_rows.append({
+            'Strategy': name,
+            'Base': base,
+            '-1%': low,
+            '+1%': high,
+            'Δ-1%': dlow,
+            'Δ+1%': dhigh
+        })
+    df_r = pd.DataFrame(r_rows)
+    df_r.to_csv(os.path.join(vis_dir, 'sensitivity_r_all_bs.csv'), index=False)
+    plt.xlabel('Risk-free rate (r)')
+    plt.ylabel('Portfolio Value')
+    plt.title('Sensitivity to r - All Strategies (BS)')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(os.path.join(vis_dir, 'sensitivity_r_all_bs.png'))
+    plt.close()
+    # 3. Sensibilidad volatilidad (±20%)
+    plt.figure(figsize=(12,7))
+    vol_base = 1.0
+    vol_range = np.linspace(0.8, 1.2, 21)
+    vol_idx_low = 0
+    vol_idx_base = 10
+    vol_idx_high = 20
+    vol_rows = []
+    for name, port in hedge_strategies:
+        values = []
+        for vol_mult in vol_range:
+            port_mod = copy.deepcopy(port)
+            for opt in port_mod:
+                iv = implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
+                if iv is None:
+                    iv = 0.2
+                new_iv = iv * vol_mult
+                if opt['type'] == 'call':
+                    opt['market_price'] = black_scholes_call_price(opt['S'], opt['K'], opt['T'], opt['r'], new_iv)
+                else:
+                    opt['market_price'] = black_scholes_put_price(opt['S'], opt['K'], opt['T'], opt['r'], new_iv)
+            values.append(portfolio_value(port_mod))
+        plt.plot(vol_range, values, label=name)
+        base = values[vol_idx_base]
+        low = values[vol_idx_low]
+        high = values[vol_idx_high]
+        dlow = low - base
+        dhigh = high - base
+        vol_rows.append({
+            'Strategy': name,
+            'Base': base,
+            '-20%': low,
+            '+20%': high,
+            'Δ-20%': dlow,
+            'Δ+20%': dhigh
+        })
+    df_vol = pd.DataFrame(vol_rows)
+    df_vol.to_csv(os.path.join(vis_dir, 'sensitivity_vol_all_bs.csv'), index=False)
+    plt.xlabel('Volatility multiplier')
+    plt.ylabel('Portfolio Value')
+    plt.title('Sensitivity to Volatility - All Strategies (BS)')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(os.path.join(vis_dir, 'sensitivity_vol_all_bs.png'))
+    plt.close()
 
 if __name__ == "__main__":
     # --- Definición de la cartera ---
@@ -192,7 +330,7 @@ if __name__ == "__main__":
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig('histogram_pnl_portfolio_bs.png')
+    plt.savefig(os.path.join(VIS_DIR, 'histogram_pnl_portfolio_bs.png'))
     plt.close()
 
     # ===========================
@@ -369,7 +507,7 @@ if __name__ == "__main__":
     plt.legend(loc='upper left', fontsize=10, ncol=2)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig('histogram_compare_bs.png')
+    plt.savefig(os.path.join(VIS_DIR, 'histogram_compare_bs.png'))
     plt.close()
 
     # ===========================
@@ -379,131 +517,6 @@ if __name__ == "__main__":
     print("SENSITIVITY ANALYSIS (BLACK-SCHOLES) - PORTFOLIO VALUE")
     print("="*60)
 
-    hedge_strategies = [
-        ('Original', portfolio),
-        ('Delta Hedge', portfolio + [{
-            'type': 'call', 'S': portfolio[0]['S'], 'K': portfolio[0]['K'], 'T': portfolio[0]['T'], 'r': portfolio[0]['r'], 'qty': -portfolio_greeks(portfolio)['delta'], 'market_price': portfolio[0]['market_price']
-        }]),
-        ('Delta-Gamma Hedge', portfolio_gamma_hedged),
-        ('Vega Hedge', portfolio_vega_hedged),
-    ]
-
-    # 1. Sensibilidad Spot (±10%)
-    spot_base = portfolio[0]['S']
-    spot_range = np.linspace(spot_base*0.9, spot_base*1.1, 21)
-    spot_idx_low = 0
-    spot_idx_base = 10
-    spot_idx_high = 20
-    plt.figure(figsize=(12,7))
-    print("\n=== Spot Sensitivity (±10%) ===")
-    print(f"{'Strategy':<20}{'Base':>12}{'-10%':>12}{'+10%':>12}{'Δ-10%':>12}{'Δ+10%':>12}")
-    for name, port in hedge_strategies:
-        values = []
-        for S in spot_range:
-            port_mod = copy.deepcopy(port)
-            for opt in port_mod:
-                opt['S'] = S
-            values.append(portfolio_value(port_mod))
-        plt.plot(spot_range, values, label=name)
-        plt.scatter([spot_range[spot_idx_low], spot_range[spot_idx_base], spot_range[spot_idx_high]],
-                    [values[spot_idx_low], values[spot_idx_base], values[spot_idx_high]],
-                    marker='o', s=80)
-        for idx, label in zip([spot_idx_low, spot_idx_base, spot_idx_high], ['-10%', 'Base', '+10%']):
-            plt.annotate(f"{label}\n{values[idx]:.2f}", (spot_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
-        base = values[spot_idx_base]
-        low = values[spot_idx_low]
-        high = values[spot_idx_high]
-        dlow = low - base
-        dhigh = high - base
-        print(f"{name:<20}{base:12.4f}{low:12.4f}{high:12.4f}{dlow:12.4f}{dhigh:12.4f}")
-    plt.xlabel('Spot')
-    plt.ylabel('Portfolio Value')
-    plt.title('Sensitivity to Spot - All Strategies (BS)')
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.savefig('sensitivity_spot_all_bs.png')
-    plt.close()
-
-    # 2. Sensibilidad tipo de interés (±1%)
-    r_base = portfolio[0]['r']
-    r_range = np.linspace(r_base-0.01, r_base+0.01, 21)
-    r_idx_low = 0
-    r_idx_base = 10
-    r_idx_high = 20
-    plt.figure(figsize=(12,7))
-    print("\n=== r Sensitivity (±1%) ===")
-    print(f"{'Strategy':<20}{'Base':>12}{'-1%':>12}{'+1%':>12}{'Δ-1%':>12}{'Δ+1%':>12}")
-    for name, port in hedge_strategies:
-        values = []
-        for r in r_range:
-            port_mod = copy.deepcopy(port)
-            for opt in port_mod:
-                opt['r'] = r
-            values.append(portfolio_value(port_mod))
-        plt.plot(r_range, values, label=name)
-        plt.scatter([r_range[r_idx_low], r_range[r_idx_base], r_range[r_idx_high]],
-                    [values[r_idx_low], values[r_idx_base], values[r_idx_high]],
-                    marker='o', s=80)
-        for idx, label in zip([r_idx_low, r_idx_base, r_idx_high], ['-1%', 'Base', '+1%']):
-            plt.annotate(f"{label}\n{values[idx]:.2f}", (r_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
-        base = values[r_idx_base]
-        low = values[r_idx_low]
-        high = values[r_idx_high]
-        dlow = low - base
-        dhigh = high - base
-        print(f"{name:<20}{base:12.4f}{low:12.4f}{high:12.4f}{dlow:12.4f}{dhigh:12.4f}")
-    plt.xlabel('Risk-free rate (r)')
-    plt.ylabel('Portfolio Value')
-    plt.title('Sensitivity to r - All Strategies (BS)')
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.savefig('sensitivity_r_all_bs.png')
-    plt.close()
-
-    # 3. Sensibilidad volatilidad (±20%)
-    plt.figure(figsize=(12,7))
-    vol_base = 1.0
-    vol_range = np.linspace(0.8, 1.2, 21)  # multiplicador de la volatilidad implícita
-    vol_idx_low = 0
-    vol_idx_base = 10
-    vol_idx_high = 20
-    print("\n=== Volatility Sensitivity (±20%) ===")
-    print(f"{'Strategy':<20}{'Base':>12}{'-20%':>12}{'+20%':>12}{'Δ-20%':>12}{'Δ+20%':>12}")
-    for name, port in hedge_strategies:
-        values = []
-        for vol_mult in vol_range:
-            port_mod = copy.deepcopy(port)
-            for opt in port_mod:
-                iv = implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
-                if iv is None:
-                    iv = 0.2
-                new_iv = iv * vol_mult
-                if opt['type'] == 'call':
-                    opt['market_price'] = black_scholes_call_price(opt['S'], opt['K'], opt['T'], opt['r'], new_iv)
-                else:
-                    opt['market_price'] = black_scholes_put_price(opt['S'], opt['K'], opt['T'], opt['r'], new_iv)
-            values.append(portfolio_value(port_mod))
-        plt.plot(vol_range, values, label=name)
-        plt.scatter([vol_range[vol_idx_low], vol_range[vol_idx_base], vol_range[vol_idx_high]],
-                    [values[vol_idx_low], values[vol_idx_base], values[vol_idx_high]],
-                    marker='o', s=80)
-        for idx, label in zip([vol_idx_low, vol_idx_base, vol_idx_high], ['-20%', 'Base', '+20%']):
-            plt.annotate(f"{label}\n{values[idx]:.2f}", (vol_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
-        base = values[vol_idx_base]
-        low = values[vol_idx_low]
-        high = values[vol_idx_high]
-        dlow = low - base
-        dhigh = high - base
-        print(f"{name:<20}{base:12.4f}{low:12.4f}{high:12.4f}{dlow:12.4f}{dhigh:12.4f}")
-    plt.xlabel('Volatility multiplier')
-    plt.ylabel('Portfolio Value')
-    plt.title('Sensitivity to Volatility - All Strategies (BS)')
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.savefig('sensitivity_vol_all_bs.png')
-    plt.close()
+    run_sensitivity_analysis_bs(portfolio, VIS_DIR)
 
     print('Sensitivity analysis completed. PNG files generated.') 

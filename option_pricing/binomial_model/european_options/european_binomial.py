@@ -153,7 +153,7 @@ def plot_binomial_tree_summary(S, u, d, N, prefix='binomial_tree_summary'):
     plt.title('Evolution of Asset Price in Binomial Tree')
     plt.legend()
     plt.grid(True)
-    fname1 = f'{prefix}_evolution.png'
+    fname1 = f'visualizations/{prefix}_evolution.png'
     plt.savefig(fname1, bbox_inches='tight')
     print(f"Evolution plot saved to {fname1}")
     plt.close()
@@ -164,7 +164,7 @@ def plot_binomial_tree_summary(S, u, d, N, prefix='binomial_tree_summary'):
     plt.ylabel('Probability')
     plt.title(f'Asset Price Probability Distribution at Maturity (N={N})')
     plt.grid(True)
-    fname2 = f'{prefix}_maturity_hist.png'
+    fname2 = f'visualizations/{prefix}_maturity_hist.png'
     plt.savefig(fname2, bbox_inches='tight')
     print(f"Maturity probability distribution plot saved to {fname2}")
     plt.close()

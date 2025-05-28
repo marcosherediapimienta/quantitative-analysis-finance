@@ -96,7 +96,7 @@ def portfolio_greeks_mc(portfolio, n_sim=10000, n_steps=50):
             total[g] += greeks[g] * opt['qty']
     return total
 
-def simulate_portfolio_mc_pricing(portfolio, n_sims=1000, n_steps=50, horizon=None):
+def simulate_portfolio_mc_pricing(portfolio, n_sims=1000, n_steps=50, horizon=None, vol_shock_sigma=0.1, rho=-0.5):
     base_val = sum(price_option_mc(opt, n_sim=1000, n_steps=n_steps) * opt['qty'] for opt in portfolio)
     pnl = []
     shocks_dict = {}
@@ -106,6 +106,7 @@ def simulate_portfolio_mc_pricing(portfolio, n_sims=1000, n_steps=50, horizon=No
     for i in range(n_sims):
         shocked_portfolio = []
         Zs = {}
+        sigma_shocks = []
         for opt in portfolio:
             iv = implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
             if iv is None:
@@ -115,15 +116,20 @@ def simulate_portfolio_mc_pricing(portfolio, n_sims=1000, n_steps=50, horizon=No
                 else:
                     iv = 0.2
             T_sim = horizon if horizon is not None else opt['T']
-            Z = np.random.normal(0, 1)
-            key = opt.get('ticker', opt['S'])
-            Zs[key] = Z
-            shocks_dict[key].append(Z)
-            S_T = opt['S'] * np.exp((opt['r'] - 0.5 * iv ** 2) * T_sim + iv * np.sqrt(T_sim) * Z)
+            # Correlated shocks
+            Z1, Z2 = np.random.normal(size=2)
+            Z_spot = Z1
+            Z_vol = rho * Z1 + np.sqrt(1 - rho**2) * Z2
+            Zs[key] = Z_spot
+            shocks_dict[key].append(Z_spot)
+            # Simular shock de volatilidad lognormal correlacionado
+            vol_shock = np.random.lognormal(mean=0, sigma=vol_shock_sigma) * np.exp(Z_vol * vol_shock_sigma)
+            sigma_shocks.append(iv * vol_shock)
+            S_T = opt['S'] * np.exp((opt['r'] - 0.5 * iv ** 2) * T_sim + iv * np.sqrt(T_sim) * Z_spot)
             shocked_opt = opt.copy()
             shocked_opt['S'] = S_T
             shocked_portfolio.append(shocked_opt)
-        shocked_val = sum(price_option_mc(opt, n_sim=500, n_steps=n_steps) * opt['qty'] for opt in shocked_portfolio)
+        shocked_val = sum(price_option_mc(opt, n_sim=500, n_steps=n_steps) * opt['qty'] for opt, sigma in zip(shocked_portfolio, sigma_shocks))
         pnl.append(shocked_val - base_val)
     return {'pnl': np.array(pnl), 'shocks': shocks_dict}
 

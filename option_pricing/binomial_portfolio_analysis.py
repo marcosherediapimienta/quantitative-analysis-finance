@@ -76,7 +76,7 @@ def portfolio_value(portfolio, N=100):
         value += price * opt['qty']
     return value
 
-def simulate_portfolio(portfolio, n_sims=10000, N=100, horizon=None):
+def simulate_portfolio(portfolio, n_sims=10000, N=100, horizon=None, vol_shock_sigma=0.1, rho=-0.5):
     base_val = portfolio_value(portfolio, N)
     pnl = []
     shocks_dict = {}
@@ -100,16 +100,32 @@ def simulate_portfolio(portfolio, n_sims=10000, N=100, horizon=None):
     for i in range(n_sims):
         shocked_portfolio = []
         Zs = {}
-        for p in params:
-            Z = np.random.normal(0, 1)
-            Zs[p['key']] = Z
-            shocks_dict[p['key']].append(Z)
+        sigma_shocks = []
+        for idx, p in enumerate(params):
+            # Correlated shocks
+            Z1, Z2 = np.random.normal(size=2)
+            Z_spot = Z1
+            Z_vol = rho * Z1 + np.sqrt(1 - rho**2) * Z2
+            Zs[p['key']] = Z_spot
+            shocks_dict[p['key']].append(Z_spot)
             T_sim = horizon if horizon is not None else p['T']
-            S_T = p['S'] * np.exp((p['r'] - 0.5 * p['iv'] ** 2) * T_sim + p['iv'] * np.sqrt(T_sim) * Z)
+            # Simular shock de volatilidad lognormal correlacionado
+            vol_shock = np.random.lognormal(mean=0, sigma=vol_shock_sigma) * np.exp(Z_vol * vol_shock_sigma)
+            sigma_shocks.append(p['iv'] * vol_shock)
+            S_T = p['S'] * np.exp((p['r'] - 0.5 * p['iv'] ** 2) * T_sim + p['iv'] * np.sqrt(T_sim) * Z_spot)
             shocked_opt = p.copy()
             shocked_opt['S'] = S_T
+            shocked_opt['iv'] = p['iv'] * vol_shock
             shocked_portfolio.append(shocked_opt)
-        shocked_val = portfolio_value(shocked_portfolio, N)
+        shocked_val = 0
+        for idx, opt in enumerate(shocked_portfolio):
+            opt_copy = opt.copy()
+            # Usar la volatilidad shocked para el pricing binomial
+            if opt_copy['style'] == 'american':
+                price = binomial_american_option_price(opt_copy['S'], opt_copy['K'], opt_copy['T'], opt_copy['r'], opt_copy['iv'], N, opt_copy['type'])
+            else:
+                price = binomial_european_option_price(opt_copy['S'], opt_copy['K'], opt_copy['T'], opt_copy['r'], opt_copy['iv'], N, opt_copy['type'])
+            shocked_val += price * opt_copy['qty']
         pnl.append(shocked_val - base_val)
     return {'pnl': np.array(pnl), 'shocks': shocks_dict}
 

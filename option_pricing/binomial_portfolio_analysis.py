@@ -259,7 +259,7 @@ if __name__ == "__main__":
     }
     greeks_hedge = option_greeks(hedge_opt, N=N_steps)
     gamma_hedge = greeks_hedge['gamma']
-    gamma_hedge_fraction = 1.0
+    gamma_hedge_fraction = 0.7
     qty_gamma_hedge = -gamma_cartera * gamma_hedge_fraction / gamma_hedge if gamma_hedge != 0 else 0
     hedge_opt['qty'] = qty_gamma_hedge
     portfolio_gamma_hedged = portfolio + [hedge_opt]
@@ -320,7 +320,7 @@ if __name__ == "__main__":
     }
     greeks_hedge_vega = option_greeks(hedge_opt_vega, N=N_steps)
     vega_hedge = greeks_hedge_vega['vega']
-    vega_hedge_fraction = 1.0  # 50% de la vega neta
+    vega_hedge_fraction = 0.7  # 50% de la vega neta
     qty_vega_hedge = -vega_total * vega_hedge_fraction / vega_hedge if vega_hedge != 0 else 0
     hedge_opt_vega['qty'] = qty_vega_hedge
     # 3. Crea nueva cartera con vega hedge
@@ -405,7 +405,7 @@ if __name__ == "__main__":
     spot_idx_high = 20
     plt.figure(figsize=(12,7))
     print("\n=== Spot Sensitivity (±10%) ===")
-    print(f"{'Strategy':<20}{'Base':>12}{'-10%':>12}{'+10%':>12}{'Δ-10%':>12}{'Δ+10%':>12}{'Δ-10%[%]':>12}{'Δ+10%[%]':>12}")
+    print(f"{'Strategy':<20}{'Base':>12}{'-10%':>12}{'+10%':>12}{'Δ-10%':>12}{'Δ+10%':>12}")
     for name, port in hedge_strategies:
         values = []
         for S in spot_range:
@@ -414,21 +414,17 @@ if __name__ == "__main__":
                 opt['S'] = S
             values.append(portfolio_value(port_mod, N=N_steps))
         plt.plot(spot_range, values, label=name)
-        # Marcar puntos bajo, base, alto
         plt.scatter([spot_range[spot_idx_low], spot_range[spot_idx_base], spot_range[spot_idx_high]],
                     [values[spot_idx_low], values[spot_idx_base], values[spot_idx_high]],
                     marker='o', s=80)
         for idx, label in zip([spot_idx_low, spot_idx_base, spot_idx_high], ['-10%', 'Base', '+10%']):
             plt.annotate(f"{label}\n{values[idx]:.2f}", (spot_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
-        # Imprimir tabla
         base = values[spot_idx_base]
         low = values[spot_idx_low]
         high = values[spot_idx_high]
         dlow = low - base
         dhigh = high - base
-        dlow_pct = 100 * dlow / base if base != 0 else 0
-        dhigh_pct = 100 * dhigh / base if base != 0 else 0
-        print(f"{name:<20}{base:12.4f}{low:12.4f}{high:12.4f}{dlow:12.4f}{dhigh:12.4f}{dlow_pct:12.2f}%{dhigh_pct:12.2f}%")
+        print(f"{name:<20}{base:12.4f}{low:12.4f}{high:12.4f}{dlow:12.4f}{dhigh:12.4f}")
     plt.xlabel('Spot')
     plt.ylabel('Portfolio Value')
     plt.title('Sensitivity to Spot - All Strategies')
@@ -446,7 +442,7 @@ if __name__ == "__main__":
     r_idx_high = 20
     plt.figure(figsize=(12,7))
     print("\n=== r Sensitivity (±1%) ===")
-    print(f"{'Strategy':<20}{'Base':>12}{'-1%':>12}{'+1%':>12}{'Δ-1%':>12}{'Δ+1%':>12}{'Δ-1%[%]':>12}{'Δ+1%[%]':>12}")
+    print(f"{'Strategy':<20}{'Base':>12}{'-1%':>12}{'+1%':>12}{'Δ-1%':>12}{'Δ+1%':>12}")
     for name, port in hedge_strategies:
         values = []
         for r in r_range:
@@ -465,9 +461,7 @@ if __name__ == "__main__":
         high = values[r_idx_high]
         dlow = low - base
         dhigh = high - base
-        dlow_pct = 100 * dlow / base if base != 0 else 0
-        dhigh_pct = 100 * dhigh / base if base != 0 else 0
-        print(f"{name:<20}{base:12.4f}{low:12.4f}{high:12.4f}{dlow:12.4f}{dhigh:12.4f}{dlow_pct:12.2f}%{dhigh_pct:12.2f}%")
+        print(f"{name:<20}{base:12.4f}{low:12.4f}{high:12.4f}{dlow:12.4f}{dhigh:12.4f}")
     plt.xlabel('Risk-free rate (r)')
     plt.ylabel('Portfolio Value')
     plt.title('Sensitivity to r - All Strategies')
@@ -485,7 +479,7 @@ if __name__ == "__main__":
     vol_idx_base = 10
     vol_idx_high = 20
     print("\n=== Volatility Sensitivity (±20%) ===")
-    print(f"{'Strategy':<20}{'Base':>12}{'-20%':>12}{'+20%':>12}{'Δ-20%':>12}{'Δ+20%':>12}{'Δ-20%[%]':>12}{'Δ+20%[%]':>12}")
+    print(f"{'Strategy':<20}{'Base':>12}{'-20%':>12}{'+20%':>12}{'Δ-20%':>12}{'Δ+20%':>12}")
     for name, port in hedge_strategies:
         values = []
         for vol_mult in vol_range:
@@ -507,9 +501,7 @@ if __name__ == "__main__":
         high = values[vol_idx_high]
         dlow = low - base
         dhigh = high - base
-        dlow_pct = 100 * dlow / base if base != 0 else 0
-        dhigh_pct = 100 * dhigh / base if base != 0 else 0
-        print(f"{name:<20}{base:12.4f}{low:12.4f}{high:12.4f}{dlow:12.4f}{dhigh:12.4f}{dlow_pct:12.2f}%{dhigh_pct:12.2f}%")
+        print(f"{name:<20}{base:12.4f}{low:12.4f}{high:12.4f}{dlow:12.4f}{dhigh:12.4f}")
     plt.xlabel('Volatility multiplier')
     plt.ylabel('Portfolio Value')
     plt.title('Sensitivity to Volatility - All Strategies')

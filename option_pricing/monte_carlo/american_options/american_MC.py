@@ -56,6 +56,11 @@ def black_scholes_call_price(S, K, T, r, sigma):
     d2 = d1 - sigma * np.sqrt(T)
     return S * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)
 
+def black_scholes_put_price(S, K, T, r, sigma):
+    d1 = (np.log(S / K) + (r + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
+    d2 = d1 - sigma * np.sqrt(T)
+    return K * np.exp(-r * T) * norm.cdf(-d2) - S * norm.cdf(-d1)
+
 def vega(S, K, T, r, sigma):
     d1 = (np.log(S / K) + (r + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
     return S * norm.pdf(d1) * np.sqrt(T)
@@ -75,6 +80,26 @@ def implied_volatility_call(S, K, T, r, market_price, tol=1e-6, max_iter=25):
             sigma = 0.0001
     def objective(s): 
         return black_scholes_call_price(S, K, T, r, s) - market_price
+    try:
+        return brentq(objective, 0.0001, 5.0, xtol=tol)
+    except:
+        return None
+
+def implied_volatility_put(S, K, T, r, market_price, tol=1e-6, max_iter=25):
+    sigma = 0.2
+    for i in range(max_iter):
+        price = black_scholes_put_price(S, K, T, r, sigma)
+        v = vega(S, K, T, r, sigma)
+        if abs(v) < 1e-8:
+            break
+        diff = price - market_price
+        if abs(diff) < tol:
+            return sigma
+        sigma = sigma - diff / v
+        if sigma <= 0:
+            sigma = 0.0001
+    def objective(s):
+        return black_scholes_put_price(S, K, T, r, s) - market_price
     try:
         return brentq(objective, 0.0001, 5.0, xtol=tol)
     except:
@@ -136,6 +161,20 @@ def calculate_greeks(S, K, T, r, sigma, option_type='call'):
         'theta': theta,
         'rho': rho
     }
+
+def get_historical_volatility(ticker, window=252):
+    """
+    Calcula la volatilidad histórica anualizada usando precios de cierre diarios de Yahoo Finance.
+    Por defecto usa una ventana de 1 año (252 días hábiles).
+    """
+    try:
+        data = yf.Ticker(ticker).history(period=f"{window+1}d")['Close']
+        returns = np.log(data / data.shift(1)).dropna()
+        hist_vol = returns.std() * np.sqrt(252)
+        return float(hist_vol)
+    except Exception as e:
+        print(f"Error calculating historical volatility for {ticker}: {e}")
+        return 0.2  # fallback
 
 if __name__ == "__main__":
     print("\nAmerican Option Pricing via Monte Carlo (Longstaff-Schwartz, datos Yahoo Finance)")
@@ -235,12 +274,21 @@ if __name__ == "__main__":
     except Exception:
         C_market = 1.0
         P_market = 1.0
-    # Implied volatility (call)
-    iv = implied_volatility_call(S, K, T, r, C_market)
+    # Implied volatility
+    if option_type == 'call':
+        iv = implied_volatility_call(S, K, T, r, C_market)
+        market_price = C_market
+    else:
+        iv = implied_volatility_put(S, K, T, r, P_market)
+        market_price = P_market
     if iv is None:
-        print("No implied volatility found, using 20% as fallback.")
-        iv = 0.2
-    print(f"\nImplied Volatility (call): {iv:.2%}")
+        try:
+            iv = get_historical_volatility(ticker, window=252)
+            print(f"No implied volatility found, using 1y historical volatility as fallback: {iv:.2%}")
+        except Exception as e:
+            print(f'Could not fetch historical volatility: {e}. Using 20% as fallback.')
+            iv = 0.2
+    print(f"\nImplied Volatility ({option_type}): {iv:.2%}")
     # Monte Carlo pricing
     mc_price = american_option_longstaff_schwartz(S, K, T, r, iv, n_sim, n_steps, option_type=option_type, seed=seed)
     # Cálculo de griegas analíticas (Black-Scholes)

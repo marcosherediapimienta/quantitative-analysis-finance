@@ -1,9 +1,14 @@
+import sys
+import os
+path_to_add = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+print("Path added to sys.path:", path_to_add)
+sys.path.append(path_to_add)
+print("Current working directory:", os.getcwd())
 import numpy as np
 from scipy.optimize import brentq
 from scipy.stats import norm
 import matplotlib.pyplot as plt
 import copy
-import os
 import pandas as pd
 
 from option_pricing.binomial_model.american_options.american_binomial import binomial_american_option_price, binomial_greeks_american_option, get_historical_volatility
@@ -294,12 +299,12 @@ def run_sensitivity_analysis_binomial(portfolio, N, vis_dir):
 if __name__ == "__main__":
     # --- Definición de la cartera ---
     portfolio = [
-        {'type': 'call', 'style': 'european', 'S': 5802.82, 'K': 5800, 'T': 0.0849, 'r': 0.0421, 'qty': -10, 'market_price': 152.80},
-        {'type': 'put',  'style': 'european', 'S': 5802.82, 'K': 5800, 'T': 0.0849, 'r': 0.0421, 'qty': -5,  'market_price': 147.20},
-        {'type': 'call', 'style': 'european', 'S': 5802.82, 'K': 5900, 'T': 0.0849, 'r': 0.0421, 'qty': 5,   'market_price': 80.00},
+        {'type': 'put', 'style': 'european', 'S': 5922.60, 'K': 6105, 'T': 0.0849, 'r': 0.0421, 'qty': -5, 'market_price': 630.04},
+        {'type': 'put',  'style': 'american', 'S': 5922.60, 'K': 6105, 'T': 0.0849, 'r': 0.0421, 'qty': -5,  'market_price': 630.04},
+        #{'type': 'call', 'style': 'european', 'S': 5802.82, 'K': 5900, 'T': 0.0849, 'r': 0.0421, 'qty': 5,   'market_price': 80.00},
     ]
     horizonte_dias = 10 / 252  # días de trading
-    N_steps = 100
+    N_steps = 1000
 
     print("\n" + "="*60)
     print("OPTION PORTFOLIO SUMMARY USING BINOMIAL")

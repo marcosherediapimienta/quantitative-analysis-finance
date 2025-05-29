@@ -287,9 +287,13 @@ def run_sensitivity_analysis_mc(portfolio, N, n_sim_sens, vis_dir, horizon):
 
 if __name__ == "__main__":
     portfolio = [
-        {'type': 'call', 'style': 'european', 'S': 5802.82, 'K': 5800, 'T': 0.0849, 'r': 0.0421, 'qty': -10, 'market_price': 152.80},
-        {'type': 'put',  'style': 'european', 'S': 5802.82, 'K': 5800, 'T': 0.0849, 'r': 0.0421, 'qty': -5,  'market_price': 147.20},
-        {'type': 'call', 'style': 'european', 'S': 5802.82, 'K': 5900, 'T': 0.0849, 'r': 0.0421, 'qty': 5,   'market_price': 80.00},
+        {'type': 'put', 'style': 'european', 'S': 5901.46, 'K': 6105, 'T': 0.0849, 'r': 0.0421, 'qty': -10, 'market_price': 630.04},
+        {'type': 'put',  'style': 'american', 'S': 5901.46, 'K': 6105, 'T': 0.0849, 'r': 0.0421, 'qty': -5,  'market_price': 630.04},
+        #{'type': 'call', 'style': 'european', 'S': 5901.46, 'K': 5905, 'T': 0.0849, 'r': 0.0421, 'qty': -5,   'market_price': 98.18},
+        #{'type': 'call', 'style': 'american', 'S': 5901.46, 'K': 5905, 'T': 0.0849, 'r': 0.0421, 'qty': -5,   'market_price': 98.18},
+        #{'type': 'put', 'style': 'american', 'S': 5901.46, 'K': 5790, 'T': 0.0849, 'r': 0.0421, 'qty': -5,   'market_price': 68.41},
+        #{'type': 'put', 'style': 'european', 'S': 5901.46, 'K': 5790, 'T': 0.0849, 'r': 0.0421, 'qty': -5,   'market_price': 68.41},
+        {'type': 'call', 'style': 'european', 'S': 5901.46, 'K': 5905, 'T': 0.0849, 'r': 0.0421, 'qty': 10,   'market_price': 98.18},
     ]
     horizonte_dias = 10 / 252
     N_steps = 100

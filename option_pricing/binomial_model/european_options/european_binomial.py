@@ -182,6 +182,9 @@ def get_historical_volatility(ticker, window=252):
         print(f"Error calculating historical volatility for {ticker}: {e}")
         return 0.2  # fallback
 
+def valor_intrinseco_put_desc(S, K, T, r):
+    return max(K - S * np.exp(-r * T), 0)
+
 if __name__ == "__main__":
     print("\nBinomial Model European Option Pricing (Cox-Ross-Rubinstein)")
     option_type = input("Option type ('call' or 'put') [call]: ").strip().lower() or 'call'
@@ -265,14 +268,24 @@ if __name__ == "__main__":
         market_price = None
         print("No market price found for this option.")
     if market_price is not None:
-        iv = implied_volatility_option(market_price, S, K, T, r, option_type)
-        if iv is not None:
-            print(f"Implied volatility: {iv*100:.2f}% (used in binomial model)")
-            sigma = iv
+        # Implied volatility
+        if option_type == 'call':
+            iv = implied_volatility_option(market_price, S, K, T, r, option_type='call')
         else:
-            print("Could not calculate implied volatility from market price. Using historical volatility instead.")
-            sigma = get_historical_volatility(ticker)
-            print(f"Historical volatility (used): {sigma*100:.2f}%")
+            vi_put = valor_intrinseco_put_desc(S, K, T, r)
+            if market_price < vi_put:
+                print(f"[WARNING] The market price of the put (${market_price:.2f}) is less than the discounted intrinsic value (${vi_put:.2f}). It is not possible to find a consistent implied volatility. Using historical volatility as fallback.")
+                iv = None
+            else:
+                iv = implied_volatility_option(market_price, S, K, T, r, option_type='put')
+        if iv is None:
+            try:
+                iv = get_historical_volatility(ticker, window=252)
+                print(f"No implied volatility found, using 1y historical volatility as fallback: {iv:.2%}")
+            except Exception as e:
+                print(f'Could not fetch historical volatility: {e}. Using 20% as fallback.')
+                iv = 0.2
+        sigma = iv
     else:
         print("No market price available, using historical volatility.")
         sigma = get_historical_volatility(ticker)

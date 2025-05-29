@@ -4,9 +4,9 @@ import pandas as pd
 from scipy.stats import norm
 from scipy.optimize import brentq
 
-# Longstaff-Schwartz para Americanas
+# Longstaff-Schwartz for American options
 
-def american_option_longstaff_schwartz(S, K, T, r, sigma, n_sim=10000, n_steps=50, option_type='call', seed=None):
+def american_option_longstaff_schwartz(S, K, T, r, sigma, n_sim=10000, n_steps=50, option_type='call', seed=None, regression_type='quadratic'):
     dt = T / n_steps
     discount = np.exp(-r * dt)
     S_paths = np.zeros((n_sim, n_steps + 1))
@@ -25,9 +25,15 @@ def american_option_longstaff_schwartz(S, K, T, r, sigma, n_sim=10000, n_steps=5
         if np.any(itm):
             X = S_paths[itm, t]
             Y = V[itm] * discount
-            A = np.vstack([np.ones_like(X), X, X**2]).T
+            if regression_type == 'linear':
+                A = np.vstack([np.ones_like(X), X]).T
+            else:  # 'quadratic' by default
+                A = np.vstack([np.ones_like(X), X, X**2]).T
             coeffs = np.linalg.lstsq(A, Y, rcond=None)[0]
-            continuation = coeffs[0] + coeffs[1] * X + coeffs[2] * X**2
+            if regression_type == 'linear':
+                continuation = coeffs[0] + coeffs[1] * X
+            else:
+                continuation = coeffs[0] + coeffs[1] * X + coeffs[2] * X**2
             exercise = payoff[itm, t]
             exercise_now = exercise > continuation
             idx = np.where(itm)[0][exercise_now]
@@ -105,33 +111,28 @@ def implied_volatility_put(S, K, T, r, market_price, tol=1e-6, max_iter=25):
     except:
         return None
 
-def american_mc_greeks(S, K, T, r, sigma, n_sim, n_steps, option_type='call', seed=None):
-    # Usar un generador local y derivar seeds distintos para cada cálculo
+def american_mc_greeks(S, K, T, r, sigma, n_sim, n_steps, option_type='call', seed=None, regression_type='quadratic'):
     base_rng = np.random.default_rng(seed)
-    seeds = base_rng.integers(0, 1e9, size=7)  # 7 seeds para cada cálculo
-    # Delta/Gamma
+    seeds = base_rng.integers(0, 1e9, size=7)  # 7 seeds for each calculation
     eps_S = S * 0.01
-    price_up = american_option_longstaff_schwartz(S + eps_S, K, T, r, sigma, n_sim, n_steps, option_type, seed=int(seeds[0]))
-    price_down = american_option_longstaff_schwartz(S - eps_S, K, T, r, sigma, n_sim, n_steps, option_type, seed=int(seeds[1]))
-    price = american_option_longstaff_schwartz(S, K, T, r, sigma, n_sim, n_steps, option_type, seed=int(seeds[2]))
+    price_up = american_option_longstaff_schwartz(S + eps_S, K, T, r, sigma, n_sim, n_steps, option_type, seed=int(seeds[0]), regression_type=regression_type)
+    price_down = american_option_longstaff_schwartz(S - eps_S, K, T, r, sigma, n_sim, n_steps, option_type, seed=int(seeds[1]), regression_type=regression_type)
+    price = american_option_longstaff_schwartz(S, K, T, r, sigma, n_sim, n_steps, option_type, seed=int(seeds[2]), regression_type=regression_type)
     delta = (price_up - price_down) / (2 * eps_S)
     gamma = (price_up - 2 * price + price_down) / (eps_S ** 2)
-    # Vega
     eps_sigma = 0.01
-    price_vega_up = american_option_longstaff_schwartz(S, K, T, r, sigma + eps_sigma, n_sim, n_steps, option_type, seed=int(seeds[3]))
-    price_vega_down = american_option_longstaff_schwartz(S, K, T, r, sigma - eps_sigma, n_sim, n_steps, option_type, seed=int(seeds[4]))
+    price_vega_up = american_option_longstaff_schwartz(S, K, T, r, sigma + eps_sigma, n_sim, n_steps, option_type, seed=int(seeds[3]), regression_type=regression_type)
+    price_vega_down = american_option_longstaff_schwartz(S, K, T, r, sigma - eps_sigma, n_sim, n_steps, option_type, seed=int(seeds[4]), regression_type=regression_type)
     vega = (price_vega_up - price_vega_down) / (2 * eps_sigma)
-    # Theta
     dt = 1/365
     if T - dt > 0:
-        price_Tdt = american_option_longstaff_schwartz(S, K, T - dt, r, sigma, n_sim, n_steps, option_type, seed=int(seeds[5]))
+        price_Tdt = american_option_longstaff_schwartz(S, K, T - dt, r, sigma, n_sim, n_steps, option_type, seed=int(seeds[5]), regression_type=regression_type)
         theta = (price_Tdt - price) / dt
     else:
         theta = float('nan')
-    # Rho
     dr = 0.01
-    price_rho_up = american_option_longstaff_schwartz(S, K, T, r + dr, sigma, n_sim, n_steps, option_type, seed=int(seeds[6]))
-    price_rho_down = american_option_longstaff_schwartz(S, K, T, r - dr, sigma, n_sim, n_steps, option_type, seed=int(seeds[2]))
+    price_rho_up = american_option_longstaff_schwartz(S, K, T, r + dr, sigma, n_sim, n_steps, option_type, seed=int(seeds[6]), regression_type=regression_type)
+    price_rho_down = american_option_longstaff_schwartz(S, K, T, r - dr, sigma, n_sim, n_steps, option_type, seed=int(seeds[2]), regression_type=regression_type)
     rho = (price_rho_up - price_rho_down) / (2 * dr)
     return {
         'delta': delta,
@@ -164,8 +165,8 @@ def calculate_greeks(S, K, T, r, sigma, option_type='call'):
 
 def get_historical_volatility(ticker, window=252):
     """
-    Calcula la volatilidad histórica anualizada usando precios de cierre diarios de Yahoo Finance.
-    Por defecto usa una ventana de 1 año (252 días hábiles).
+    Calculates the annualized historical volatility using daily closing prices from Yahoo Finance.
+    By default uses a 1-year window (252 trading days).
     """
     try:
         data = yf.Ticker(ticker).history(period=f"{window+1}d")['Close']
@@ -176,17 +177,20 @@ def get_historical_volatility(ticker, window=252):
         print(f"Error calculating historical volatility for {ticker}: {e}")
         return 0.2  # fallback
 
+def valor_intrinseco_put_desc(S, K, T, r):
+    return max(K - S * np.exp(-r * T), 0)
+
 if __name__ == "__main__":
-    print("\nAmerican Option Pricing via Monte Carlo (Longstaff-Schwartz, datos Yahoo Finance)")
-    # Preguntar tipo de opción
+    print("\nAmerican Option Pricing via Monte Carlo (Longstaff-Schwartz, Yahoo Finance data)")
+    # Ask option type
     while True:
-        option_type = input("¿Qué tipo de opción quieres analizar? (call/put) [default: call]: ").strip().lower()
+        option_type = input("Which type of option do you want to analyze? (call/put) [default: call]: ").strip().lower()
         if option_type == '':
             option_type = 'call'
         if option_type in ['call', 'put']:
             break
         else:
-            print("Por favor, introduce 'call' o 'put'.")
+            print("Please enter 'call' or 'put'.")
     # Ticker input
     while True:
         ticker = input("Enter stock ticker (e.g., ^SPX) [default: ^SPX]: ").strip().upper()
@@ -258,6 +262,9 @@ if __name__ == "__main__":
     r = get_input("Enter risk-free rate (as decimal, e.g., 0.0421 for 4.21%)", 0.0421, float, lambda x: x >= 0)
     n_sim = get_input("Number of Monte Carlo simulations", 10000, int, lambda x: x > 0)
     n_steps = get_input("Number of time steps (Longstaff-Schwartz)", 50, int, lambda x: x > 1)
+    regression_type = input("Regression type for continuation value ('linear' or 'quadratic') [quadratic]: ").strip().lower()
+    if regression_type not in ['linear', 'quadratic']:
+        regression_type = 'quadratic'
     seed = get_input("Random seed for reproducibility (int, blank for random)", 42, int)
     # Market price
     try:
@@ -279,8 +286,13 @@ if __name__ == "__main__":
         iv = implied_volatility_call(S, K, T, r, C_market)
         market_price = C_market
     else:
-        iv = implied_volatility_put(S, K, T, r, P_market)
+        vi_put = valor_intrinseco_put_desc(S, K, T, r)
         market_price = P_market
+        if market_price < vi_put:
+            print(f"[WARNING] The market price of the put (${market_price:.2f}) is less than the discounted intrinsic value (${vi_put:.2f}). It is not possible to find a consistent implied volatility. Using historical volatility as fallback.")
+            iv = None
+        else:
+            iv = implied_volatility_put(S, K, T, r, P_market)
     if iv is None:
         try:
             iv = get_historical_volatility(ticker, window=252)
@@ -290,12 +302,17 @@ if __name__ == "__main__":
             iv = 0.2
     print(f"\nImplied Volatility ({option_type}): {iv:.2%}")
     # Monte Carlo pricing
-    mc_price = american_option_longstaff_schwartz(S, K, T, r, iv, n_sim, n_steps, option_type=option_type, seed=seed)
-    # Cálculo de griegas analíticas (Black-Scholes)
+    mc_price = american_option_longstaff_schwartz(S, K, T, r, iv, n_sim, n_steps, option_type=option_type, seed=seed, regression_type=regression_type)
+    # Greeks calculation (analytical Black-Scholes)
     greeks = calculate_greeks(S, K, T, r, iv, option_type=option_type)
-    # Cálculo de griegas por Monte Carlo (diferencias finitas)
+    # Greeks calculation by Monte Carlo (finite differences)
     n_sim_greeks = max(100000, n_sim)
-    mc_greek_vals = american_mc_greeks(S, K, T, r, iv, n_sim_greeks, n_steps, option_type=option_type, seed=seed)
+    mc_greek_vals = american_mc_greeks(S, K, T, r, iv, n_sim_greeks, n_steps, option_type=option_type, seed=seed, regression_type=regression_type)
+    # Warning message if the market price is less than the discounted intrinsic value
+    if option_type == 'put':
+        vi_put = valor_intrinseco_put_desc(S, K, T, r)
+        if market_price < vi_put:
+            print(f"[WARNING] The market price of the put (${market_price:.2f}) is less than the discounted intrinsic value (${vi_put:.2f}). It was not possible to find a consistent implied volatility. Historical volatility was used as fallback.")
     print("\n" + "="*50)
     print(f"{'RESULTS':^50}")
     print("="*50)

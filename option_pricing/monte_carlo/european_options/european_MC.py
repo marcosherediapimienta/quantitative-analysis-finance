@@ -4,7 +4,7 @@ import pandas as pd
 from scipy.stats import norm
 from scipy.optimize import brentq
 
-# Black-Scholes call price (para IV)
+# Black-Scholes call price (for IV)
 def black_scholes_call_price(S, K, T, r, sigma):
     d1 = (np.log(S / K) + (r + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
     d2 = d1 - sigma * np.sqrt(T)
@@ -119,12 +119,12 @@ def calculate_greeks(S, K, T, r, sigma, option_type='call'):
         'rho': rho
     }
 
-# Griegas por diferencias finitas usando Monte Carlo
+# Greeks by finite differences using Monte Carlo
 
 def mc_greeks(S, K, T, r, sigma, n_sim, option_type='call', seed=None):
     base_rng = np.random.default_rng(seed)
     seeds = base_rng.integers(0, 1e9, size=7)
-    # Common random numbers para cada cálculo
+    # Common random numbers for each calculation
     eps_S = S * 0.01
     price_up = monte_carlo_european_option(S + eps_S, K, T, r, sigma, n_sim, option_type, seed=int(seeds[0]))
     price_down = monte_carlo_european_option(S - eps_S, K, T, r, sigma, n_sim, option_type, seed=int(seeds[1]))
@@ -158,8 +158,8 @@ def mc_greeks(S, K, T, r, sigma, n_sim, option_type='call', seed=None):
 
 def get_historical_volatility(ticker, window=252):
     """
-    Calcula la volatilidad histórica anualizada usando precios de cierre diarios de Yahoo Finance.
-    Por defecto usa una ventana de 1 año (252 días hábiles).
+    Calculates the annualized historical volatility using daily closing prices from Yahoo Finance.
+    By default uses a 1-year window (252 trading days).
     """
     try:
         data = yf.Ticker(ticker).history(period=f"{window+1}d")['Close']
@@ -170,17 +170,20 @@ def get_historical_volatility(ticker, window=252):
         print(f"Error calculating historical volatility for {ticker}: {e}")
         return 0.2  # fallback
 
+def valor_intrinseco_put_desc(S, K, T, r):
+    return max(K - S * np.exp(-r * T), 0)
+
 if __name__ == "__main__":
-    print("\nEuropean Option Pricing via Monte Carlo (con datos de Yahoo Finance)")
-    # Preguntar tipo de opción
+    print("\nEuropean Option Pricing via Monte Carlo (with Yahoo Finance data)")
+    # Ask option type
     while True:
-        option_type = input("¿Qué tipo de opción quieres analizar? (call/put) [default: call]: ").strip().lower()
+        option_type = input("Which type of option do you want to analyze? (call/put) [default: call]: ").strip().lower()
         if option_type == '':
             option_type = 'call'
         if option_type in ['call', 'put']:
             break
         else:
-            print("Por favor, introduce 'call' o 'put'.")
+            print("Please enter 'call' or 'put'.")
     # Ticker input
     while True:
         ticker = input("Enter stock ticker (e.g., ^SPX) [default: ^SPX]: ").strip().upper()
@@ -272,8 +275,13 @@ if __name__ == "__main__":
         iv = implied_volatility_call(S, K, T, r, C_market)
         market_price = C_market
     else:
-        iv = implied_volatility_put(S, K, T, r, P_market)
         market_price = P_market
+        vi_put = valor_intrinseco_put_desc(S, K, T, r)
+        if market_price < vi_put:
+            print(f"[WARNING] The market price of the put (${market_price:.2f}) is less than the discounted intrinsic value (${vi_put:.2f}). It is not possible to find a consistent implied volatility. Using historical volatility as fallback.")
+            iv = None
+        else:
+            iv = implied_volatility_put(S, K, T, r, P_market)
     if iv is None:
         try:
             iv = get_historical_volatility(ticker, window=252)
@@ -284,10 +292,10 @@ if __name__ == "__main__":
     print(f"\nImplied Volatility ({option_type}): {iv:.2%}")
     # Monte Carlo pricing
     mc_price = monte_carlo_european_option(S, K, T, r, iv, n_sim, option_type=option_type, seed=seed)
-    # Cálculo de griegas (analítico Black-Scholes)
+    # Greeks calculation (analytical Black-Scholes)
     greeks = calculate_greeks(S, K, T, r, iv, option_type=option_type)
-    # Cálculo de griegas por Monte Carlo (diferencias finitas)
-    n_sim_greeks = max(100000, n_sim)  # Usar al menos 100,000 simulaciones para griegas
+    # Greeks calculation by Monte Carlo (finite differences)
+    n_sim_greeks = max(100000, n_sim)  # Use at least 100,000 simulations for Greeks
     mc_greek_vals = mc_greeks(S, K, T, r, iv, n_sim_greeks, option_type=option_type, seed=seed)
     print("\n" + "="*50)
     print(f"{'RESULTS':^50}")
@@ -318,3 +326,4 @@ if __name__ == "__main__":
     print(f"{'Vega':<10}{mc_greek_vals['vega']:>15.4f}{'per 1 vol point':>25}")
     print(f"{'Rho':<10}{mc_greek_vals['rho']:>15.4f}{'per 1% rate change':>25}")
     print("="*50)
+    

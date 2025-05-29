@@ -27,11 +27,19 @@ def american_option_longstaff_schwartz(S, K, T, r, sigma, n_sim=10000, n_steps=5
             Y = V[itm] * discount
             if regression_type == 'linear':
                 A = np.vstack([np.ones_like(X), X]).T
-            else:  # 'quadratic' by default
+            elif regression_type == 'quadratic':
+                A = np.vstack([np.ones_like(X), X, X**2]).T
+            elif regression_type == 'cubic':
+                A = np.vstack([np.ones_like(X), X, X**2, X**3]).T
+            else:
                 A = np.vstack([np.ones_like(X), X, X**2]).T
             coeffs = np.linalg.lstsq(A, Y, rcond=None)[0]
             if regression_type == 'linear':
                 continuation = coeffs[0] + coeffs[1] * X
+            elif regression_type == 'quadratic':
+                continuation = coeffs[0] + coeffs[1] * X + coeffs[2] * X**2
+            elif regression_type == 'cubic':
+                continuation = coeffs[0] + coeffs[1] * X + coeffs[2] * X**2 + coeffs[3] * X**3
             else:
                 continuation = coeffs[0] + coeffs[1] * X + coeffs[2] * X**2
             exercise = payoff[itm, t]
@@ -262,8 +270,8 @@ if __name__ == "__main__":
     r = get_input("Enter risk-free rate (as decimal, e.g., 0.0421 for 4.21%)", 0.0421, float, lambda x: x >= 0)
     n_sim = get_input("Number of Monte Carlo simulations", 10000, int, lambda x: x > 0)
     n_steps = get_input("Number of time steps (Longstaff-Schwartz)", 50, int, lambda x: x > 1)
-    regression_type = input("Regression type for continuation value ('linear' or 'quadratic') [quadratic]: ").strip().lower()
-    if regression_type not in ['linear', 'quadratic']:
+    regression_type = input("Regression type for continuation value ('linear', 'quadratic', or 'cubic') [quadratic]: ").strip().lower()
+    if regression_type not in ['linear', 'quadratic', 'cubic']:
         regression_type = 'quadratic'
     seed = get_input("Random seed for reproducibility (int, blank for random)", 42, int)
     # Market price

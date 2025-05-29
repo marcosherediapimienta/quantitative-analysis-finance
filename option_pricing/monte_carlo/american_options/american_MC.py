@@ -6,13 +6,14 @@ from scipy.optimize import brentq
 
 # Longstaff-Schwartz para Americanas
 
-def american_option_longstaff_schwartz(S, K, T, r, sigma, n_sim=10000, n_steps=50, option_type='call'):
+def american_option_longstaff_schwartz(S, K, T, r, sigma, n_sim=10000, n_steps=50, option_type='call', seed=None):
     dt = T / n_steps
     discount = np.exp(-r * dt)
     S_paths = np.zeros((n_sim, n_steps + 1))
     S_paths[:, 0] = S
+    rng = np.random.default_rng(seed)
     for t in range(1, n_steps + 1):
-        Z = np.random.standard_normal(n_sim)
+        Z = rng.standard_normal(n_sim)
         S_paths[:, t] = S_paths[:, t-1] * np.exp((r - 0.5 * sigma**2) * dt + sigma * np.sqrt(dt) * Z)
     if option_type == 'call':
         payoff = np.maximum(S_paths - K, 0)
@@ -79,32 +80,33 @@ def implied_volatility_call(S, K, T, r, market_price, tol=1e-6, max_iter=25):
     except:
         return None
 
-def american_mc_greeks(S, K, T, r, sigma, n_sim, n_steps, option_type='call'):
-    rng = np.random.default_rng()
-    Z = rng.standard_normal((n_sim, n_steps))
+def american_mc_greeks(S, K, T, r, sigma, n_sim, n_steps, option_type='call', seed=None):
+    # Usar un generador local y derivar seeds distintos para cada cálculo
+    base_rng = np.random.default_rng(seed)
+    seeds = base_rng.integers(0, 1e9, size=7)  # 7 seeds para cada cálculo
     # Delta/Gamma
     eps_S = S * 0.01
-    price_up = american_option_longstaff_schwartz(S + eps_S, K, T, r, sigma, n_sim, n_steps, option_type)
-    price_down = american_option_longstaff_schwartz(S - eps_S, K, T, r, sigma, n_sim, n_steps, option_type)
-    price = american_option_longstaff_schwartz(S, K, T, r, sigma, n_sim, n_steps, option_type)
+    price_up = american_option_longstaff_schwartz(S + eps_S, K, T, r, sigma, n_sim, n_steps, option_type, seed=int(seeds[0]))
+    price_down = american_option_longstaff_schwartz(S - eps_S, K, T, r, sigma, n_sim, n_steps, option_type, seed=int(seeds[1]))
+    price = american_option_longstaff_schwartz(S, K, T, r, sigma, n_sim, n_steps, option_type, seed=int(seeds[2]))
     delta = (price_up - price_down) / (2 * eps_S)
     gamma = (price_up - 2 * price + price_down) / (eps_S ** 2)
     # Vega
     eps_sigma = 0.01
-    price_vega_up = american_option_longstaff_schwartz(S, K, T, r, sigma + eps_sigma, n_sim, n_steps, option_type)
-    price_vega_down = american_option_longstaff_schwartz(S, K, T, r, sigma - eps_sigma, n_sim, n_steps, option_type)
+    price_vega_up = american_option_longstaff_schwartz(S, K, T, r, sigma + eps_sigma, n_sim, n_steps, option_type, seed=int(seeds[3]))
+    price_vega_down = american_option_longstaff_schwartz(S, K, T, r, sigma - eps_sigma, n_sim, n_steps, option_type, seed=int(seeds[4]))
     vega = (price_vega_up - price_vega_down) / (2 * eps_sigma)
     # Theta
     dt = 1/365
     if T - dt > 0:
-        price_Tdt = american_option_longstaff_schwartz(S, K, T - dt, r, sigma, n_sim, n_steps, option_type)
+        price_Tdt = american_option_longstaff_schwartz(S, K, T - dt, r, sigma, n_sim, n_steps, option_type, seed=int(seeds[5]))
         theta = (price_Tdt - price) / dt
     else:
         theta = float('nan')
     # Rho
     dr = 0.01
-    price_rho_up = american_option_longstaff_schwartz(S, K, T, r + dr, sigma, n_sim, n_steps, option_type)
-    price_rho_down = american_option_longstaff_schwartz(S, K, T, r - dr, sigma, n_sim, n_steps, option_type)
+    price_rho_up = american_option_longstaff_schwartz(S, K, T, r + dr, sigma, n_sim, n_steps, option_type, seed=int(seeds[6]))
+    price_rho_down = american_option_longstaff_schwartz(S, K, T, r - dr, sigma, n_sim, n_steps, option_type, seed=int(seeds[2]))
     rho = (price_rho_up - price_rho_down) / (2 * dr)
     return {
         'delta': delta,
@@ -217,6 +219,7 @@ if __name__ == "__main__":
     r = get_input("Enter risk-free rate (as decimal, e.g., 0.0421 for 4.21%)", 0.0421, float, lambda x: x >= 0)
     n_sim = get_input("Number of Monte Carlo simulations", 10000, int, lambda x: x > 0)
     n_steps = get_input("Number of time steps (Longstaff-Schwartz)", 50, int, lambda x: x > 1)
+    seed = get_input("Random seed for reproducibility (int, blank for random)", 42, int)
     # Market price
     try:
         call_row = opt_chain.calls[opt_chain.calls['strike'] == K]
@@ -239,12 +242,12 @@ if __name__ == "__main__":
         iv = 0.2
     print(f"\nImplied Volatility (call): {iv:.2%}")
     # Monte Carlo pricing
-    mc_price = american_option_longstaff_schwartz(S, K, T, r, iv, n_sim, n_steps, option_type=option_type)
+    mc_price = american_option_longstaff_schwartz(S, K, T, r, iv, n_sim, n_steps, option_type=option_type, seed=seed)
     # Cálculo de griegas analíticas (Black-Scholes)
     greeks = calculate_greeks(S, K, T, r, iv, option_type=option_type)
     # Cálculo de griegas por Monte Carlo (diferencias finitas)
     n_sim_greeks = max(100000, n_sim)
-    mc_greek_vals = american_mc_greeks(S, K, T, r, iv, n_sim_greeks, n_steps, option_type=option_type)
+    mc_greek_vals = american_mc_greeks(S, K, T, r, iv, n_sim_greeks, n_steps, option_type=option_type, seed=seed)
     print("\n" + "="*50)
     print(f"{'RESULTS':^50}")
     print("="*50)

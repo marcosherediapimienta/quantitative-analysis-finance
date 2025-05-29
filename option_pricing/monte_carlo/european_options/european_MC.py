@@ -35,8 +35,9 @@ def implied_volatility_call(S, K, T, r, market_price, tol=1e-6, max_iter=25):
     except:
         return None
 
-def monte_carlo_european_option(S, K, T, r, sigma, n_sim=10000, option_type='call'):
-    Z = np.random.standard_normal(n_sim)
+def monte_carlo_european_option(S, K, T, r, sigma, n_sim=10000, option_type='call', seed=None):
+    rng = np.random.default_rng(seed)
+    Z = rng.standard_normal(n_sim)
     ST = S * np.exp((r - 0.5 * sigma**2) * T + sigma * np.sqrt(T) * Z)
     if option_type == 'call':
         payoff = np.maximum(ST - K, 0)
@@ -94,42 +95,32 @@ def calculate_greeks(S, K, T, r, sigma, option_type='call'):
 
 # Griegas por diferencias finitas usando Monte Carlo
 
-def mc_greeks(S, K, T, r, sigma, n_sim, option_type='call'):
-    rng = np.random.default_rng()
-    # Common random numbers
-    Z = rng.standard_normal(n_sim)
-    # Delta/Gamma: paso de 1% del spot
+def mc_greeks(S, K, T, r, sigma, n_sim, option_type='call', seed=None):
+    base_rng = np.random.default_rng(seed)
+    seeds = base_rng.integers(0, 1e9, size=7)
+    # Common random numbers para cada cálculo
     eps_S = S * 0.01
-    price_up = monte_carlo_european_option_common(S + eps_S, K, T, r, sigma, Z, option_type)
-    price_down = monte_carlo_european_option_common(S - eps_S, K, T, r, sigma, Z, option_type)
-    price = monte_carlo_european_option_common(S, K, T, r, sigma, Z, option_type)
+    price_up = monte_carlo_european_option(S + eps_S, K, T, r, sigma, n_sim, option_type, seed=int(seeds[0]))
+    price_down = monte_carlo_european_option(S - eps_S, K, T, r, sigma, n_sim, option_type, seed=int(seeds[1]))
+    price = monte_carlo_european_option(S, K, T, r, sigma, n_sim, option_type, seed=int(seeds[2]))
     delta = (price_up - price_down) / (2 * eps_S)
     gamma = (price_up - 2 * price + price_down) / (eps_S ** 2)
-    # Vega: paso de 0.01 en sigma (1 punto de volatilidad)
+    # Vega
     eps_sigma = 0.01
-    price_vega_up = monte_carlo_european_option_common(S, K, T, r, sigma + eps_sigma, Z, option_type)
-    price_vega_down = monte_carlo_european_option_common(S, K, T, r, sigma - eps_sigma, Z, option_type)
+    price_vega_up = monte_carlo_european_option(S, K, T, r, sigma + eps_sigma, n_sim, option_type, seed=int(seeds[3]))
+    price_vega_down = monte_carlo_european_option(S, K, T, r, sigma - eps_sigma, n_sim, option_type, seed=int(seeds[4]))
     vega = (price_vega_up - price_vega_down) / (2 * eps_sigma)
-    # Theta: paso de 1 día, usando descuento correcto y mismos paths
+    # Theta
     dt = 1/365
     if T - dt > 0:
-        ST_T = S * np.exp((r - 0.5 * sigma**2) * T + sigma * np.sqrt(T) * Z)
-        ST_Tdt = S * np.exp((r - 0.5 * sigma**2) * (T - dt) + sigma * np.sqrt(T - dt) * Z)
-        if option_type == 'call':
-            payoff_T = np.maximum(ST_T - K, 0)
-            payoff_Tdt = np.maximum(ST_Tdt - K, 0)
-        else:
-            payoff_T = np.maximum(K - ST_T, 0)
-            payoff_Tdt = np.maximum(K - ST_Tdt, 0)
-        price_T = np.exp(-r * T) * np.mean(payoff_T)
-        price_Tdt = np.exp(-r * (T - dt)) * np.mean(payoff_Tdt)
-        theta = (price_Tdt - price_T) / dt
+        price_Tdt = monte_carlo_european_option(S, K, T - dt, r, sigma, n_sim, option_type, seed=int(seeds[5]))
+        theta = (price_Tdt - price) / dt
     else:
         theta = float('nan')
-    # Rho: paso de 0.01 (1%), resultado por 1% rate change
+    # Rho
     dr = 0.01
-    price_rho_up = monte_carlo_european_option_common(S, K, T, r + dr, sigma, Z, option_type)
-    price_rho_down = monte_carlo_european_option_common(S, K, T, r - dr, sigma, Z, option_type)
+    price_rho_up = monte_carlo_european_option(S, K, T, r + dr, sigma, n_sim, option_type, seed=int(seeds[6]))
+    price_rho_down = monte_carlo_european_option(S, K, T, r - dr, sigma, n_sim, option_type, seed=int(seeds[2]))
     rho = (price_rho_up - price_rho_down) / (2 * dr)
     return {
         'delta': delta,
@@ -220,6 +211,7 @@ if __name__ == "__main__":
     T = T_days / 365
     r = get_input("Enter risk-free rate (as decimal, e.g., 0.0421 for 4.21%)", 0.0421, float, lambda x: x >= 0)
     n_sim = get_input("Number of Monte Carlo simulations", 10000, int, lambda x: x > 0)
+    seed = get_input("Random seed for reproducibility (int, blank for random)", 42, int)
     # Market price
     try:
         call_row = opt_chain.calls[opt_chain.calls['strike'] == K]
@@ -248,12 +240,12 @@ if __name__ == "__main__":
         iv = 0.2
     print(f"\nImplied Volatility (call): {iv:.2%}")
     # Monte Carlo pricing
-    mc_price = monte_carlo_european_option(S, K, T, r, iv, n_sim, option_type=option_type)
+    mc_price = monte_carlo_european_option(S, K, T, r, iv, n_sim, option_type=option_type, seed=seed)
     # Cálculo de griegas (analítico Black-Scholes)
     greeks = calculate_greeks(S, K, T, r, iv, option_type=option_type)
     # Cálculo de griegas por Monte Carlo (diferencias finitas)
     n_sim_greeks = max(100000, n_sim)  # Usar al menos 100,000 simulaciones para griegas
-    mc_greek_vals = mc_greeks(S, K, T, r, iv, n_sim_greeks, option_type=option_type)
+    mc_greek_vals = mc_greeks(S, K, T, r, iv, n_sim_greeks, option_type=option_type, seed=seed)
     print("\n" + "="*50)
     print(f"{'RESULTS':^50}")
     print("="*50)

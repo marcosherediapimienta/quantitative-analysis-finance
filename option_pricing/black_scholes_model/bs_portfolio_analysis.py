@@ -154,6 +154,8 @@ def run_sensitivity_analysis_bs(portfolio, vis_dir):
         ('Delta Hedge', portfolio + [{
             'type': 'call', 'S': portfolio[0]['S'], 'K': portfolio[0]['K'], 'T': portfolio[0]['T'], 'r': portfolio[0]['r'], 'qty': -portfolio_greeks(portfolio)['delta'], 'market_price': portfolio[0]['market_price']
         }]),
+        ('Delta-Gamma Hedge', portfolio_gamma_hedged),
+        ('Vega Hedge', portfolio_vega_hedged),
     ]
     # 1. Sensibilidad Spot (±10%)
     spot_base = portfolio[0]['S']
@@ -280,12 +282,25 @@ def run_sensitivity_analysis_bs(portfolio, vis_dir):
     plt.savefig(os.path.join(vis_dir, 'sensitivity_vol_all_bs.png'))
     plt.close()
 
+    # Print numerical tables for sensitivity analysis
+    print("\nSensitivity to Spot (BS):")
+    print(df_spot.to_string(index=False))
+
+    print("\nSensitivity to Risk-free Rate (BS):")
+    print(df_r.to_string(index=False))
+
+    print("\nSensitivity to Volatility (BS):")
+    print(df_vol.to_string(index=False))
+
+    print('Sensitivity analysis completed. PNG files generated.')
+
 if __name__ == "__main__":
     # --- Definición de la cartera ---
     portfolio = [
-        {'type': 'call', 'S': 5802.82, 'K': 5800, 'T': 0.0849, 'r': 0.0421, 'qty': -10, 'market_price': 152.80},
-        {'type': 'put',  'S': 5802.82, 'K': 5800, 'T': 0.0849, 'r': 0.0421, 'qty': -5,  'market_price': 147.20},
-        {'type': 'call', 'S': 5802.82, 'K': 5900, 'T': 0.0849, 'r': 0.0421, 'qty': 5,   'market_price': 80.00},
+        {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5915, 'T': 0.0849, 'r': 0.0421, 'qty': -10, 'market_price': 111.93},
+        {'type': 'put',  'style': 'american', 'S': 5912.17, 'K': 5910, 'T': 0.0849, 'r': 0.0421, 'qty': -5,  'market_price': 106.89},
+        {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5920, 'T': 0.0849, 'r': 0.0421, 'qty': 10,   'market_price': 103.66},
+        {'type': 'put', 'style': 'european', 'S': 5912.17, 'K': 5900, 'T': 0.0849, 'r': 0.0421, 'qty': 10,   'market_price': 102.92},
     ]
     horizonte_dias = 10 / 252  # días de trading
 
@@ -339,12 +354,13 @@ if __name__ == "__main__":
     print("\n" + "="*60)
     print("DELTA HEDGING ANALYSIS (BLACK-SCHOLES)")
     print("="*60)
+    delta_hedge_fraction_bs = 0.7  # Default to 70% coverage
     subyacentes = {}
     for opt in portfolio:
         key = opt.get('ticker', opt['S'])
         greeks = option_greeks(opt)
         subyacentes.setdefault(key, {'S0': opt['S'], 'delta': 0})
-        subyacentes[key]['delta'] += greeks['delta'] * opt['qty']
+        subyacentes[key]['delta'] += greeks['delta'] * opt['qty'] * delta_hedge_fraction_bs
     pnl_bs_hedged = []
     for i in range(len(pnl_bs)):
         hedge_pnl = 0
@@ -511,12 +527,10 @@ if __name__ == "__main__":
     plt.close()
 
     # ===========================
-    # SENSITIVITY ANALYSIS (BS) - VALOR ABSOLUTO
+    # SENSITIVITY ANALYSIS (BS) 
     # ===========================
     print("\n" + "="*60)
     print("SENSITIVITY ANALYSIS (BLACK-SCHOLES) - PORTFOLIO VALUE")
     print("="*60)
 
-    run_sensitivity_analysis_bs(portfolio, VIS_DIR)
-
-    print('Sensitivity analysis completed. PNG files generated.') 
+    run_sensitivity_analysis_bs(portfolio, VIS_DIR) 

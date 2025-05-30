@@ -100,6 +100,7 @@ def portfolio_greeks(portfolio):
     return total
 
 def simulate_portfolio(portfolio, n_sims=10000, horizon=None, vol_shock_sigma=0.1, rho=-0.5):
+    np.random.seed(42)  # Set seed for reproducibility
     base_val = portfolio_value(portfolio)
     pnl = []
     shocks_dict = {}

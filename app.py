@@ -91,42 +91,93 @@ st.sidebar.markdown('''
 if menu == "Portfolio Analysis - Black-Scholes":
     st.write("Black-Scholes portfolio model selected.")
     # Add Black-Scholes portfolio logic here
-    S = st.number_input("Spot price (S)", value=100.0, help="Current price of the underlying asset.")
-    K = st.number_input("Strike price (K)", value=100.0, help="Strike price of the option.")
-    T = st.number_input("Time to maturity (years)", value=1.0, min_value=0.01, help="Time to maturity in years.")
-    r = st.number_input("Risk-free rate (r, decimal)", value=0.05, min_value=0.0, max_value=1.0, step=0.01, help="Annual risk-free interest rate.")
+    num_options = st.number_input("Number of options in portfolio", min_value=1, max_value=10, value=4, step=1, help="Number of different options in the portfolio.")
+    horizon = st.number_input("Horizon (e.g., enter 10/252 for a 10-day horizon)", value=0.0849, min_value=0.01, format="%.4f", help="Horizon for VaR calculation.")
+    portfolio = []
+    default_values = [
+        {'type': 'call', 'S': 5912.17, 'K': 5915, 'T': 0.0849, 'r': 0.0421, 'qty': -10, 'market_price': 111.93},
+        {'type': 'put', 'S': 5912.17, 'K': 5910, 'T': 0.0849, 'r': 0.0421, 'qty': -5, 'market_price': 106.89},
+        {'type': 'call', 'S': 5912.17, 'K': 5920, 'T': 0.0849, 'r': 0.0421, 'qty': 10, 'market_price': 103.66},
+        {'type': 'put', 'S': 5912.17, 'K': 5900, 'T': 0.0849, 'r': 0.0421, 'qty': 10, 'market_price': 102.92}
+    ]
+    for i in range(num_options):
+        st.subheader(f"Option {i+1}")
+        option_type = st.selectbox(f"Option type for Option {i+1}", ["call", "put"], index=["call", "put"].index(default_values[i]['type']), key=f"option_type_{i}", help="Call or put option.")
+        S = st.number_input(f"Spot price (S) for Option {i+1}", value=default_values[i]['S'], help="Current price of the underlying asset.", key=f"S_{i}")
+        K = st.number_input(f"Strike price (K) for Option {i+1}", value=default_values[i]['K'], help="Strike price of the option.", key=f"K_{i}")
+        T = st.number_input(f"Time to maturity (years) for Option {i+1}", value=default_values[i]['T'], min_value=0.01, format="%.4f", help="Time to maturity in years.", key=f"T_{i}")
+        r = st.number_input(f"Risk-free rate (r, decimal) for Option {i+1}", value=default_values[i]['r'], min_value=0.0, max_value=1.0, step=0.0001, format="%.4f", help="Annual risk-free interest rate.", key=f"r_{i}")
+        qty = st.number_input(f"Quantity for Option {i+1}", value=default_values[i]['qty'], step=1, help="Quantity of options in the portfolio.", key=f"qty_{i}")
+        market_price = st.number_input(f"Market price for Option {i+1}", value=default_values[i]['market_price'], help="Observed market price of the option.", key=f"market_price_{i}")
+        portfolio.append({'type': option_type, 'S': S, 'K': K, 'T': T, 'r': r, 'qty': qty, 'market_price': market_price})
     if st.button("Calculate Portfolio", key="bs_portfolio_btn"):
         with st.spinner("Calculating portfolio..."):
             try:
-                price, greeks = bsa.calculate_portfolio(S, K, T, r)
-                st.metric("Portfolio Price", f"{price:.4f}")
-                st.write("Greeks:")
-                st.json(greeks)
+                np.random.seed(42)  # Set seed for reproducibility
+                value_bs = sum(bsa.price_option(opt)[0] * opt['qty'] for opt in portfolio)
+                greeks_total_bs = bsa.portfolio_greeks(portfolio)
+                # Simulate P&L distribution using bs_portfolio_analysis
+                sim_bs = bsa.simulate_portfolio(portfolio, n_sims=10000, horizon=horizon)
+                pnl_bs = sim_bs['pnl']
+                var_bs, es_bs = bsa.var_es(pnl_bs, alpha=0.01)
+                # Display portfolio Greeks first
+                st.write("Portfolio Greeks:")
+                st.json(greeks_total_bs)
+                # Display individual option model vs market prices
+                for i, opt in enumerate(portfolio, 1):
+                    st.subheader(f"Option {i} Details")
+                    model_price, _ = bsa.price_option(opt)
+                    col1, col2 = st.columns(2)
+                    col1.metric("Model Price", f"{model_price:.2f}")
+                    col2.metric("Market Price", f"{opt['market_price']:.2f}")
+                # Add Metric Risk label
+                st.subheader("Metric Risk")
+                # Display portfolio value, VaR, and ES horizontally
+                col1, col2, col3 = st.columns(3)
+                col1.metric("Portfolio Value", f"{value_bs:.2f}")
+                col2.metric("VaR (99%)", f"{var_bs:.2f}")
+                col3.metric("ES (99%)", f"{es_bs:.2f}")
+                # Plot histogram of P&L distribution
+                fig, ax = plt.subplots(figsize=(14, 8))
+                ax.hist(pnl_bs, bins=50, color='skyblue', edgecolor='k', alpha=0.5, density=True)
+                ax.axvline(-var_bs, color='red', linestyle='--', label=f'VaR (99%) {-var_bs:.2f}')
+                ax.axvline(-es_bs, color='orange', linestyle=':', label=f'ES (99%) {-es_bs:.2f}')
+                ax.set_title('Simulated P&L Distribution of the Portfolio (Black-Scholes)')
+                ax.set_xlabel('P&L')
+                ax.set_ylabel('Density')
+                ax.legend()
+                st.pyplot(fig)
             except Exception as e:
                 st.error(f"Error in calculation: {e}")
 
 elif menu == "Portfolio Analysis - Binomial":
     st.write("Binomial portfolio model selected.")
     # Add Binomial portfolio logic here
-    num_options = st.number_input("Number of options in portfolio", min_value=1, max_value=10, value=1, step=1, help="Number of different options in the portfolio.")
+    num_options = st.number_input("Number of options in portfolio", min_value=1, max_value=10, value=4, step=1, help="Number of different options in the portfolio.")
     N_steps = st.number_input("Number of steps", value=100, min_value=1, step=1, help="Discretization steps for Binomial model.")
     horizon = st.number_input("Horizon (e.g., enter 10/252 for a 10-day horizon)", value=0.0849, min_value=0.01, format="%.4f", help="Horizon for VaR calculation.")
     portfolio = []
+    default_values = [
+        {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5915, 'T': 0.0849, 'r': 0.0421, 'qty': -10, 'market_price': 111.93},
+        {'type': 'put', 'style': 'american', 'S': 5912.17, 'K': 5910, 'T': 0.0849, 'r': 0.0421, 'qty': -5, 'market_price': 106.89},
+        {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5920, 'T': 0.0849, 'r': 0.0421, 'qty': 10, 'market_price': 103.66},
+        {'type': 'put', 'style': 'european', 'S': 5912.17, 'K': 5900, 'T': 0.0849, 'r': 0.0421, 'qty': 10, 'market_price': 102.92}
+    ]
     for i in range(num_options):
         st.subheader(f"Option {i+1}")
-        option_style = st.selectbox(f"Option style for Option {i+1}", ["european", "american"], key=f"option_style_{i}", help="Exercise style of the option.")
-        option_type = st.selectbox(f"Option type for Option {i+1}", ["call", "put"], key=f"option_type_{i}", help="Call or put option.")
-        S = st.number_input(f"Spot price (S) for Option {i+1}", value=5912.17, help="Current price of the underlying asset.", key=f"S_{i}")
-        K = st.number_input(f"Strike price (K) for Option {i+1}", value=5915, help="Strike price of the option.", key=f"K_{i}")
-        T = st.number_input(f"Time to maturity (years) for Option {i+1}", value=0.0849, min_value=0.01, format="%.4f", help="Time to maturity in years.", key=f"T_{i}")
-        r = st.number_input(f"Risk-free rate (r, decimal) for Option {i+1}", value=0.0421, min_value=0.0, max_value=1.0, step=0.0001, format="%.4f", help="Annual risk-free interest rate.", key=f"r_{i}")
-        qty = st.number_input(f"Quantity for Option {i+1}", value=-10, step=1, help="Quantity of options in the portfolio.", key=f"qty_{i}")
-        market_price = st.number_input(f"Market price for Option {i+1}", value=111.93, help="Observed market price of the option.", key=f"market_price_{i}")
+        option_style = st.selectbox(f"Option style for Option {i+1}", ["european", "american"], index=["european", "american"].index(default_values[i]['style']), key=f"option_style_{i}", help="Exercise style of the option.")
+        option_type = st.selectbox(f"Option type for Option {i+1}", ["call", "put"], index=["call", "put"].index(default_values[i]['type']), key=f"option_type_{i}", help="Call or put option.")
+        S = st.number_input(f"Spot price (S) for Option {i+1}", value=default_values[i]['S'], help="Current price of the underlying asset.", key=f"S_{i}")
+        K = st.number_input(f"Strike price (K) for Option {i+1}", value=default_values[i]['K'], help="Strike price of the option.", key=f"K_{i}")
+        T = st.number_input(f"Time to maturity (years) for Option {i+1}", value=default_values[i]['T'], min_value=0.01, format="%.4f", help="Time to maturity in years.", key=f"T_{i}")
+        r = st.number_input(f"Risk-free rate (r, decimal) for Option {i+1}", value=default_values[i]['r'], min_value=0.0, max_value=1.0, step=0.0001, format="%.4f", help="Annual risk-free interest rate.", key=f"r_{i}")
+        qty = st.number_input(f"Quantity for Option {i+1}", value=default_values[i]['qty'], step=1, help="Quantity of options in the portfolio.", key=f"qty_{i}")
+        market_price = st.number_input(f"Market price for Option {i+1}", value=default_values[i]['market_price'], help="Observed market price of the option.", key=f"market_price_{i}")
         portfolio.append({'type': option_type, 'style': option_style, 'S': S, 'K': K, 'T': T, 'r': r, 'qty': qty, 'market_price': market_price})
     if st.button("Calculate Portfolio", key="binomial_portfolio_btn"):
         with st.spinner("Calculating portfolio..."):
             try:
-                sim_binomial = bpa.simulate_portfolio(portfolio, n_sims=10000, N=N_steps, horizon=T)
+                sim_binomial = bpa.simulate_portfolio(portfolio, n_sims=10000, N=N_steps, horizon=horizon)
                 pnl_binomial = sim_binomial['pnl']
                 var_binomial, es_binomial = bpa.var_es(pnl_binomial, alpha=0.01)
                 value_binomial = bpa.portfolio_value(portfolio, N=N_steps)
@@ -169,23 +220,29 @@ elif menu == "Portfolio Analysis - Binomial":
 elif menu == "Portfolio Analysis - Monte Carlo":
     st.write("Monte Carlo portfolio model selected.")
     # Add Monte Carlo portfolio logic here
-    num_options = st.number_input("Number of options in portfolio", min_value=1, max_value=10, value=1, step=1, help="Number of different options in the portfolio.")
+    num_options = st.number_input("Number of options in portfolio", min_value=1, max_value=10, value=4, step=1, help="Number of different options in the portfolio.")
     n_sim_main = st.number_input("Number of simulations for P&L and VaR/ES", value=50000, min_value=1000, step=1000, help="Number of scenarios for P&L and VaR/ES simulation.")
     n_sim_greeks = st.number_input("Number of simulations for Greeks", value=100000, min_value=1000, step=1000, help="Number of scenarios for Greeks calculation.")
     st.write("Note: The following input uses the Longstaff-Schwartz method.")
     N_steps = st.number_input("Number of steps (For short maturities, use fewer steps; for long maturities, use more steps)", value=100, min_value=1, step=1, help="Discretization steps for Monte Carlo model.")
     horizon = st.number_input("Horizon (e.g., enter 10/252 for a 10-day horizon)", value=0.0849, min_value=0.01, format="%.4f", help="Horizon for VaR calculation.")
     portfolio = []
+    default_values = [
+        {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5915, 'T': 0.0849, 'r': 0.0421, 'qty': -10, 'market_price': 111.93},
+        {'type': 'put', 'style': 'american', 'S': 5912.17, 'K': 5910, 'T': 0.0849, 'r': 0.0421, 'qty': -5, 'market_price': 106.89},
+        {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5920, 'T': 0.0849, 'r': 0.0421, 'qty': 10, 'market_price': 103.66},
+        {'type': 'put', 'style': 'european', 'S': 5912.17, 'K': 5900, 'T': 0.0849, 'r': 0.0421, 'qty': 10, 'market_price': 102.92}
+    ]
     for i in range(num_options):
         st.subheader(f"Option {i+1}")
-        option_style = st.selectbox(f"Option style for Option {i+1}", ["european", "american"], key=f"option_style_{i}", help="Exercise style of the option.")
-        option_type = st.selectbox(f"Option type for Option {i+1}", ["call", "put"], key=f"option_type_{i}", help="Call or put option.")
-        S = st.number_input(f"Spot price (S) for Option {i+1}", value=5912.17, help="Current price of the underlying asset.", key=f"S_{i}")
-        K = st.number_input(f"Strike price (K) for Option {i+1}", value=5915, help="Strike price of the option.", key=f"K_{i}")
-        T = st.number_input(f"Time to maturity (years) for Option {i+1}", value=0.0849, min_value=0.01, format="%.4f", help="Time to maturity in years.", key=f"T_{i}")
-        r = st.number_input(f"Risk-free rate (r, decimal) for Option {i+1}", value=0.0421, min_value=0.0, max_value=1.0, step=0.0001, format="%.4f", help="Annual risk-free interest rate.", key=f"r_{i}")
-        qty = st.number_input(f"Quantity for Option {i+1}", value=-10, step=1, help="Quantity of options in the portfolio.", key=f"qty_{i}")
-        market_price = st.number_input(f"Market price for Option {i+1}", value=111.93, help="Observed market price of the option.", key=f"market_price_{i}")
+        option_style = st.selectbox(f"Option style for Option {i+1}", ["european", "american"], index=["european", "american"].index(default_values[i]['style']), key=f"option_style_{i}", help="Exercise style of the option.")
+        option_type = st.selectbox(f"Option type for Option {i+1}", ["call", "put"], index=["call", "put"].index(default_values[i]['type']), key=f"option_type_{i}", help="Call or put option.")
+        S = st.number_input(f"Spot price (S) for Option {i+1}", value=default_values[i]['S'], help="Current price of the underlying asset.", key=f"S_{i}")
+        K = st.number_input(f"Strike price (K) for Option {i+1}", value=default_values[i]['K'], help="Strike price of the option.", key=f"K_{i}")
+        T = st.number_input(f"Time to maturity (years) for Option {i+1}", value=default_values[i]['T'], min_value=0.01, format="%.4f", help="Time to maturity in years.", key=f"T_{i}")
+        r = st.number_input(f"Risk-free rate (r, decimal) for Option {i+1}", value=default_values[i]['r'], min_value=0.0, max_value=1.0, step=0.0001, format="%.4f", help="Annual risk-free interest rate.", key=f"r_{i}")
+        qty = st.number_input(f"Quantity for Option {i+1}", value=default_values[i]['qty'], step=1, help="Quantity of options in the portfolio.", key=f"qty_{i}")
+        market_price = st.number_input(f"Market price for Option {i+1}", value=default_values[i]['market_price'], help="Observed market price of the option.", key=f"market_price_{i}")
         portfolio.append({'type': option_type, 'style': option_style, 'S': S, 'K': K, 'T': T, 'r': r, 'qty': qty, 'market_price': market_price})
     if st.button("Calculate Portfolio", key="mc_portfolio_btn"):
         with st.spinner("Calculating portfolio..."):

@@ -4,13 +4,16 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+from option_pricing.black_scholes_model import bs_portfolio_analysis as bsa
+from option_pricing.binomial_model import binomial_portfolio_analysis as bpa
+from option_pricing.monte_carlo import mc_portfolio_analysis as mca
 
-st.set_page_config(page_title="Option Pricing & Portfolio Risk App", layout="centered")
+st.set_page_config(page_title="Option Pricing & Portfolio Risk App", layout="wide")
 
 st.markdown("""
 <style>
     .main, .stApp, .css-18e3th9 {
-        background-color: #181a1b;
+        background-color: #1e1e1e;
     }
     .title-conference {
         font-size: 2.4rem;
@@ -49,18 +52,25 @@ st.markdown("""
     .stSidebar {
         background-color: #23272b !important;
     }
+    .stSelectbox>div>div>div>div { color: #90caf9; font-weight: bold; }
+    .stMetric {
+        background-color: #2e2e2e;
+        border-radius: 8px;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
+# Update menu to include portfolio model selection
 menu = st.sidebar.selectbox(
     "Select section:",
     [
         "Introduction",
         "Single Option Analysis",
-        "Portfolio Analysis",
-        "Model Comparison",
-        "Visualizations",
-        "Hedging & Sensitivity Analysis"
+        "Portfolio Analysis - Black-Scholes",
+        "Portfolio Analysis - Binomial",
+        "Portfolio Analysis - Monte Carlo"
     ],
     index=0
 )
@@ -73,6 +83,103 @@ st.sidebar.markdown('''
     <div style="color:#e0e0e0; font-size:0.95rem; margin-bottom:0.4em;">Quantitative Risk Analyst</div>
 </div>
 ''', unsafe_allow_html=True)
+
+# Implement logic for each portfolio model
+if menu == "Portfolio Analysis - Black-Scholes":
+    st.write("Black-Scholes portfolio model selected.")
+    # Add Black-Scholes portfolio logic here
+    S = st.number_input("Spot price (S)", value=100.0, help="Current price of the underlying asset.")
+    K = st.number_input("Strike price (K)", value=100.0, help="Strike price of the option.")
+    T = st.number_input("Time to maturity (years)", value=1.0, min_value=0.01, help="Time to maturity in years.")
+    r = st.number_input("Risk-free rate (r, decimal)", value=0.05, min_value=0.0, max_value=1.0, step=0.01, help="Annual risk-free interest rate.")
+    if st.button("Calculate Portfolio", key="bs_portfolio_btn"):
+        with st.spinner("Calculating portfolio..."):
+            try:
+                price, greeks = bsa.calculate_portfolio(S, K, T, r)
+                st.metric("Portfolio Price", f"{price:.4f}")
+                st.write("Greeks:")
+                st.json(greeks)
+            except Exception as e:
+                st.error(f"Error in calculation: {e}")
+
+elif menu == "Portfolio Analysis - Binomial":
+    st.write("Binomial portfolio model selected.")
+    # Add Binomial portfolio logic here
+    num_options = st.number_input("Number of options in portfolio", min_value=1, max_value=10, value=1, step=1, help="Number of different options in the portfolio.")
+    N_steps = st.number_input("Number of steps", value=100, min_value=1, step=1, help="Discretization steps for Binomial model.")
+    horizon = st.number_input("Horizon (e.g., enter 10/252 for a 10-day horizon)", value=0.0849, min_value=0.01, format="%.4f", help="Horizon for VaR calculation.")
+    portfolio = []
+    for i in range(num_options):
+        st.subheader(f"Option {i+1}")
+        option_style = st.selectbox(f"Option style for Option {i+1}", ["european", "american"], key=f"option_style_{i}", help="Exercise style of the option.")
+        option_type = st.selectbox(f"Option type for Option {i+1}", ["call", "put"], key=f"option_type_{i}", help="Call or put option.")
+        S = st.number_input(f"Spot price (S) for Option {i+1}", value=5912.17, help="Current price of the underlying asset.", key=f"S_{i}")
+        K = st.number_input(f"Strike price (K) for Option {i+1}", value=5915, help="Strike price of the option.", key=f"K_{i}")
+        T = st.number_input(f"Time to maturity (years) for Option {i+1}", value=0.0849, min_value=0.01, format="%.4f", help="Time to maturity in years.", key=f"T_{i}")
+        r = st.number_input(f"Risk-free rate (r, decimal) for Option {i+1}", value=0.0421, min_value=0.0, max_value=1.0, step=0.0001, format="%.4f", help="Annual risk-free interest rate.", key=f"r_{i}")
+        qty = st.number_input(f"Quantity for Option {i+1}", value=-10, step=1, help="Quantity of options in the portfolio.", key=f"qty_{i}")
+        market_price = st.number_input(f"Market price for Option {i+1}", value=111.93, help="Observed market price of the option.", key=f"market_price_{i}")
+        portfolio.append({'type': option_type, 'style': option_style, 'S': S, 'K': K, 'T': T, 'r': r, 'qty': qty, 'market_price': market_price})
+    if st.button("Calculate Portfolio", key="binomial_portfolio_btn"):
+        with st.spinner("Calculating portfolio..."):
+            try:
+                sim_binomial = bpa.simulate_portfolio(portfolio, n_sims=10000, N=N_steps, horizon=T)
+                pnl_binomial = sim_binomial['pnl']
+                var_binomial, es_binomial = bpa.var_es(pnl_binomial, alpha=0.01)
+                value_binomial = bpa.portfolio_value(portfolio, N=N_steps)
+                greeks_total_binomial = bpa.portfolio_greeks(portfolio, N=N_steps)
+                # Calculate and display model price for each option
+                for i, opt in enumerate(portfolio, 1):
+                    st.subheader(f"Option {i}")
+                    # Calculate model price using existing logic
+                    if opt['style'] == 'european':
+                        model_price, _ = bpa.price_option(opt, N=N_steps)
+                    else:
+                        model_price, _ = bpa.price_option(opt, N=N_steps)  # Adjust this line if different logic is needed for American options
+                    # Display user-inputted market price
+                    market_price = opt['market_price']
+                    col1, col2 = st.columns(2)
+                    col1.metric("Model Price", f"{model_price:.2f}")
+                    col2.metric("Market Price", f"{market_price:.2f}")
+                # Add header for risk analysis section
+                st.subheader("Risk Metrics")
+                # Existing metrics for portfolio analysis
+                col1, col2, col3 = st.columns(3)
+                col1.metric("Portfolio Value", f"{value_binomial:.2f}")
+                col2.metric("VaR (99%)", f"{var_binomial:.2f}")
+                col3.metric("ES (99%)", f"{es_binomial:.2f}")
+                st.write("Greeks:")
+                st.json(greeks_total_binomial)
+                # Add histogram for P&L distribution
+                fig, ax = plt.subplots(figsize=(14, 8))
+                ax.hist(pnl_binomial, bins=50, color='skyblue', edgecolor='k', alpha=0.5, density=True, label='Original')
+                ax.axvline(-var_binomial, color='red', linestyle='--', label=f'VaR (99%) {-var_binomial:.2f}')
+                ax.axvline(-es_binomial, color='orange', linestyle=':', label=f'ES (99%) {-es_binomial:.2f}')
+                ax.set_title('Simulated P&L Distribution of the Portfolio (BINOMIAL)')
+                ax.set_xlabel('P&L')
+                ax.set_ylabel('Density')
+                ax.legend()
+                st.pyplot(fig)
+            except Exception as e:
+                st.error(f"Error in calculation: {e}")
+
+elif menu == "Portfolio Analysis - Monte Carlo":
+    st.write("Monte Carlo portfolio model selected.")
+    # Add Monte Carlo portfolio logic here
+    S = st.number_input("Spot price (S)", value=100.0, help="Current price of the underlying asset.")
+    K = st.number_input("Strike price (K)", value=100.0, help="Strike price of the option.")
+    T = st.number_input("Time to maturity (years)", value=1.0, min_value=0.01, help="Time to maturity in years.")
+    r = st.number_input("Risk-free rate (r, decimal)", value=0.05, min_value=0.0, max_value=1.0, step=0.01, help="Annual risk-free interest rate.")
+    n_sim = st.number_input("Number of simulations", value=10000, min_value=1000, step=1000, help="Number of scenarios for risk simulation.")
+    if st.button("Calculate Portfolio", key="mc_portfolio_btn"):
+        with st.spinner("Calculating portfolio..."):
+            try:
+                price, greeks = mca.calculate_portfolio(S, K, T, r, n_sim)
+                st.metric("Portfolio Price", f"{price:.4f}")
+                st.write("Greeks:")
+                st.json(greeks)
+            except Exception as e:
+                st.error(f"Error in calculation: {e}")
 
 if menu == "Introduction":
     st.markdown('<div class="title-conference">Option Pricing & Portfolio Risk App</div>', unsafe_allow_html=True)
@@ -112,27 +219,24 @@ if menu == "Single Option Analysis":
         with st.spinner("Calculating option price and Greeks..."):
             try:
                 if model == "Black-Scholes":
-                    from option_pricing.black_scholes_model import bs_portfolio_analysis as bsa
                     if option_style == "European":
-                        iv = bsa.implied_volatility_option(market_price, S, K, T, r, option_type)
-                        price = bsa.price_option_bs(S, K, T, r, iv, option_type)
-                        greeks = bsa.greeks_bs(S, K, T, r, iv, option_type)
+                        opt = {'type': option_type, 'S': S, 'K': K, 'T': T, 'r': r, 'market_price': market_price}
+                        price, iv = bsa.price_option(opt)
+                        greeks = bsa.option_greeks(opt)
                     else:
                         st.info("Black-Scholes is not suitable for American options. Use Binomial or Monte Carlo.")
                         price = None
                         greeks = None
                 elif model == "Binomial":
-                    from option_pricing.binomial_model import binomial_portfolio_analysis as bpa
                     if option_style == "European":
                         iv = bpa.implied_volatility_option(market_price, S, K, T, r, option_type)
                         price = bpa.binomial_european_option_price(S, K, T, r, iv, int(N), option_type)
                         greeks = bpa.binomial_greeks_european_option(S, K, T, r, iv, int(N), option_type)
                     else:
-                        price = bpa.binomial_american_option_price(S, K, T, r, market_price, int(N), option_type)
-                        greeks = bpa.binomial_greeks_american_option(S, K, T, r, market_price, int(N), option_type)
-                        iv = None
+                        iv = bsa.implied_volatility_option(market_price, S, K, T, r, option_type)  # Use Black-Scholes for IV
+                        price = bpa.binomial_american_option_price(S, K, T, r, iv, int(N), option_type)
+                        greeks = bpa.binomial_greeks_american_option(S, K, T, r, iv, int(N), option_type)
                 elif model == "Monte Carlo":
-                    from option_pricing.monte_carlo import mc_portfolio_analysis as mca
                     opt = {'type': option_type, 'style': option_style.lower(), 'S': S, 'K': K, 'T': T, 'r': r, 'qty': 1, 'market_price': market_price}
                     price = mca.price_option_mc(opt, n_sim=int(n_sim), n_steps=int(N))
                     greeks = mca.option_greeks_mc(opt, n_sim=int(n_sim), n_steps=int(N))
@@ -150,742 +254,4 @@ if menu == "Single Option Analysis":
             except Exception as e:
                 st.error(f"Error in calculation: {e}")
 
-if menu == "Portfolio Analysis":
-    st.header("Portfolio Analysis")
-    st.write("Define your portfolio of options (European or American, any model) and analyze risk metrics and visualizations.")
-    st.info("For advanced risk analysis, use the Binomial or Monte Carlo models.")
-    
-    n_opts = st.number_input("Number of options in portfolio", min_value=1, max_value=10, value=st.session_state.get("n_opts", 3), key="n_opts", help="How many different options do you want to include in your portfolio?")
-    portfolio = []
-    for i in range(int(n_opts)):
-        st.subheader(f"Option #{i+1}")
-        cols = st.columns(3)
-        with cols[0]:
-            model = st.selectbox(f"Model", ["Binomial", "Monte Carlo"], key=f"model_{i}", help="Pricing model for this option.")
-            style = st.selectbox(f"Style", ["European", "American"], key=f"style_{i}", help="Option exercise style.")
-            typ = st.selectbox(f"Type", ["call", "put"], key=f"type_{i}", help="Call or put option.")
-        with cols[1]:
-            S = st.number_input(f"Spot", value=st.session_state.get(f"S_{i}", 100.0), key=f"S_{i}", help="Current price of the underlying asset.")
-            K = st.number_input(f"Strike", value=st.session_state.get(f"K_{i}", 100.0), key=f"K_{i}", help="Strike price of the option.")
-            T = st.number_input(f"Maturity (years)", value=st.session_state.get(f"T_{i}", 1.0), key=f"T_{i}", min_value=0.01, help="Time to maturity in years.")
-        with cols[2]:
-            r = st.number_input(f"Risk-free rate", value=st.session_state.get(f"r_{i}", 0.05), key=f"r_{i}", min_value=0.0, max_value=1.0, step=0.01, help="Annual risk-free interest rate (as decimal, e.g. 0.03 for 3%).")
-            qty = st.number_input(f"Quantity", value=st.session_state.get(f"qty_{i}", 1), key=f"qty_{i}", help="Number of contracts (positive: long, negative: short).")
-            market_price = st.number_input(f"Market price", value=st.session_state.get(f"mp_{i}", 10.0), key=f"mp_{i}", min_value=0.0, help="Observed market price of the option.")
-        # Validación básica
-        if T <= 0:
-            st.error(f"Option #{i+1}: Maturity must be positive.")
-        if qty == 0:
-            st.warning(f"Option #{i+1}: Quantity is zero, this option will not affect the portfolio.")
-        portfolio.append({'type': typ, 'style': style.lower(), 'S': S, 'K': K, 'T': T, 'r': r, 'qty': qty, 'market_price': market_price})
-    N = st.number_input("Number of steps (Binomial/MC)", value=100, min_value=1, step=1, key="port_n", help="Discretization steps for Binomial/Monte Carlo models.")
-    n_sim = st.number_input("Number of Monte Carlo simulations", value=1000, min_value=100, step=100, key="port_nsim", help="Number of scenarios for risk simulation.")
-    horizon = st.number_input("Risk horizon (days)", value=10, min_value=1, step=1, key="port_horizon", help="Number of days for VaR/ES calculation.") / 252
-    if st.button("Analyze Portfolio", key="analyze_portfolio_btn"):
-        with st.spinner("Calculating risk metrics and simulating portfolio..."):
-            try:
-                from option_pricing.binomial_model import binomial_portfolio_analysis as bpa
-                from option_pricing.monte_carlo import mc_portfolio_analysis as mca
-                model_set = set([st.session_state[f"model_{i}"] for i in range(int(n_opts))])
-                if len(model_set) > 1:
-                    st.warning("For now, all options in the portfolio must use the same model (Binomial or Monte Carlo).")
-                else:
-                    model = model_set.pop()
-                    if model == "Binomial":
-                        sim = bpa.simulate_portfolio(portfolio, n_sims=int(n_sim), N=int(N), horizon=horizon)
-                        pnl = sim['pnl']
-                        var, es = bpa.var_es(pnl, alpha=0.01)
-                        value = bpa.portfolio_value(portfolio, N=int(N))
-                        greeks = bpa.portfolio_greeks(portfolio, N=int(N))
-                    else:
-                        sim = mca.simulate_portfolio_mc_pricing(portfolio, n_sims=int(n_sim), n_steps=int(N), horizon=horizon)
-                        pnl = sim['pnl']
-                        var, es = mca.var_es(pnl, alpha=0.01)
-                        value = sum(mca.price_option_mc(opt, n_sim=10000, n_steps=int(N)) * opt['qty'] for opt in portfolio)
-                        greeks = mca.portfolio_greeks_mc(portfolio, n_sim=10000, n_steps=int(N))
-                    # Guardar resultados en session_state
-                    st.session_state['portfolio_results'] = {
-                        'model': model,
-                        'portfolio': portfolio,
-                        'pnl': pnl,
-                        'var': var,
-                        'es': es,
-                        'value': value,
-                        'greeks': greeks,
-                        'sim': sim,
-                        'N': int(N),
-                        'n_sim': int(n_sim),
-                        'horizon': horizon
-                    }
-                    # Resultados destacados
-                    col1, col2, col3 = st.columns(3)
-                    col1.metric("Portfolio Value", f"{value:.2f}")
-                    col2.metric("VaR (99%)", f"{var:.2f}")
-                    col3.metric("ES (99%)", f"{es:.2f}")
-                    st.markdown("---")
-                    st.write("Greeks (aggregated):")
-                    st.json(greeks)
-                    # Mostrar histograma
-                    fig, ax = plt.subplots(figsize=(8,4))
-                    ax.hist(pnl, bins=50, color='skyblue', edgecolor='k', alpha=0.7, density=True)
-                    ax.axvline(-var, color='red', linestyle='--', label=f'VaR (99%)')
-                    ax.axvline(-es, color='orange', linestyle='--', label=f'ES (99%)')
-                    ax.set_title('Simulated P&L distribution of the portfolio')
-                    ax.set_xlabel('P&L')
-                    ax.set_ylabel('Density')
-                    ax.legend()
-                    st.pyplot(fig)
-            except Exception as e:
-                st.error(f"Error in portfolio analysis: {e}")
-
-if menu == "Model Comparison":
-    st.header("Model Comparison")
-    st.write("Compare the price and Greeks of a single option across all models.")
-    cols = st.columns(3)
-    with cols[0]:
-        option_style = st.selectbox("Option style", ["European", "American"], key="cmp_style", help="Exercise style of the option.")
-        option_type = st.selectbox("Option type", ["call", "put"], key="cmp_type", help="Call or put option.")
-    with cols[1]:
-        S = st.number_input("Spot price (S)", value=100.0, key="cmp_s", format="%.4f", help="Current price of the underlying asset.")
-        K = st.number_input("Strike price (K)", value=100.0, key="cmp_k", format="%.4f", help="Strike price of the option.")
-        T = st.number_input("Time to maturity (years)", value=1.0, key="cmp_t", format="%.4f", min_value=0.01, help="Time to maturity in years.")
-    with cols[2]:
-        r = st.number_input("Risk-free rate (r, decimal)", value=0.05, key="cmp_r", format="%.4f", min_value=0.0, max_value=1.0, step=0.01, help="Annual risk-free interest rate (as decimal, e.g. 0.03 for 3%).")
-        market_price = st.number_input("Option market price", value=10.0, key="cmp_mp", format="%.4f", min_value=0.0, help="Observed market price of the option.")
-        N = st.number_input("Number of steps (Binomial/MC)", value=100, min_value=1, step=1, key="cmp_n", help="Discretization steps for Binomial/Monte Carlo models.")
-        n_sim = st.number_input("Number of Monte Carlo simulations", value=10000, min_value=1000, step=1000, key="cmp_nsim", help="Number of scenarios for risk simulation.")
-    if T <= 0:
-        st.error("Maturity must be positive.")
-    if st.button("Compare Models", key="cmp_btn"):
-        with st.spinner("Comparing models..."):
-            try:
-                from option_pricing.black_scholes_model import bs_portfolio_analysis as bsa
-                from option_pricing.binomial_model import binomial_portfolio_analysis as bpa
-                from option_pricing.monte_carlo import mc_portfolio_analysis as mca
-                results = {}
-                if option_style == "European":
-                    iv_bs = bsa.implied_volatility_option(market_price, S, K, T, r, option_type)
-                    price_bs = bsa.price_option_bs(S, K, T, r, iv_bs, option_type)
-                    greeks_bs = bsa.greeks_bs(S, K, T, r, iv_bs, option_type)
-                    iv_bin = bpa.implied_volatility_option(market_price, S, K, T, r, option_type)
-                    price_bin = bpa.binomial_european_option_price(S, K, T, r, iv_bin, int(N), option_type)
-                    greeks_bin = bpa.binomial_greeks_european_option(S, K, T, r, iv_bin, int(N), option_type)
-                    opt = {'type': option_type, 'style': 'european', 'S': S, 'K': K, 'T': T, 'r': r, 'qty': 1, 'market_price': market_price}
-                    price_mc = mca.price_option_mc(opt, n_sim=int(n_sim), n_steps=int(N))
-                    greeks_mc = mca.option_greeks_mc(opt, n_sim=int(n_sim), n_steps=int(N))
-                    results['Black-Scholes'] = {'price': price_bs, 'iv': iv_bs, 'greeks': greeks_bs}
-                    results['Binomial'] = {'price': price_bin, 'iv': iv_bin, 'greeks': greeks_bin}
-                    results['Monte Carlo'] = {'price': price_mc, 'iv': None, 'greeks': greeks_mc}
-                else:
-                    price_bin = bpa.binomial_american_option_price(S, K, T, r, market_price, int(N), option_type)
-                    greeks_bin = bpa.binomial_greeks_american_option(S, K, T, r, market_price, int(N), option_type)
-                    opt = {'type': option_type, 'style': 'american', 'S': S, 'K': K, 'T': T, 'r': r, 'qty': 1, 'market_price': market_price}
-                    price_mc = mca.price_option_mc(opt, n_sim=int(n_sim), n_steps=int(N))
-                    greeks_mc = mca.option_greeks_mc(opt, n_sim=int(n_sim), n_steps=int(N))
-                    results['Binomial'] = {'price': price_bin, 'iv': None, 'greeks': greeks_bin}
-                    results['Monte Carlo'] = {'price': price_mc, 'iv': None, 'greeks': greeks_mc}
-                # Resultados destacados
-                st.markdown("---")
-                for model, res in results.items():
-                    st.subheader(model)
-                    col1, col2 = st.columns(2)
-                    col1.metric("Model Price", f"{res['price']:.4f}")
-                    if res['iv'] is not None:
-                        col2.metric("Implied Volatility", f"{res['iv']:.4f}")
-                    st.write("Greeks:")
-                    st.json(res['greeks'])
-            except Exception as e:
-                st.error(f"Error in model comparison: {e}")
-
-if menu == "Visualizations":
-    st.header("Visualizations")
-    st.write("Browse generated histograms and sensitivity plots from your analyses.")
-    vis_dir = os.path.join(os.path.dirname(__file__), 'option_pricing', 'visualizations')
-    if not os.path.exists(vis_dir):
-        st.warning("No visualizations found yet. Run some analyses first.")
-    else:
-        files = [f for f in os.listdir(vis_dir) if f.endswith('.png')]
-        if not files:
-            st.warning("No PNG files found in visualizations directory.")
-        else:
-            # Mostrar previews en grid
-            n_cols = 3
-            rows = [files[i:i+n_cols] for i in range(0, len(files), n_cols)]
-            st.markdown("#### Previews:")
-            for row in rows:
-                cols = st.columns(n_cols)
-                for idx, file in enumerate(row):
-                    file_path = os.path.join(vis_dir, file)
-                    with open(file_path, "rb") as img_file:
-                        img_bytes = img_file.read()
-                    cols[idx].image(img_bytes, caption=file, use_container_width=True)
-                    cols[idx].download_button(
-                        label="Download",
-                        data=img_bytes,
-                        file_name=file,
-                        mime="image/png",
-                        help=f"Download {file} ({os.path.getsize(file_path)//1024} KB)"
-                    )
-            st.markdown("---")
-            # Visualización ampliada
-            file = st.selectbox("Select a visualization to display in large:", files)
-            file_path = os.path.join(vis_dir, file)
-            st.image(file_path, use_container_width=True, caption=f"{file} ({os.path.getsize(file_path)//1024} KB)")
-            with open(file_path, "rb") as img_file:
-                st.download_button(
-                    label="Download selected image",
-                    data=img_file.read(),
-                    file_name=file,
-                    mime="image/png",
-                    help=f"Download {file} ({os.path.getsize(file_path)//1024} KB)"
-                )
-
-if menu == "Hedging & Sensitivity Analysis":
-    st.header("Hedging & Sensitivity Analysis")
-    st.write("Select the type of hedge and analyze the impact on your portfolio.")
-    hedge_type = st.selectbox(
-        "Select hedge type:",
-        ["Delta", "DeltaGamma", "Vega"],
-        index=0,
-        help="Choose the type of hedge to analyze: Delta, Delta+Gamma, or Vega."
-    )
-    if 'portfolio_results' in st.session_state:
-        results = st.session_state['portfolio_results']
-        st.success(f"Loaded portfolio results for model: {results['model']}")
-        st.write("**Portfolio Value:**", results['value'])
-        st.write("**VaR (99%):**", results['var'])
-        st.write("**ES (99%):**", results['es'])
-        st.write("**Greeks (aggregated):**")
-        st.json(results['greeks'])
-        st.write("---")
-        # Definir vis_dir para ambos modelos
-        vis_dir = os.path.join(os.path.dirname(__file__), 'option_pricing', 'visualizations')
-        if results['model'] == 'Binomial':
-            from option_pricing.binomial_model import binomial_portfolio_analysis as bpa
-            import copy
-            import matplotlib.pyplot as plt
-            portfolio = results['portfolio']
-            N = results['N']
-            horizon = results['horizon']
-            n_sims = results['n_sim']
-            # Botón para generar archivos de sensibilidad Binomial
-            if st.button("Generar/Actualizar análisis de sensibilidad (Binomial)"):
-                with st.spinner("Generando análisis de sensibilidad Binomial..."):
-                    bpa.run_sensitivity_analysis_binomial(
-                        portfolio=portfolio,
-                        N=N,
-                        vis_dir=vis_dir
-                    )
-                st.success("¡Archivos de sensibilidad Binomial generados!")
-                st.rerun()
-            sim = bpa.simulate_portfolio(portfolio, n_sims=n_sims, N=N, horizon=horizon)
-            pnl = sim['pnl']
-            shocks = sim['shocks']
-            value = bpa.portfolio_value(portfolio, N=N)
-            var, es = bpa.var_es(pnl, alpha=0.01)
-            greeks_total = bpa.portfolio_greeks(portfolio, N=N)
-            # Delta
-            if hedge_type == 'Delta':
-                subyacentes = {}
-                for opt in portfolio:
-                    key = opt.get('ticker', opt['S'])
-                    greeks = bpa.option_greeks(opt, N)
-                    subyacentes.setdefault(key, {'S0': opt['S'], 'delta': 0})
-                    subyacentes[key]['delta'] += greeks['delta'] * opt['qty']
-                pnl_hedged = []
-                for i in range(len(pnl)):
-                    hedge_pnl = 0
-                    for key, v in subyacentes.items():
-                        S0 = v['S0']
-                        delta = v['delta']
-                        Z = shocks[key][i]
-                        for opt in portfolio:
-                            if opt.get('ticker', opt['S']) == key:
-                                from option_pricing.binomial_model.binomial_portfolio_analysis import implied_volatility_option
-                                iv = implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
-                                if iv is None:
-                                    iv = 0.2
-                                r = opt['r']
-                                T_sim = horizon if horizon is not None else opt['T']
-                                break
-                        S_T = S0 * np.exp((r - 0.5 * iv ** 2) * T_sim + iv * np.sqrt(T_sim) * Z)
-                        hedge_pnl += -delta * (S_T - S0)
-                    pnl_hedged.append(pnl[i] + hedge_pnl)
-                import numpy as np
-                pnl_hedged = np.array(pnl_hedged)
-                var_hedged, es_hedged = bpa.var_es(pnl_hedged, alpha=0.01)
-                st.subheader("Delta Hedge Results")
-                st.write(f"VaR after delta hedge (99%): {var_hedged:.2f}")
-                st.write(f"ES after delta hedge (99%): {es_hedged:.2f}")
-                st.write(f"VaR reduction: {var - var_hedged:.2f}")
-                st.write(f"ES reduction: {es - es_hedged:.2f}")
-                fig, ax = plt.subplots(figsize=(8,4))
-                ax.hist(pnl, bins=50, color='skyblue', edgecolor='k', alpha=0.5, density=True, label='Original')
-                ax.hist(pnl_hedged, bins=50, color='orange', edgecolor='k', alpha=0.5, density=True, label='Delta Hedge')
-                ax.axvline(-var, color='blue', linestyle='--', label=f'VaR Original ({-var:.2f})')
-                ax.axvline(-es, color='blue', linestyle=':', label=f'ES Original ({-es:.2f})')
-                ax.axvline(-var_hedged, color='orange', linestyle='--', label=f'VaR Delta ({-var_hedged:.2f})')
-                ax.axvline(-es_hedged, color='orange', linestyle=':', label=f'ES Delta ({-es_hedged:.2f})')
-                ax.set_title('P&L Distribution: Delta Hedge (Binomial)')
-                ax.set_xlabel('P&L')
-                ax.set_ylabel('Density')
-                ax.legend()
-                st.pyplot(fig)
-            # DeltaGamma
-            elif hedge_type == 'DeltaGamma':
-                greeks_total = bpa.portfolio_greeks(portfolio, N)
-                gamma_cartera = greeks_total['gamma']
-                delta_cartera = greeks_total['delta']
-                hedge_opt = {
-                    'type': 'call',
-                    'style': 'european',
-                    'S': portfolio[0]['S'],
-                    'K': portfolio[0]['K'],
-                    'T': portfolio[0]['T'],
-                    'r': portfolio[0]['r'],
-                    'qty': 0,
-                    'market_price': portfolio[0]['market_price'],
-                }
-                greeks_hedge = bpa.option_greeks(hedge_opt, N)
-                gamma_hedge = greeks_hedge['gamma']
-                gamma_hedge_fraction = 0.7
-                qty_gamma_hedge = -gamma_cartera * gamma_hedge_fraction / gamma_hedge if gamma_hedge != 0 else 0
-                hedge_opt['qty'] = qty_gamma_hedge
-                portfolio_gamma_hedged = portfolio + [hedge_opt]
-                greeks_total_gamma = bpa.portfolio_greeks(portfolio_gamma_hedged, N)
-                delta_gamma_hedged = greeks_total_gamma['delta']
-                pnl_gamma_delta_hedged = []
-                for i in range(len(pnl)):
-                    shocked_portfolio = []
-                    for opt in portfolio_gamma_hedged:
-                        key = opt.get('ticker', opt['S'])
-                        S0 = opt['S']
-                        from option_pricing.binomial_model.binomial_portfolio_analysis import implied_volatility_option
-                        iv = implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
-                        if iv is None:
-                            iv = 0.2
-                        r = opt['r']
-                        T_sim = horizon if horizon is not None else opt['T']
-                        Z = shocks[key][i] if key in shocks else np.random.normal(0, 1)
-                        S_T = S0 * np.exp((r - 0.5 * iv ** 2) * T_sim + iv * np.sqrt(T_sim) * Z)
-                        shocked_opt = opt.copy()
-                        shocked_opt['S'] = S_T
-                        shocked_portfolio.append(shocked_opt)
-                    val = bpa.portfolio_value(shocked_portfolio, N=N)
-                    hedge_pnl = 0
-                    S0 = portfolio[0]['S']
-                    delta = delta_gamma_hedged
-                    Z = shocks[portfolio[0].get('ticker', portfolio[0]['S'])][i]
-                    S_T = S0 * np.exp((portfolio[0]['r'] - 0.5 * iv ** 2) * T_sim + iv * np.sqrt(T_sim) * Z)
-                    hedge_pnl += -delta * (S_T - S0)
-                    pnl_gamma_delta_hedged.append(val - value + hedge_pnl)
-                import numpy as np
-                pnl_gamma_delta_hedged = np.array(pnl_gamma_delta_hedged)
-                var_gamma_delta_hedged, es_gamma_delta_hedged = bpa.var_es(pnl_gamma_delta_hedged, alpha=0.01)
-                st.subheader("Gamma+Delta Hedge Results")
-                st.write(f"VaR after gamma+delta hedge (99%): {var_gamma_delta_hedged:.2f}")
-                st.write(f"ES after gamma+delta hedge (99%): {es_gamma_delta_hedged:.2f}")
-                st.write(f"VaR reduction vs original: {var - var_gamma_delta_hedged:.2f}")
-                st.write(f"ES reduction vs original: {es - es_gamma_delta_hedged:.2f}")
-                fig, ax = plt.subplots(figsize=(8,4))
-                ax.hist(pnl, bins=50, color='skyblue', edgecolor='k', alpha=0.5, density=True, label='Original')
-                ax.hist(pnl_gamma_delta_hedged, bins=50, color='green', edgecolor='k', alpha=0.5, density=True, label='Gamma+Delta Hedge')
-                ax.axvline(-var, color='blue', linestyle='--', label=f'VaR Original ({-var:.2f})')
-                ax.axvline(-es, color='blue', linestyle=':', label=f'ES Original ({-es:.2f})')
-                ax.axvline(-var_gamma_delta_hedged, color='green', linestyle='--', label=f'VaR Gamma+Delta ({-var_gamma_delta_hedged:.2f})')
-                ax.axvline(-es_gamma_delta_hedged, color='green', linestyle=':', label=f'ES Gamma+Delta ({-es_gamma_delta_hedged:.2f})')
-                ax.set_title('P&L Distribution: Gamma+Delta Hedge (Binomial)')
-                ax.set_xlabel('P&L')
-                ax.set_ylabel('Density')
-                ax.legend()
-                st.pyplot(fig)
-            # Vega
-            elif hedge_type == 'Vega':
-                vega_total = bpa.portfolio_greeks(portfolio, N)['vega']
-                hedge_opt_vega = {
-                    'type': 'call',
-                    'style': 'european',
-                    'S': portfolio[0]['S'],
-                    'K': portfolio[0]['K'],
-                    'T': portfolio[0]['T'],
-                    'r': portfolio[0]['r'],
-                    'qty': 0,
-                    'market_price': portfolio[0]['market_price'],
-                }
-                greeks_hedge_vega = bpa.option_greeks(hedge_opt_vega, N)
-                vega_hedge = greeks_hedge_vega['vega']
-                vega_hedge_fraction = 0.7
-                qty_vega_hedge = -vega_total * vega_hedge_fraction / vega_hedge if vega_hedge != 0 else 0
-                hedge_opt_vega['qty'] = qty_vega_hedge
-                portfolio_vega_hedged = portfolio + [hedge_opt_vega]
-                pnl_vega_hedged = []
-                for i in range(len(pnl)):
-                    shocked_portfolio = []
-                    for opt in portfolio_vega_hedged:
-                        key = opt.get('ticker', opt['S'])
-                        S0 = opt['S']
-                        from option_pricing.binomial_model.binomial_portfolio_analysis import implied_volatility_option
-                        iv = implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
-                        if iv is None:
-                            iv = 0.2
-                        r = opt['r']
-                        T_sim = horizon if horizon is not None else opt['T']
-                        Z = shocks[key][i] if key in shocks else np.random.normal(0, 1)
-                        S_T = S0 * np.exp((r - 0.5 * iv ** 2) * T_sim + iv * np.sqrt(T_sim) * Z)
-                        shocked_opt = opt.copy()
-                        shocked_opt['S'] = S_T
-                        shocked_portfolio.append(shocked_opt)
-                    val = bpa.portfolio_value(shocked_portfolio, N=N)
-                    pnl_vega_hedged.append(val - value)
-                import numpy as np
-                pnl_vega_hedged = np.array(pnl_vega_hedged)
-                var_vega_hedged, es_vega_hedged = bpa.var_es(pnl_vega_hedged, alpha=0.01)
-                st.subheader("Vega Hedge Results")
-                st.write(f"VaR after vega hedge (99%): {var_vega_hedged:.2f}")
-                st.write(f"ES after vega hedge (99%): {es_vega_hedged:.2f}")
-                st.write(f"VaR reduction vs original: {var - var_vega_hedged:.2f}")
-                st.write(f"ES reduction vs original: {es - es_vega_hedged:.2f}")
-                fig, ax = plt.subplots(figsize=(8,4))
-                ax.hist(pnl, bins=50, color='skyblue', edgecolor='k', alpha=0.5, density=True, label='Original')
-                ax.hist(pnl_vega_hedged, bins=50, color='purple', edgecolor='k', alpha=0.5, density=True, label='Vega Hedge')
-                ax.axvline(-var, color='blue', linestyle='--', label=f'VaR Original ({-var:.2f})')
-                ax.axvline(-es, color='blue', linestyle=':', label=f'ES Original ({-es:.2f})')
-                ax.axvline(-var_vega_hedged, color='purple', linestyle='--', label=f'VaR Vega ({-var_vega_hedged:.2f})')
-                ax.axvline(-es_vega_hedged, color='purple', linestyle=':', label=f'ES Vega ({-es_vega_hedged:.2f})')
-                ax.set_title('P&L Distribution: Vega Hedge (Binomial)')
-                ax.set_xlabel('P&L')
-                ax.set_ylabel('Density')
-                ax.legend()
-                st.pyplot(fig)
-            # Mostrar análisis de sensibilidad si existen los archivos
-            sens_files = [
-                ('Spot Sensitivity', 'sensitivity_spot_all.png'),
-                ('r Sensitivity', 'sensitivity_r_all.png'),
-                ('Volatility Sensitivity', 'sensitivity_vol_all.png'),
-            ]
-            st.markdown('---')
-            st.subheader('Sensitivity Analysis')
-            for title, fname in sens_files:
-                file_path = os.path.join(vis_dir, fname)
-                st.markdown(f'**{title}:**')
-                if os.path.exists(file_path):
-                    st.image(file_path, use_container_width=True)
-                else:
-                    st.info(f"No {title} plot found. Run the analysis to generate it.")
-                # Mostrar datos tabulares si existen (CSV o TXT)
-                base_name = fname.replace('.png', '')
-                table_shown = False
-                for ext in ['.csv', '.txt']:
-                    data_path = os.path.join(vis_dir, base_name + ext)
-                    if os.path.exists(data_path):
-                        try:
-                            if ext == '.csv':
-                                df = pd.read_csv(data_path)
-                            else:
-                                df = pd.read_csv(data_path, sep=None, engine='python')
-                            # Si la tabla tiene una columna de estrategia, ponla como índice
-                            if 'Strategy' in df.columns:
-                                df = df.set_index('Strategy')
-                            st.dataframe(df, use_container_width=True)
-                            # Mostrar también los valores de los ejes si existen en la tabla
-                            st.markdown('**Raw sensitivity values:**')
-                            st.write(df.to_dict(orient='list'))
-                            table_shown = True
-                        except Exception as e:
-                            st.warning(f"Could not display table for {title}: {e}")
-                # Si no hay archivo, intenta mostrar una tabla resumen si los datos están en memoria (placeholder)
-                if not table_shown:
-                    st.info(f"No summary table found for {title}. Run the analysis to generate it.")
-        elif results['model'] == 'Monte Carlo':
-            from option_pricing.monte_carlo import mc_portfolio_analysis as mca
-            import copy
-            import matplotlib.pyplot as plt
-            import numpy as np
-            portfolio = results['portfolio']
-            N = results['N']
-            horizon = results['horizon']
-            n_sims = results['n_sim']
-            # Botón para generar archivos de sensibilidad Monte Carlo
-            if st.button("Generar/Actualizar análisis de sensibilidad (Monte Carlo)"):
-                with st.spinner("Generando análisis de sensibilidad Monte Carlo..."):
-                    mca.run_sensitivity_analysis_mc(
-                        portfolio=portfolio,
-                        N=N,
-                        n_sim_sens=20000,
-                        vis_dir=vis_dir,
-                        horizon=horizon
-                    )
-                st.success("¡Archivos de sensibilidad Monte Carlo generados!")
-                st.rerun()
-            sim = mca.simulate_portfolio_mc_pricing(portfolio, n_sims=n_sims, n_steps=N, horizon=horizon)
-            pnl = sim['pnl']
-            shocks = sim['shocks']
-            value = sum(mca.price_option_mc(opt, n_sim=10000, n_steps=N) * opt['qty'] for opt in portfolio)
-            var, es = mca.var_es(pnl, alpha=0.01)
-            greeks_total = mca.portfolio_greeks_mc(portfolio, n_sim=10000, n_steps=N)
-            # Delta
-            if hedge_type == 'Delta':
-                subyacentes = {}
-                for opt in portfolio:
-                    key = opt.get('ticker', opt['S'])
-                    greeks = mca.option_greeks_mc(opt, n_sim=10000, n_steps=N)
-                    subyacentes.setdefault(key, {'S0': opt['S'], 'delta': 0})
-                    subyacentes[key]['delta'] += greeks['delta'] * opt['qty']
-                pnl_hedged = []
-                for i in range(len(pnl)):
-                    hedge_pnl = 0
-                    for key, v in subyacentes.items():
-                        S0 = v['S0']
-                        delta = v['delta']
-                        Z = shocks[key][i]
-                        for opt in portfolio:
-                            if opt.get('ticker', opt['S']) == key:
-                                from option_pricing.monte_carlo.mc_portfolio_analysis import implied_volatility_option
-                                iv = implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
-                                if iv is None:
-                                    iv = 0.2
-                                r = opt['r']
-                                T_sim = horizon if horizon is not None else opt['T']
-                                break
-                        S_T = S0 * np.exp((r - 0.5 * iv ** 2) * T_sim + iv * np.sqrt(T_sim) * Z)
-                        hedge_pnl += -delta * (S_T - S0)
-                    pnl_hedged.append(pnl[i] + hedge_pnl)
-                pnl_hedged = np.array(pnl_hedged)
-                var_hedged, es_hedged = mca.var_es(pnl_hedged, alpha=0.01)
-                st.subheader("Delta Hedge Results (Monte Carlo)")
-                st.write(f"VaR after delta hedge (99%): {var_hedged:.2f}")
-                st.write(f"ES after delta hedge (99%): {es_hedged:.2f}")
-                st.write(f"VaR reduction: {var - var_hedged:.2f}")
-                st.write(f"ES reduction: {es - es_hedged:.2f}")
-                fig, ax = plt.subplots(figsize=(8,4))
-                ax.hist(pnl, bins=50, color='skyblue', edgecolor='k', alpha=0.5, density=True, label='Original')
-                ax.hist(pnl_hedged, bins=50, color='orange', edgecolor='k', alpha=0.5, density=True, label='Delta Hedge')
-                ax.axvline(-var, color='blue', linestyle='--', label=f'VaR Original ({-var:.2f})')
-                ax.axvline(-es, color='blue', linestyle=':', label=f'ES Original ({-es:.2f})')
-                ax.axvline(-var_hedged, color='orange', linestyle='--', label=f'VaR Delta ({-var_hedged:.2f})')
-                ax.axvline(-es_hedged, color='orange', linestyle=':', label=f'ES Delta ({-es_hedged:.2f})')
-                ax.set_title('P&L Distribution: Delta Hedge (Monte Carlo)')
-                ax.set_xlabel('P&L')
-                ax.set_ylabel('Density')
-                ax.legend()
-                st.pyplot(fig)
-            # DeltaGamma
-            elif hedge_type == 'DeltaGamma':
-                greeks_total = mca.portfolio_greeks_mc(portfolio, n_sim=10000, n_steps=N)
-                gamma_cartera = greeks_total['gamma']
-                delta_cartera = greeks_total['delta']
-                hedge_opt = {
-                    'type': 'call',
-                    'style': 'european',
-                    'S': portfolio[0]['S'],
-                    'K': portfolio[0]['K'],
-                    'T': portfolio[0]['T'],
-                    'r': portfolio[0]['r'],
-                    'qty': 0,
-                    'market_price': portfolio[0]['market_price'],
-                }
-                greeks_hedge = mca.option_greeks_mc(hedge_opt, n_sim=10000, n_steps=N)
-                gamma_hedge = greeks_hedge['gamma']
-                gamma_hedge_fraction = 0.7
-                qty_gamma_hedge = -gamma_cartera * gamma_hedge_fraction / gamma_hedge if gamma_hedge != 0 else 0
-                hedge_opt['qty'] = qty_gamma_hedge
-                portfolio_gamma_hedged = portfolio + [hedge_opt]
-                greeks_total_gamma = mca.portfolio_greeks_mc(portfolio_gamma_hedged, n_sim=10000, n_steps=N)
-                delta_gamma_hedged = greeks_total_gamma['delta']
-                pnl_gamma_delta_hedged = []
-                for i in range(len(pnl)):
-                    shocked_portfolio = []
-                    for opt in portfolio_gamma_hedged:
-                        key = opt.get('ticker', opt['S'])
-                        S0 = opt['S']
-                        from option_pricing.monte_carlo.mc_portfolio_analysis import implied_volatility_option
-                        iv = implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
-                        if iv is None:
-                            iv = 0.2
-                        r = opt['r']
-                        T_sim = horizon if horizon is not None else opt['T']
-                        Z = shocks[key][i] if key in shocks else np.random.normal(0, 1)
-                        S_T = S0 * np.exp((r - 0.5 * iv ** 2) * T_sim + iv * np.sqrt(T_sim) * Z)
-                        shocked_opt = opt.copy()
-                        shocked_opt['S'] = S_T
-                        shocked_portfolio.append(shocked_opt)
-                    val = sum(mca.price_option_mc(opt, n_sim=500, n_steps=N) * opt['qty'] for opt in shocked_portfolio)
-                    hedge_pnl = 0
-                    S0 = portfolio[0]['S']
-                    delta = delta_gamma_hedged
-                    Z = shocks[portfolio[0].get('ticker', portfolio[0]['S'])][i]
-                    S_T = S0 * np.exp((portfolio[0]['r'] - 0.5 * iv ** 2) * T_sim + iv * np.sqrt(T_sim) * Z)
-                    hedge_pnl += -delta * (S_T - S0)
-                    pnl_gamma_delta_hedged.append(val - value + hedge_pnl)
-                pnl_gamma_delta_hedged = np.array(pnl_gamma_delta_hedged)
-                var_gamma_delta_hedged, es_gamma_delta_hedged = mca.var_es(pnl_gamma_delta_hedged, alpha=0.01)
-                st.subheader("Gamma+Delta Hedge Results (Monte Carlo)")
-                st.write(f"VaR after gamma+delta hedge (99%): {var_gamma_delta_hedged:.2f}")
-                st.write(f"ES after gamma+delta hedge (99%): {es_gamma_delta_hedged:.2f}")
-                st.write(f"VaR reduction vs original: {var - var_gamma_delta_hedged:.2f}")
-                st.write(f"ES reduction vs original: {es - es_gamma_delta_hedged:.2f}")
-                fig, ax = plt.subplots(figsize=(8,4))
-                ax.hist(pnl, bins=50, color='skyblue', edgecolor='k', alpha=0.5, density=True, label='Original')
-                ax.hist(pnl_gamma_delta_hedged, bins=50, color='green', edgecolor='k', alpha=0.5, density=True, label='Gamma+Delta Hedge')
-                ax.axvline(-var, color='blue', linestyle='--', label=f'VaR Original ({-var:.2f})')
-                ax.axvline(-es, color='blue', linestyle=':', label=f'ES Original ({-es:.2f})')
-                ax.axvline(-var_gamma_delta_hedged, color='green', linestyle='--', label=f'VaR Gamma+Delta ({-var_gamma_delta_hedged:.2f})')
-                ax.axvline(-es_gamma_delta_hedged, color='green', linestyle=':', label=f'ES Gamma+Delta ({-es_gamma_delta_hedged:.2f})')
-                ax.set_title('P&L Distribution: Gamma+Delta Hedge (Monte Carlo)')
-                ax.set_xlabel('P&L')
-                ax.set_ylabel('Density')
-                ax.legend()
-                st.pyplot(fig)
-            # Vega
-            elif hedge_type == 'Vega':
-                vega_total = mca.portfolio_greeks_mc(portfolio, n_sim=10000, n_steps=N)['vega']
-                hedge_opt_vega = {
-                    'type': 'call',
-                    'style': 'european',
-                    'S': portfolio[0]['S'],
-                    'K': portfolio[0]['K'],
-                    'T': portfolio[0]['T'],
-                    'r': portfolio[0]['r'],
-                    'qty': 0,
-                    'market_price': portfolio[0]['market_price'],
-                }
-                greeks_hedge_vega = mca.option_greeks_mc(hedge_opt_vega, n_sim=10000, n_steps=N)
-                vega_hedge = greeks_hedge_vega['vega']
-                vega_hedge_fraction = 0.7
-                qty_vega_hedge = -vega_total * vega_hedge_fraction / vega_hedge if vega_hedge != 0 else 0
-                hedge_opt_vega['qty'] = qty_vega_hedge
-                portfolio_vega_hedged = portfolio + [hedge_opt_vega]
-                pnl_vega_hedged = []
-                for i in range(len(pnl)):
-                    shocked_portfolio = []
-                    for opt in portfolio_vega_hedged:
-                        key = opt.get('ticker', opt['S'])
-                        S0 = opt['S']
-                        from option_pricing.monte_carlo.mc_portfolio_analysis import implied_volatility_option
-                        iv = implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
-                        if iv is None:
-                            iv = 0.2
-                        r = opt['r']
-                        T_sim = horizon if horizon is not None else opt['T']
-                        Z = shocks[key][i] if key in shocks else np.random.normal(0, 1)
-                        S_T = S0 * np.exp((r - 0.5 * iv ** 2) * T_sim + iv * np.sqrt(T_sim) * Z)
-                        shocked_opt = opt.copy()
-                        shocked_opt['S'] = S_T
-                        shocked_portfolio.append(shocked_opt)
-                    val = sum(mca.price_option_mc(opt, n_sim=500, n_steps=N) * opt['qty'] for opt in shocked_portfolio)
-                    pnl_vega_hedged.append(val - value)
-                pnl_vega_hedged = np.array(pnl_vega_hedged)
-                var_vega_hedged, es_vega_hedged = mca.var_es(pnl_vega_hedged, alpha=0.01)
-                st.subheader("Vega Hedge Results (Monte Carlo)")
-                st.write(f"VaR after vega hedge (99%): {var_vega_hedged:.2f}")
-                st.write(f"ES after vega hedge (99%): {es_vega_hedged:.2f}")
-                st.write(f"VaR reduction vs original: {var - var_vega_hedged:.2f}")
-                st.write(f"ES reduction vs original: {es - es_vega_hedged:.2f}")
-                fig, ax = plt.subplots(figsize=(8,4))
-                ax.hist(pnl, bins=50, color='skyblue', edgecolor='k', alpha=0.5, density=True, label='Original')
-                ax.hist(pnl_vega_hedged, bins=50, color='purple', edgecolor='k', alpha=0.5, density=True, label='Vega Hedge')
-                ax.axvline(-var, color='blue', linestyle='--', label=f'VaR Original ({-var:.2f})')
-                ax.axvline(-es, color='blue', linestyle=':', label=f'ES Original ({-es:.2f})')
-                ax.axvline(-var_vega_hedged, color='purple', linestyle='--', label=f'VaR Vega ({-var_vega_hedged:.2f})')
-                ax.axvline(-es_vega_hedged, color='purple', linestyle=':', label=f'ES Vega ({-es_vega_hedged:.2f})')
-                ax.set_title('P&L Distribution: Vega Hedge (Monte Carlo)')
-                ax.set_xlabel('P&L')
-                ax.set_ylabel('Density')
-                ax.legend()
-                st.pyplot(fig)
-            # Mostrar análisis de sensibilidad si existen los archivos
-            sens_files = [
-                ('Spot Sensitivity', 'sensitivity_spot_mc.png'),
-                ('r Sensitivity', 'sensitivity_r_mc.png'),
-                ('Volatility Sensitivity', 'sensitivity_vol_mc.png'),
-            ]
-            st.markdown('---')
-            st.subheader('Sensitivity Analysis')
-            for title, fname in sens_files:
-                file_path = os.path.join(vis_dir, fname)
-                st.markdown(f'**{title}:**')
-                if os.path.exists(file_path):
-                    st.image(file_path, use_container_width=True)
-                else:
-                    st.info(f"No {title} plot found. Run the analysis to generate it.")
-                # Mostrar datos tabulares si existen (CSV o TXT)
-                base_name = fname.replace('.png', '')
-                table_shown = False
-                for ext in ['.csv', '.txt']:
-                    data_path = os.path.join(vis_dir, base_name + ext)
-                    if os.path.exists(data_path):
-                        try:
-                            if ext == '.csv':
-                                df = pd.read_csv(data_path)
-                            else:
-                                df = pd.read_csv(data_path, sep=None, engine='python')
-                            # Si la tabla tiene una columna de estrategia, ponla como índice
-                            if 'Strategy' in df.columns:
-                                df = df.set_index('Strategy')
-                            st.dataframe(df, use_container_width=True)
-                            # Mostrar también los valores de los ejes si existen en la tabla
-                            st.markdown('**Raw sensitivity values:**')
-                            st.write(df.to_dict(orient='list'))
-                            table_shown = True
-                        except Exception as e:
-                            st.warning(f"Could not display table for {title}: {e}")
-                # Si no hay archivo, intenta mostrar una tabla resumen si los datos están en memoria (placeholder)
-                if not table_shown:
-                    st.info(f"No summary table found for {title}. Run the analysis to generate it.")
-        elif results['model'] == 'Black-Scholes':
-            from option_pricing.black_scholes_model import bs_portfolio_analysis as bsa
-            import copy
-            import matplotlib.pyplot as plt
-            portfolio = results['portfolio']
-            vis_dir = os.path.join(os.path.dirname(__file__), 'option_pricing', 'visualizations')
-            # Botón para generar archivos de sensibilidad Black-Scholes
-            if st.button("Generar/Actualizar análisis de sensibilidad (Black-Scholes)"):
-                with st.spinner("Generando análisis de sensibilidad Black-Scholes..."):
-                    bsa.run_sensitivity_analysis_bs(
-                        portfolio=portfolio,
-                        vis_dir=vis_dir
-                    )
-                st.success("¡Archivos de sensibilidad Black-Scholes generados!")
-                st.rerun()
-            # Mostrar análisis de sensibilidad si existen los archivos
-            sens_files = [
-                ('Spot Sensitivity', 'sensitivity_spot_all_bs.png'),
-                ('r Sensitivity', 'sensitivity_r_all_bs.png'),
-                ('Volatility Sensitivity', 'sensitivity_vol_all_bs.png'),
-            ]
-            st.markdown('---')
-            st.subheader('Sensitivity Analysis')
-            for title, fname in sens_files:
-                file_path = os.path.join(vis_dir, fname)
-                st.markdown(f'**{title}:**')
-                if os.path.exists(file_path):
-                    st.image(file_path, use_container_width=True)
-                else:
-                    st.info(f"No {title} plot found. Run the analysis to generate it.")
-                # Mostrar datos tabulares si existen (CSV o TXT)
-                base_name = fname.replace('.png', '')
-                table_shown = False
-                for ext in ['.csv', '.txt']:
-                    data_path = os.path.join(vis_dir, base_name + ext)
-                    if os.path.exists(data_path):
-                        try:
-                            if ext == '.csv':
-                                df = pd.read_csv(data_path)
-                            else:
-                                df = pd.read_csv(data_path, sep=None, engine='python')
-                            if 'Strategy' in df.columns:
-                                df = df.set_index('Strategy')
-                            st.dataframe(df, use_container_width=True)
-                            st.markdown('**Raw sensitivity values:**')
-                            st.write(df.to_dict(orient='list'))
-                            table_shown = True
-                        except Exception as e:
-                            st.warning(f"Could not display table for {title}: {e}")
-                if not table_shown:
-                    st.info(f"No summary table found for {title}. Run the analysis to generate it.")
-        else:
-            st.info(f"You have selected: {hedge_type} hedge. Analysis and results will be shown here.")
-    else:
-        st.warning("No portfolio analysis results found. Please run a portfolio analysis first.")
-
-st.markdown('<div class="footer-conference">Developed by Marcos Heredia Pimienta, Quantitative Risk Analyst', unsafe_allow_html=True)
+st.markdown('<div class="footer-conference">Developed by Marcos Heredia Pimienta, Quantitative Risk Analyst</div>', unsafe_allow_html=True)

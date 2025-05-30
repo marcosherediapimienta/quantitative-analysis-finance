@@ -299,16 +299,14 @@ def run_sensitivity_analysis_binomial(portfolio, N, vis_dir):
 if __name__ == "__main__":
     # --- Definición de la cartera ---
     portfolio = [
-        {'type': 'put', 'style': 'european', 'S': 5901.46, 'K': 5905, 'T': 0.0849, 'r': 0.0421, 'qty': -10, 'market_price': 98.18},
-        {'type': 'put',  'style': 'american', 'S': 5901.46, 'K': 5905, 'T': 0.0849, 'r': 0.0421, 'qty': -5,  'market_price': 98.18},
-        #{'type': 'call', 'style': 'european', 'S': 5901.46, 'K': 5905, 'T': 0.0849, 'r': 0.0421, 'qty': -5,   'market_price': 98.18},
-        #{'type': 'call', 'style': 'american', 'S': 5901.46, 'K': 5905, 'T': 0.0849, 'r': 0.0421, 'qty': -5,   'market_price': 98.18},
-        #{'type': 'put', 'style': 'american', 'S': 5901.46, 'K': 5790, 'T': 0.0849, 'r': 0.0421, 'qty': -5,   'market_price': 68.41},
-        #{'type': 'put', 'style': 'european', 'S': 5901.46, 'K': 5790, 'T': 0.0849, 'r': 0.0421, 'qty': -5,   'market_price': 68.41},
-        {'type': 'call', 'style': 'european', 'S': 5901.46, 'K': 5905, 'T': 0.0849, 'r': 0.0421, 'qty': 10,   'market_price': 98.18},
+        {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5915, 'T': 0.0849, 'r': 0.0421, 'qty': -10, 'market_price': 111.93},
+        {'type': 'put',  'style': 'american', 'S': 5912.17, 'K': 5910, 'T': 0.0849, 'r': 0.0421, 'qty': -5,  'market_price': 106.89},
+        {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5920, 'T': 0.0849, 'r': 0.0421, 'qty': 10,   'market_price': 103.66},
+        {'type': 'put', 'style': 'european', 'S': 5912.17, 'K': 5900, 'T': 0.0849, 'r': 0.0421, 'qty': 10,   'market_price': 102.92},
+
     ]
     horizonte_dias = 10 / 252  # días de trading
-    N_steps = 1000
+    N_steps = 100
 
     print("\n" + "="*60)
     print("OPTION PORTFOLIO SUMMARY USING BINOMIAL")
@@ -362,12 +360,13 @@ if __name__ == "__main__":
     print("\n" + "="*60)
     print("DELTA HEDGING ANALYSIS (BINOMIAL)")
     print("="*60)
+    delta_hedge_fraction = 0.7  # Default to 70% coverage
     subyacentes = {}
     for opt in portfolio:
         key = opt.get('ticker', opt['S'])
         greeks = option_greeks(opt, N=N_steps)
         subyacentes.setdefault(key, {'S0': opt['S'], 'delta': 0})
-        subyacentes[key]['delta'] += greeks['delta'] * opt['qty']
+        subyacentes[key]['delta'] += greeks['delta'] * opt['qty'] * delta_hedge_fraction
     pnl_binomial_hedged = []
     for i in range(len(pnl_binomial)):
         hedge_pnl = 0
@@ -479,7 +478,7 @@ if __name__ == "__main__":
     }
     greeks_hedge_vega = option_greeks(hedge_opt_vega, N=N_steps)
     vega_hedge = greeks_hedge_vega['vega']
-    vega_hedge_fraction = 0.7  # 50% de la vega neta
+    vega_hedge_fraction = 0.7  # 70% de la vega neta
     qty_vega_hedge = -vega_total * vega_hedge_fraction / vega_hedge if vega_hedge != 0 else 0
     hedge_opt_vega['qty'] = qty_vega_hedge
     # 3. Crea nueva cartera con vega hedge
@@ -540,7 +539,7 @@ if __name__ == "__main__":
     plt.close()
 
     # ===========================
-    # SENSITIVITY ANALYSIS (BINOMIAL) - VALOR ABSOLUTO
+    # SENSITIVITY ANALYSIS (BINOMIAL) 
     # ===========================
     print("\n" + "="*60)
     print("SENSITIVITY ANALYSIS (BINOMIAL) - PORTFOLIO VALUE")

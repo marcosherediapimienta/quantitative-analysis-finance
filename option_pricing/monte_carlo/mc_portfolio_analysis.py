@@ -287,16 +287,14 @@ def run_sensitivity_analysis_mc(portfolio, N, n_sim_sens, vis_dir, horizon):
 
 if __name__ == "__main__":
     portfolio = [
-        {'type': 'put', 'style': 'european', 'S': 5901.46, 'K': 6105, 'T': 0.0849, 'r': 0.0421, 'qty': -10, 'market_price': 630.04},
-        {'type': 'put',  'style': 'american', 'S': 5901.46, 'K': 6105, 'T': 0.0849, 'r': 0.0421, 'qty': -5,  'market_price': 630.04},
-        #{'type': 'call', 'style': 'european', 'S': 5901.46, 'K': 5905, 'T': 0.0849, 'r': 0.0421, 'qty': -5,   'market_price': 98.18},
-        #{'type': 'call', 'style': 'american', 'S': 5901.46, 'K': 5905, 'T': 0.0849, 'r': 0.0421, 'qty': -5,   'market_price': 98.18},
-        #{'type': 'put', 'style': 'american', 'S': 5901.46, 'K': 5790, 'T': 0.0849, 'r': 0.0421, 'qty': -5,   'market_price': 68.41},
-        #{'type': 'put', 'style': 'european', 'S': 5901.46, 'K': 5790, 'T': 0.0849, 'r': 0.0421, 'qty': -5,   'market_price': 68.41},
-        {'type': 'call', 'style': 'european', 'S': 5901.46, 'K': 5905, 'T': 0.0849, 'r': 0.0421, 'qty': 10,   'market_price': 98.18},
+        {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5915, 'T': 0.0849, 'r': 0.0421, 'qty': -10, 'market_price': 111.93},
+        {'type': 'put',  'style': 'american', 'S': 5912.17, 'K': 5910, 'T': 0.0849, 'r': 0.0421, 'qty': -5,  'market_price': 106.89},
+        {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5920, 'T': 0.0849, 'r': 0.0421, 'qty': 10,   'market_price': 103.66},
+        {'type': 'put', 'style': 'european', 'S': 5912.17, 'K': 5900, 'T': 0.0849, 'r': 0.0421, 'qty': 10,   'market_price': 102.92},
+
     ]
     horizonte_dias = 10 / 252
-    N_steps = 100
+    N_steps = 20
     n_sim_main = 50000      # Para P&L y VaR/ES
     n_sim_greeks = 100000   # Para griegas
     n_sim_sens = 20000      # Para sensibilidades
@@ -360,12 +358,13 @@ if __name__ == "__main__":
     print("\n" + "="*60)
     print("DELTA HEDGING ANALYSIS (MONTE CARLO)")
     print("="*60)
+    delta_hedge_fraction_mc = 0.7  # Default to 70% coverage
     subyacentes_mc = {}
     for opt in portfolio:
         key = opt.get('ticker', opt['S'])
         greeks_mc = option_greeks_mc(opt, n_sim=n_sim_greeks, n_steps=N_steps)
         subyacentes_mc.setdefault(key, {'S0': opt['S'], 'delta': 0})
-        subyacentes_mc[key]['delta'] += greeks_mc['delta'] * opt['qty']
+        subyacentes_mc[key]['delta'] += greeks_mc['delta'] * opt['qty'] * delta_hedge_fraction_mc
     pnl_mc_hedged = []
     for i in range(len(pnl_mc)):
         hedge_pnl = 0
@@ -477,7 +476,7 @@ if __name__ == "__main__":
     }
     greeks_hedge_vega_mc = option_greeks_mc(hedge_opt_vega_mc, n_sim=n_sim_greeks, n_steps=N_steps)
     vega_hedge_mc = greeks_hedge_vega_mc['vega']
-    vega_hedge_fraction = 0.7  # 50% de la vega neta
+    vega_hedge_fraction = 0.7  # 70% de la vega neta
     qty_vega_hedge_mc = -vega_total_mc * vega_hedge_fraction / vega_hedge_mc if vega_hedge_mc != 0 else 0
     hedge_opt_vega_mc['qty'] = qty_vega_hedge_mc
     # 3. Crea nueva cartera con vega hedge

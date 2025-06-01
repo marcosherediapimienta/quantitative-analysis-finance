@@ -2,7 +2,6 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 import numpy as np
-np.random.seed(42)
 from scipy.optimize import brentq
 from scipy.stats import norm
 import matplotlib.pyplot as plt
@@ -24,6 +23,8 @@ from option_pricing.binomial_model.american_options.american_binomial import get
 #   'qty': cantidad (positiva: long, negativa: short),
 #   'market_price': precio de mercado (para IV)
 # }
+
+np.random.seed(42)  # Set seed for reproducibility
 
 def black_scholes_call_price(S, K, T, r, sigma):
     d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
@@ -80,7 +81,6 @@ def price_option_mc(opt, n_sim=10000, n_steps=50):
     return price
 
 def option_greeks_mc(opt, n_sim=10000, n_steps=50):
-    np.random.seed(42)  # Set seed for reproducibility
     iv = implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
     if iv is None:
         ticker = opt.get('ticker', None)
@@ -103,7 +103,6 @@ def portfolio_greeks_mc(portfolio, n_sim=10000, n_steps=50):
     return total
 
 def simulate_portfolio_mc_pricing(portfolio, n_sims=1000, n_steps=50, horizon=None, vol_shock_sigma=0.1, rho=-0.5):
-    np.random.seed(42)  # Set seed for reproducibility
     base_val = sum(price_option_mc(opt, n_sim=1000, n_steps=n_steps) * opt['qty'] for opt in portfolio)
     pnl = []
     shocks_dict = {}
@@ -165,7 +164,6 @@ def run_sensitivity_analysis_mc(portfolio, N, n_sim_sens, vis_dir, horizon):
         }]),
         # Gamma y Vega hedge requieren lógica previa, pero para automatización rápida usamos las carteras ya generadas en la llamada principal
     ]
-    # Puedes agregar Delta-Gamma y Vega Hedge si tienes la lógica en la app
     # Calculate initial portfolio value
     initial_portfolio_value = sum(price_option_mc(opt, n_sim=n_sim_greeks, n_steps=N) * opt['qty'] for opt in portfolio)
 
@@ -315,7 +313,6 @@ def run_sensitivity_analysis_mc(portfolio, N, n_sim_sens, vis_dir, horizon):
     plt.close()
 
 if __name__ == "__main__":
-    np.random.seed(42)  # Set seed for reproducibility
     portfolio = [
         {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5915, 'T': 0.0849, 'r': 0.0421, 'qty': -10, 'market_price': 111.93},
         {'type': 'put',  'style': 'american', 'S': 5912.17, 'K': 5910, 'T': 0.0849, 'r': 0.0421, 'qty': -5,  'market_price': 106.89},

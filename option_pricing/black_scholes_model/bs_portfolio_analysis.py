@@ -168,6 +168,8 @@ def run_sensitivity_analysis_bs(portfolio, vis_dir):
     spot_idx_base = 10
     spot_idx_high = 20
     plt.figure(figsize=(12,7))
+    plt.style.use('default')
+    plt.rcParams.update({'font.size': 10})
     spot_rows = []
     for name, port in hedge_strategies:
         values = []
@@ -190,6 +192,9 @@ def run_sensitivity_analysis_bs(portfolio, vis_dir):
             'Δ-10%': dlow,
             'Δ+10%': dhigh
         })
+        plt.scatter([spot_range[spot_idx_low], spot_range[spot_idx_base], spot_range[spot_idx_high]],
+                    [values[spot_idx_low], values[spot_idx_base], values[spot_idx_high]],
+                    marker='o', s=60)
     df_spot = pd.DataFrame(spot_rows)
     df_spot.to_csv(os.path.join(vis_dir, 'sensitivity_spot_all_bs.csv'), index=False)
     plt.xlabel('Spot')
@@ -207,6 +212,8 @@ def run_sensitivity_analysis_bs(portfolio, vis_dir):
     r_idx_base = 10
     r_idx_high = 20
     plt.figure(figsize=(12,7))
+    plt.style.use('default')
+    plt.rcParams.update({'font.size': 10})
     r_rows = []
     for name, port in hedge_strategies:
         values = []
@@ -229,6 +236,9 @@ def run_sensitivity_analysis_bs(portfolio, vis_dir):
             'Δ-1%': dlow,
             'Δ+1%': dhigh
         })
+        plt.scatter([r_range[r_idx_low], r_range[r_idx_base], r_range[r_idx_high]],
+                    [values[r_idx_low], values[r_idx_base], values[r_idx_high]],
+                    marker='o', s=60)
     df_r = pd.DataFrame(r_rows)
     df_r.to_csv(os.path.join(vis_dir, 'sensitivity_r_all_bs.csv'), index=False)
     plt.xlabel('Risk-free rate (r)')
@@ -241,6 +251,8 @@ def run_sensitivity_analysis_bs(portfolio, vis_dir):
     plt.close()
     # 3. Sensibilidad volatilidad (±20%)
     plt.figure(figsize=(12,7))
+    plt.style.use('default')
+    plt.rcParams.update({'font.size': 10})
     vol_base = 1.0
     vol_range = np.linspace(0.8, 1.2, 21)
     vol_idx_low = 0
@@ -275,6 +287,9 @@ def run_sensitivity_analysis_bs(portfolio, vis_dir):
             'Δ-20%': dlow,
             'Δ+20%': dhigh
         })
+        plt.scatter([vol_range[vol_idx_low], vol_range[vol_idx_base], vol_range[vol_idx_high]],
+                    [values[vol_idx_low], values[vol_idx_base], values[vol_idx_high]],
+                    marker='o', s=60)
     df_vol = pd.DataFrame(vol_rows)
     df_vol.to_csv(os.path.join(vis_dir, 'sensitivity_vol_all_bs.csv'), index=False)
     plt.xlabel('Volatility multiplier')
@@ -302,7 +317,7 @@ if __name__ == "__main__":
     # --- Definición de la cartera ---
     portfolio = [
         {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5915, 'T': 0.0849, 'r': 0.0421, 'qty': -10, 'market_price': 111.93},
-        {'type': 'put',  'style': 'american', 'S': 5912.17, 'K': 5910, 'T': 0.0849, 'r': 0.0421, 'qty': -5,  'market_price': 106.89},
+        {'type': 'put',  'style': 'european', 'S': 5912.17, 'K': 5910, 'T': 0.0849, 'r': 0.0421, 'qty': -5,  'market_price': 106.89},
         {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5920, 'T': 0.0849, 'r': 0.0421, 'qty': 10,   'market_price': 103.66},
         {'type': 'put', 'style': 'european', 'S': 5912.17, 'K': 5900, 'T': 0.0849, 'r': 0.0421, 'qty': 10,   'market_price': 102.92},
     ]

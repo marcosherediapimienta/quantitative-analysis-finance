@@ -185,6 +185,8 @@ def run_sensitivity_analysis_binomial(portfolio, N, vis_dir):
     spot_idx_base = 10
     spot_idx_high = 20
     plt.figure(figsize=(12,7))
+    plt.style.use('default')
+    plt.rcParams.update({'font.size': 10})
     spot_rows = []
     for name, port in hedge_strategies:
         values = []
@@ -194,6 +196,9 @@ def run_sensitivity_analysis_binomial(portfolio, N, vis_dir):
                 opt['S'] = S
             values.append(portfolio_value(port_mod, N))
         plt.plot(spot_range, values, label=name)
+        plt.scatter([spot_range[spot_idx_low], spot_range[spot_idx_base], spot_range[spot_idx_high]],
+                    [values[spot_idx_low], values[spot_idx_base], values[spot_idx_high]],
+                    marker='o', s=60)
         base = values[spot_idx_base]
         low = values[spot_idx_low]
         high = values[spot_idx_high]
@@ -211,7 +216,7 @@ def run_sensitivity_analysis_binomial(portfolio, N, vis_dir):
     df_spot.to_csv(os.path.join(vis_dir, 'sensitivity_spot_all.csv'), index=False)
     plt.xlabel('Spot')
     plt.ylabel('Portfolio Value')
-    plt.title('Sensitivity to Spot - All Strategies')
+    plt.title('Sensitivity to Spot - All Strategies (Binomial)')
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -224,6 +229,8 @@ def run_sensitivity_analysis_binomial(portfolio, N, vis_dir):
     r_idx_base = 10
     r_idx_high = 20
     plt.figure(figsize=(12,7))
+    plt.style.use('default')
+    plt.rcParams.update({'font.size': 10})
     r_rows = []
     for name, port in hedge_strategies:
         values = []
@@ -233,6 +240,9 @@ def run_sensitivity_analysis_binomial(portfolio, N, vis_dir):
                 opt['r'] = r
             values.append(portfolio_value(port_mod, N))
         plt.plot(r_range, values, label=name)
+        plt.scatter([r_range[r_idx_low], r_range[r_idx_base], r_range[r_idx_high]],
+                    [values[r_idx_low], values[r_idx_base], values[r_idx_high]],
+                    marker='o', s=60)
         base = values[r_idx_base]
         low = values[r_idx_low]
         high = values[r_idx_high]
@@ -250,7 +260,7 @@ def run_sensitivity_analysis_binomial(portfolio, N, vis_dir):
     df_r.to_csv(os.path.join(vis_dir, 'sensitivity_r_all.csv'), index=False)
     plt.xlabel('Risk-free rate (r)')
     plt.ylabel('Portfolio Value')
-    plt.title('Sensitivity to r - All Strategies')
+    plt.title('Sensitivity to r - All Strategies (Binomial)')
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -258,6 +268,8 @@ def run_sensitivity_analysis_binomial(portfolio, N, vis_dir):
     plt.close()
     # 3. Sensibilidad volatilidad (±20%)
     plt.figure(figsize=(12,7))
+    plt.style.use('default')
+    plt.rcParams.update({'font.size': 10})
     vol_base = 1.0
     vol_range = np.linspace(0.8, 1.2, 21)
     vol_idx_low = 0
@@ -269,12 +281,15 @@ def run_sensitivity_analysis_binomial(portfolio, N, vis_dir):
         for vol_mult in vol_range:
             port_mod = copy.deepcopy(port)
             for opt in port_mod:
-                iv = price_option(opt, N)[1]
+                iv = implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
                 if iv is None:
                     iv = 0.2
                 opt['market_price'] = black_scholes_call_price(opt['S'], opt['K'], opt['T'], opt['r'], iv*vol_mult) if opt['type']=='call' else black_scholes_put_price(opt['S'], opt['K'], opt['T'], opt['r'], iv*vol_mult)
             values.append(portfolio_value(port_mod, N))
         plt.plot(vol_range, values, label=name)
+        plt.scatter([vol_range[vol_idx_low], vol_range[vol_idx_base], vol_range[vol_idx_high]],
+                    [values[vol_idx_low], values[vol_idx_base], values[vol_idx_high]],
+                    marker='o', s=60)
         base = values[vol_idx_base]
         low = values[vol_idx_low]
         high = values[vol_idx_high]
@@ -292,7 +307,7 @@ def run_sensitivity_analysis_binomial(portfolio, N, vis_dir):
     df_vol.to_csv(os.path.join(vis_dir, 'sensitivity_vol_all.csv'), index=False)
     plt.xlabel('Volatility multiplier')
     plt.ylabel('Portfolio Value')
-    plt.title('Sensitivity to Volatility - All Strategies')
+    plt.title('Sensitivity to Volatility - All Strategies (Binomial)')
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -564,6 +579,8 @@ if __name__ == "__main__":
     spot_idx_base = 10
     spot_idx_high = 20
     plt.figure(figsize=(12,7))
+    plt.style.use('default')
+    plt.rcParams.update({'font.size': 10})
     print("\n=== Spot Sensitivity (±10%) ===")
     print(f"{'Strategy':<20}{'Base':>12}{'-10%':>12}{'+10%':>12}{'Δ-10%':>12}{'Δ+10%':>12}")
     spot_rows = []
@@ -577,9 +594,7 @@ if __name__ == "__main__":
         plt.plot(spot_range, values, label=name)
         plt.scatter([spot_range[spot_idx_low], spot_range[spot_idx_base], spot_range[spot_idx_high]],
                     [values[spot_idx_low], values[spot_idx_base], values[spot_idx_high]],
-                    marker='o', s=80)
-        for idx, label in zip([spot_idx_low, spot_idx_base, spot_idx_high], ['-10%', 'Base', '+10%']):
-            plt.annotate(f"{label}\n{values[idx]:.2f}", (spot_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
+                    marker='o', s=60)
         base = values[spot_idx_base]
         low = values[spot_idx_low]
         high = values[spot_idx_high]
@@ -598,7 +613,7 @@ if __name__ == "__main__":
     df_spot.to_csv(os.path.join(VIS_DIR, 'sensitivity_spot_all.csv'), index=False)
     plt.xlabel('Spot')
     plt.ylabel('Portfolio Value')
-    plt.title('Sensitivity to Spot - All Strategies')
+    plt.title('Sensitivity to Spot - All Strategies (Binomial)')
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -612,6 +627,8 @@ if __name__ == "__main__":
     r_idx_base = 10
     r_idx_high = 20
     plt.figure(figsize=(12,7))
+    plt.style.use('default')
+    plt.rcParams.update({'font.size': 10})
     print("\n=== r Sensitivity (±1%) ===")
     print(f"{'Strategy':<20}{'Base':>12}{'-1%':>12}{'+1%':>12}{'Δ-1%':>12}{'Δ+1%':>12}")
     r_rows = []
@@ -625,9 +642,7 @@ if __name__ == "__main__":
         plt.plot(r_range, values, label=name)
         plt.scatter([r_range[r_idx_low], r_range[r_idx_base], r_range[r_idx_high]],
                     [values[r_idx_low], values[r_idx_base], values[r_idx_high]],
-                    marker='o', s=80)
-        for idx, label in zip([r_idx_low, r_idx_base, r_idx_high], ['-1%', 'Base', '+1%']):
-            plt.annotate(f"{label}\n{values[idx]:.2f}", (r_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
+                    marker='o', s=60)
         base = values[r_idx_base]
         low = values[r_idx_low]
         high = values[r_idx_high]
@@ -646,7 +661,7 @@ if __name__ == "__main__":
     df_r.to_csv(os.path.join(VIS_DIR, 'sensitivity_r_all.csv'), index=False)
     plt.xlabel('Risk-free rate (r)')
     plt.ylabel('Portfolio Value')
-    plt.title('Sensitivity to r - All Strategies')
+    plt.title('Sensitivity to r - All Strategies (Binomial)')
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -655,6 +670,8 @@ if __name__ == "__main__":
 
     # 3. Sensibilidad volatilidad (±20%)
     plt.figure(figsize=(12,7))
+    plt.style.use('default')
+    plt.rcParams.update({'font.size': 10})
     vol_base = 1.0
     vol_range = np.linspace(0.8, 1.2, 21)  # multiplicador de la volatilidad implícita
     vol_idx_low = 0
@@ -676,9 +693,7 @@ if __name__ == "__main__":
         plt.plot(vol_range, values, label=name)
         plt.scatter([vol_range[vol_idx_low], vol_range[vol_idx_base], vol_range[vol_idx_high]],
                     [values[vol_idx_low], values[vol_idx_base], values[vol_idx_high]],
-                    marker='o', s=80)
-        for idx, label in zip([vol_idx_low, vol_idx_base, vol_idx_high], ['-20%', 'Base', '+20%']):
-            plt.annotate(f"{label}\n{values[idx]:.2f}", (vol_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
+                    marker='o', s=60)
         base = values[vol_idx_base]
         low = values[vol_idx_low]
         high = values[vol_idx_high]
@@ -697,7 +712,7 @@ if __name__ == "__main__":
     df_vol.to_csv(os.path.join(VIS_DIR, 'sensitivity_vol_all.csv'), index=False)
     plt.xlabel('Volatility multiplier')
     plt.ylabel('Portfolio Value')
-    plt.title('Sensitivity to Volatility - All Strategies')
+    plt.title('Sensitivity to Volatility - All Strategies (Binomial)')
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()

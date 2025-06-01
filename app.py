@@ -65,7 +65,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Update menu to include portfolio model selection
+# Update menu to include hedging strategy selection
 menu = st.sidebar.selectbox(
     "Select section:",
     [
@@ -73,7 +73,8 @@ menu = st.sidebar.selectbox(
         "Single Option Analysis",
         "Portfolio Analysis - Black-Scholes",
         "Portfolio Analysis - Binomial",
-        "Portfolio Analysis - Monte Carlo"
+        "Portfolio Analysis - Monte Carlo",
+        "Hedging Strategy"
     ],
     index=0
 )
@@ -281,6 +282,56 @@ elif menu == "Portfolio Analysis - Monte Carlo":
                 ax.set_ylabel('Density')
                 ax.legend()
                 st.pyplot(fig)
+            except Exception as e:
+                st.error(f"Error in calculation: {e}")
+
+if menu == "Hedging Strategy":
+    st.write("Hedging Strategy selected.")
+    # Select model for hedging strategy
+    model = st.selectbox("Select Model:", ["Black-Scholes", "Binomial", "Monte Carlo"], index=0)
+    num_options = st.number_input("Number of options in portfolio", min_value=1, max_value=10, value=4, step=1, help="Number of different options in the portfolio.")
+    portfolio = []
+    default_values = [
+        {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5915, 'T': 0.0849, 'r': 0.0421, 'qty': -10, 'market_price': 111.93},
+        {'type': 'put', 'style': 'american', 'S': 5912.17, 'K': 5910, 'T': 0.0849, 'r': 0.0421, 'qty': -5, 'market_price': 106.89},
+        {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5920, 'T': 0.0849, 'r': 0.0421, 'qty': 10, 'market_price': 103.66},
+        {'type': 'put', 'style': 'european', 'S': 5912.17, 'K': 5900, 'T': 0.0849, 'r': 0.0421, 'qty': 10, 'market_price': 102.92}
+    ]
+    for i in range(num_options):
+        st.subheader(f"Option {i+1}")
+        option_type = st.selectbox(f"Option type for Option {i+1}", ["call", "put"], index=["call", "put"].index(default_values[i]['type']), key=f"option_type_{i}", help="Call or put option.")
+        S = st.number_input(f"Spot price (S) for Option {i+1}", value=default_values[i]['S'], help="Current price of the underlying asset.", key=f"S_{i}")
+        K = st.number_input(f"Strike price (K) for Option {i+1}", value=default_values[i]['K'], help="Strike price of the option.", key=f"K_{i}")
+        T = st.number_input(f"Time to maturity (years) for Option {i+1}", value=default_values[i]['T'], min_value=0.01, format="%.4f", help="Time to maturity in years.", key=f"T_{i}")
+        r = st.number_input(f"Risk-free rate (r, decimal) for Option {i+1}", value=default_values[i]['r'], min_value=0.0, max_value=1.0, step=0.0001, format="%.4f", help="Annual risk-free interest rate.", key=f"r_{i}")
+        qty = st.number_input(f"Quantity for Option {i+1}", value=default_values[i]['qty'], step=1, help="Quantity of options in the portfolio.", key=f"qty_{i}")
+        market_price = st.number_input(f"Market price for Option {i+1}", value=default_values[i]['market_price'], help="Observed market price of the option.", key=f"market_price_{i}")
+        portfolio.append({'type': option_type, 'S': S, 'K': K, 'T': T, 'r': r, 'qty': qty, 'market_price': market_price})
+    
+    # Show model-specific parameters
+    if model == "Monte Carlo":
+        n_sim_main = st.number_input("Number of simulations for P&L and VaR/ES", value=50000, min_value=1000, step=1000, help="Number of scenarios for P&L and VaR/ES simulation.")
+        n_sim_greeks = st.number_input("Number of simulations for Greeks", value=100000, min_value=1000, step=1000, help="Number of scenarios for Greeks calculation.")
+        N_steps = st.number_input("Number of steps (For short maturities, use fewer steps; for long maturities, use more steps)", value=100, min_value=1, step=1, help="Discretization steps for Monte Carlo model.")
+        horizon = st.number_input("Horizon (e.g., enter 10/252 for a 10-day horizon)", value=0.0849, min_value=0.01, format="%.4f", help="Horizon for VaR calculation.")
+    elif model == "Binomial":
+        N_steps = st.number_input("Number of steps", value=100, min_value=1, step=1, help="Discretization steps for Binomial model.")
+        horizon = st.number_input("Horizon (e.g., enter 10/252 for a 10-day horizon)", value=0.0849, min_value=0.01, format="%.4f", help="Horizon for VaR calculation.")
+    elif model == "Black-Scholes":
+        horizon = st.number_input("Horizon (e.g., enter 10/252 for a 10-day horizon)", value=0.0849, min_value=0.01, format="%.4f", help="Horizon for VaR calculation.")
+    
+    if st.button("Calculate Hedging Strategy", key="hedging_strategy_btn"):
+        with st.spinner("Calculating hedging strategy..."):
+            try:
+                if model == "Black-Scholes":
+                    # Implement Black-Scholes hedging logic here
+                    st.write("Black-Scholes hedging logic not yet implemented.")
+                elif model == "Binomial":
+                    # Implement Binomial hedging logic here
+                    st.write("Binomial hedging logic not yet implemented.")
+                elif model == "Monte Carlo":
+                    # Implement Monte Carlo hedging logic here
+                    st.write("Monte Carlo hedging logic not yet implemented.")
             except Exception as e:
                 st.error(f"Error in calculation: {e}")
 

@@ -185,13 +185,13 @@ def run_sensitivity_analysis_mc(portfolio, N, n_sim_sens, vis_dir, horizon):
             port_mod = copy.deepcopy(port)
             for opt in port_mod:
                 opt['S'] = S
-            values.append(sum(price_option_mc(opt, n_sim=n_sim_sens, n_steps=N) * opt['qty'] for opt in port_mod))
+            values.append(sum(price_option_mc(opt, n_sim=n_sim_sens, n_steps=N_steps) * opt['qty'] for opt in port_mod))
         plt.plot(spot_range, values, label=name)
         plt.scatter([spot_range[spot_idx_low], spot_range[spot_idx_base], spot_range[spot_idx_high]],
                     [values[spot_idx_low], values[spot_idx_base], values[spot_idx_high]],
                     marker='o', s=80)
-        for idx, label in zip([spot_idx_low, spot_idx_base, spot_idx_high], ['-10%', 'Base', '+10%']):
-            plt.annotate(f"{label}\n{values[idx]:.2f}", (spot_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
+        for idx in [spot_idx_low, spot_idx_base, spot_idx_high]:
+            plt.annotate('', (spot_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
         base = initial_portfolio_value if name == 'Original' else values[spot_idx_base]  # Use initial portfolio value only for 'Original'
         low = values[spot_idx_low]
         high = values[spot_idx_high]
@@ -233,13 +233,13 @@ def run_sensitivity_analysis_mc(portfolio, N, n_sim_sens, vis_dir, horizon):
             port_mod = copy.deepcopy(port)
             for opt in port_mod:
                 opt['r'] = r
-            values.append(sum(price_option_mc(opt, n_sim=n_sim_sens, n_steps=N) * opt['qty'] for opt in port_mod))
+            values.append(sum(price_option_mc(opt, n_sim=n_sim_sens, n_steps=N_steps) * opt['qty'] for opt in port_mod))
         plt.plot(r_range, values, label=name)
         plt.scatter([r_range[r_idx_low], r_range[r_idx_base], r_range[r_idx_high]],
                     [values[r_idx_low], values[r_idx_base], values[r_idx_high]],
                     marker='o', s=80)
-        for idx, label in zip([r_idx_low, r_idx_base, r_idx_high], ['-1%', 'Base', '+1%']):
-            plt.annotate(f"{label}\n{values[idx]:.2f}", (r_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
+        for idx in [r_idx_low, r_idx_base, r_idx_high]:
+            plt.annotate('', (r_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
         base = initial_portfolio_value if name == 'Original' else values[r_idx_base]  # Use initial portfolio value only for 'Original'
         low = values[r_idx_low]
         high = values[r_idx_high]
@@ -284,13 +284,13 @@ def run_sensitivity_analysis_mc(portfolio, N, n_sim_sens, vis_dir, horizon):
                 if iv is None:
                     iv = 0.2
                 opt['market_price'] = black_scholes_call_price(opt['S'], opt['K'], opt['T'], opt['r'], iv*vol_mult) if opt['type']=='call' else black_scholes_put_price(opt['S'], opt['K'], opt['T'], opt['r'], iv*vol_mult)
-            values.append(sum(price_option_mc(opt, n_sim=n_sim_sens, n_steps=N) * opt['qty'] for opt in port_mod))
+            values.append(sum(price_option_mc(opt, n_sim=n_sim_sens, n_steps=N_steps) * opt['qty'] for opt in port_mod))
         plt.plot(vol_range, values, label=name)
         plt.scatter([vol_range[vol_idx_low], vol_range[vol_idx_base], vol_range[vol_idx_high]],
                     [values[vol_idx_low], values[vol_idx_base], values[vol_idx_high]],
                     marker='o', s=80)
-        for idx, label in zip([vol_idx_low, vol_idx_base, vol_idx_high], ['-20%', 'Base', '+20%']):
-            plt.annotate(f"{label}\n{values[idx]:.2f}", (vol_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
+        for idx in [vol_idx_low, vol_idx_base, vol_idx_high]:
+            plt.annotate('', (vol_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
         base = initial_portfolio_value if name == 'Original' else values[vol_idx_base]  # Use initial portfolio value only for 'Original'
         low = values[vol_idx_low]
         high = values[vol_idx_high]
@@ -326,9 +326,9 @@ if __name__ == "__main__":
     ]
     horizonte_dias = 10 / 252
     N_steps = 20
-    n_sim_main = 10000      # Para P&L y VaR/ES
-    n_sim_greeks = 10000   # Para griegas
-    n_sim_sens = 10000      # Para sensibilidades
+    n_sim_main = 1000      # Para P&L y VaR/ES
+    n_sim_greeks = 1000   # Para griegas
+    n_sim_sens = 1000     # Para sensibilidades
 
     # Use direct calculation for portfolio valuation
     initial_portfolio_value = sum(price_option_mc(opt, n_sim=n_sim_greeks, n_steps=N_steps) * opt['qty'] for opt in portfolio)
@@ -610,8 +610,8 @@ if __name__ == "__main__":
         plt.scatter([spot_range[spot_idx_low], spot_range[spot_idx_base], spot_range[spot_idx_high]],
                     [values[spot_idx_low], values[spot_idx_base], values[spot_idx_high]],
                     marker='o', s=80)
-        for idx, label in zip([spot_idx_low, spot_idx_base, spot_idx_high], ['-10%', 'Base', '+10%']):
-            plt.annotate(f"{label}\n{values[idx]:.2f}", (spot_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
+        for idx in [spot_idx_low, spot_idx_base, spot_idx_high]:
+            plt.annotate('', (spot_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
         base = initial_portfolio_value if name == 'Original' else values[spot_idx_base]  # Use initial portfolio value only for 'Original'
         low = values[spot_idx_low]
         high = values[spot_idx_high]
@@ -658,8 +658,8 @@ if __name__ == "__main__":
         plt.scatter([r_range[r_idx_low], r_range[r_idx_base], r_range[r_idx_high]],
                     [values[r_idx_low], values[r_idx_base], values[r_idx_high]],
                     marker='o', s=80)
-        for idx, label in zip([r_idx_low, r_idx_base, r_idx_high], ['-1%', 'Base', '+1%']):
-            plt.annotate(f"{label}\n{values[idx]:.2f}", (r_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
+        for idx in [r_idx_low, r_idx_base, r_idx_high]:
+            plt.annotate('', (r_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
         base = initial_portfolio_value if name == 'Original' else values[r_idx_base]  # Use initial portfolio value only for 'Original'
         low = values[r_idx_low]
         high = values[r_idx_high]
@@ -709,8 +709,8 @@ if __name__ == "__main__":
         plt.scatter([vol_range[vol_idx_low], vol_range[vol_idx_base], vol_range[vol_idx_high]],
                     [values[vol_idx_low], values[vol_idx_base], values[vol_idx_high]],
                     marker='o', s=80)
-        for idx, label in zip([vol_idx_low, vol_idx_base, vol_idx_high], ['-20%', 'Base', '+20%']):
-            plt.annotate(f"{label}\n{values[idx]:.2f}", (vol_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
+        for idx in [vol_idx_low, vol_idx_base, vol_idx_high]:
+            plt.annotate('', (vol_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
         base = initial_portfolio_value if name == 'Original' else values[vol_idx_base]  # Use initial portfolio value only for 'Original'
         low = values[vol_idx_low]
         high = values[vol_idx_high]

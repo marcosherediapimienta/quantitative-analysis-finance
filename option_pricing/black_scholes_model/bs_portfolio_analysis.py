@@ -6,6 +6,9 @@ import copy
 import os
 import pandas as pd
 
+# Set a global random seed for reproducibility
+np.random.seed(42)
+
 # Definir ruta robusta para visualizaciones
 VIS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "visualizations")
 os.makedirs(VIS_DIR, exist_ok=True)

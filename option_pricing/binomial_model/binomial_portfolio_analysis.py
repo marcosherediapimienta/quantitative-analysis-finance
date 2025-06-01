@@ -30,6 +30,9 @@ from option_pricing.binomial_model.european_options.european_binomial import bin
 VIS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "visualizations")
 os.makedirs(VIS_DIR, exist_ok=True)
 
+# Set a global random seed for reproducibility
+np.random.seed(42)
+
 def black_scholes_call_price(S, K, T, r, sigma):
     d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
     d2 = d1 - sigma * np.sqrt(T)
@@ -303,7 +306,6 @@ if __name__ == "__main__":
         {'type': 'put',  'style': 'american', 'S': 5912.17, 'K': 5910, 'T': 0.0849, 'r': 0.0421, 'qty': -5,  'market_price': 106.89},
         {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5920, 'T': 0.0849, 'r': 0.0421, 'qty': 10,   'market_price': 103.66},
         {'type': 'put', 'style': 'european', 'S': 5912.17, 'K': 5900, 'T': 0.0849, 'r': 0.0421, 'qty': 10,   'market_price': 102.92},
-
     ]
     horizonte_dias = 10 / 252  # días de trading
     N_steps = 100

@@ -166,6 +166,9 @@ def run_sensitivity_analysis_mc(portfolio, N, n_sim_sens, vis_dir, horizon):
         # Gamma y Vega hedge requieren lógica previa, pero para automatización rápida usamos las carteras ya generadas en la llamada principal
     ]
     # Puedes agregar Delta-Gamma y Vega Hedge si tienes la lógica en la app
+    # Calculate initial portfolio value
+    initial_portfolio_value = sum(price_option_mc(opt, n_sim=n_sim_greeks, n_steps=N) * opt['qty'] for opt in portfolio)
+
     # 1. Sensibilidad Spot (±10%)
     spot_base = portfolio[0]['S']
     spot_range = np.linspace(spot_base*0.9, spot_base*1.1, 21)
@@ -173,6 +176,8 @@ def run_sensitivity_analysis_mc(portfolio, N, n_sim_sens, vis_dir, horizon):
     spot_idx_base = 10
     spot_idx_high = 20
     plt.figure(figsize=(12,7))
+    print("\n=== Spot Sensitivity (±10%) ===")
+    print(f"{'Strategy':<20}{'Base':>12}{'-10%':>12}{'+10%':>12}{'Δ-10%':>12}{'Δ+10%':>12}")
     spot_rows = []
     for name, port in hedge_strategies:
         values = []
@@ -182,11 +187,17 @@ def run_sensitivity_analysis_mc(portfolio, N, n_sim_sens, vis_dir, horizon):
                 opt['S'] = S
             values.append(sum(price_option_mc(opt, n_sim=n_sim_sens, n_steps=N) * opt['qty'] for opt in port_mod))
         plt.plot(spot_range, values, label=name)
-        base = values[spot_idx_base]
+        plt.scatter([spot_range[spot_idx_low], spot_range[spot_idx_base], spot_range[spot_idx_high]],
+                    [values[spot_idx_low], values[spot_idx_base], values[spot_idx_high]],
+                    marker='o', s=80)
+        for idx, label in zip([spot_idx_low, spot_idx_base, spot_idx_high], ['-10%', 'Base', '+10%']):
+            plt.annotate(f"{label}\n{values[idx]:.2f}", (spot_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
+        base = initial_portfolio_value if name == 'Original' else values[spot_idx_base]  # Use initial portfolio value only for 'Original'
         low = values[spot_idx_low]
         high = values[spot_idx_high]
         dlow = low - base
         dhigh = high - base
+        print(f"{name:<20}{base:12.4f}{low:12.4f}{high:12.4f}{dlow:12.4f}{dhigh:12.4f}")
         spot_rows.append({
             'Strategy': name,
             'Base': base,
@@ -212,6 +223,8 @@ def run_sensitivity_analysis_mc(portfolio, N, n_sim_sens, vis_dir, horizon):
     r_idx_base = 10
     r_idx_high = 20
     plt.figure(figsize=(12,7))
+    print("\n=== r Sensitivity (±1%) ===")
+    print(f"{'Strategy':<20}{'Base':>12}{'-1%':>12}{'+1%':>12}{'Δ-1%':>12}{'Δ+1%':>12}")
     r_rows = []
     for name, port in hedge_strategies:
         values = []
@@ -221,11 +234,17 @@ def run_sensitivity_analysis_mc(portfolio, N, n_sim_sens, vis_dir, horizon):
                 opt['r'] = r
             values.append(sum(price_option_mc(opt, n_sim=n_sim_sens, n_steps=N) * opt['qty'] for opt in port_mod))
         plt.plot(r_range, values, label=name)
-        base = values[r_idx_base]
+        plt.scatter([r_range[r_idx_low], r_range[r_idx_base], r_range[r_idx_high]],
+                    [values[r_idx_low], values[r_idx_base], values[r_idx_high]],
+                    marker='o', s=80)
+        for idx, label in zip([r_idx_low, r_idx_base, r_idx_high], ['-1%', 'Base', '+1%']):
+            plt.annotate(f"{label}\n{values[idx]:.2f}", (r_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
+        base = initial_portfolio_value if name == 'Original' else values[r_idx_base]  # Use initial portfolio value only for 'Original'
         low = values[r_idx_low]
         high = values[r_idx_high]
         dlow = low - base
         dhigh = high - base
+        print(f"{name:<20}{base:12.4f}{low:12.4f}{high:12.4f}{dlow:12.4f}{dhigh:12.4f}")
         r_rows.append({
             'Strategy': name,
             'Base': base,
@@ -251,6 +270,8 @@ def run_sensitivity_analysis_mc(portfolio, N, n_sim_sens, vis_dir, horizon):
     vol_idx_low = 0
     vol_idx_base = 10
     vol_idx_high = 20
+    print("\n=== Volatility Sensitivity (±20%) ===")
+    print(f"{'Strategy':<20}{'Base':>12}{'-20%':>12}{'+20%':>12}{'Δ-20%':>12}{'Δ+20%':>12}")
     vol_rows = []
     for name, port in hedge_strategies:
         values = []
@@ -263,11 +284,17 @@ def run_sensitivity_analysis_mc(portfolio, N, n_sim_sens, vis_dir, horizon):
                 opt['market_price'] = black_scholes_call_price(opt['S'], opt['K'], opt['T'], opt['r'], iv*vol_mult) if opt['type']=='call' else black_scholes_put_price(opt['S'], opt['K'], opt['T'], opt['r'], iv*vol_mult)
             values.append(sum(price_option_mc(opt, n_sim=n_sim_sens, n_steps=N) * opt['qty'] for opt in port_mod))
         plt.plot(vol_range, values, label=name)
-        base = values[vol_idx_base]
+        plt.scatter([vol_range[vol_idx_low], vol_range[vol_idx_base], vol_range[vol_idx_high]],
+                    [values[vol_idx_low], values[vol_idx_base], values[vol_idx_high]],
+                    marker='o', s=80)
+        for idx, label in zip([vol_idx_low, vol_idx_base, vol_idx_high], ['-20%', 'Base', '+20%']):
+            plt.annotate(f"{label}\n{values[idx]:.2f}", (vol_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
+        base = initial_portfolio_value if name == 'Original' else values[vol_idx_base]  # Use initial portfolio value only for 'Original'
         low = values[vol_idx_low]
         high = values[vol_idx_high]
         dlow = low - base
         dhigh = high - base
+        print(f"{name:<20}{base:12.4f}{low:12.4f}{high:12.4f}{dlow:12.4f}{dhigh:12.4f}")
         vol_rows.append({
             'Strategy': name,
             'Base': base,
@@ -301,6 +328,9 @@ if __name__ == "__main__":
     n_sim_main = 50000      # Para P&L y VaR/ES
     n_sim_greeks = 100000   # Para griegas
     n_sim_sens = 20000      # Para sensibilidades
+
+    # Calculate initial portfolio value
+    initial_portfolio_value = sum(price_option_mc(opt, n_sim=n_sim_greeks, n_steps=N_steps) * opt['qty'] for opt in portfolio)
 
     print("\n" + "="*60)
     print("OPTION PORTFOLIO SUMMARY USING MONTE CARLO (MC MODELS)")
@@ -559,6 +589,9 @@ if __name__ == "__main__":
         ('Vega Hedge', portfolio_vega_hedged_mc),
     ]
 
+    # Calculate initial portfolio value for sensitivity analysis
+    initial_portfolio_value = value_mc  
+
     # 1. Sensibilidad Spot (±10%)
     spot_base = portfolio[0]['S']
     spot_range = np.linspace(spot_base*0.9, spot_base*1.1, 21)
@@ -582,7 +615,7 @@ if __name__ == "__main__":
                     marker='o', s=80)
         for idx, label in zip([spot_idx_low, spot_idx_base, spot_idx_high], ['-10%', 'Base', '+10%']):
             plt.annotate(f"{label}\n{values[idx]:.2f}", (spot_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
-        base = values[spot_idx_base]
+        base = initial_portfolio_value if name == 'Original' else values[spot_idx_base]  # Use initial portfolio value only for 'Original'
         low = values[spot_idx_low]
         high = values[spot_idx_high]
         dlow = low - base
@@ -630,7 +663,7 @@ if __name__ == "__main__":
                     marker='o', s=80)
         for idx, label in zip([r_idx_low, r_idx_base, r_idx_high], ['-1%', 'Base', '+1%']):
             plt.annotate(f"{label}\n{values[idx]:.2f}", (r_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
-        base = values[r_idx_base]
+        base = initial_portfolio_value if name == 'Original' else values[r_idx_base]  # Use initial portfolio value only for 'Original'
         low = values[r_idx_low]
         high = values[r_idx_high]
         dlow = low - base
@@ -658,7 +691,7 @@ if __name__ == "__main__":
     # 3. Sensibilidad volatilidad (±20%)
     plt.figure(figsize=(12,7))
     vol_base = 1.0
-    vol_range = np.linspace(0.8, 1.2, 21)  # multiplicador de la volatilidad implícita
+    vol_range = np.linspace(0.8, 1.2, 21)
     vol_idx_low = 0
     vol_idx_base = 10
     vol_idx_high = 20
@@ -681,7 +714,7 @@ if __name__ == "__main__":
                     marker='o', s=80)
         for idx, label in zip([vol_idx_low, vol_idx_base, vol_idx_high], ['-20%', 'Base', '+20%']):
             plt.annotate(f"{label}\n{values[idx]:.2f}", (vol_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
-        base = values[vol_idx_base]
+        base = initial_portfolio_value if name == 'Original' else values[vol_idx_base]  # Use initial portfolio value only for 'Original'
         low = values[vol_idx_low]
         high = values[vol_idx_high]
         dlow = low - base

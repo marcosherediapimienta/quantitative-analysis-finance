@@ -366,11 +366,12 @@ if __name__ == "__main__":
     ]
     horizonte_dias = 10 / 252  # días de trading
     N_steps = 100
+    n_sim_pl_var_es = 10000  # Default value for number of simulations
 
     print("\n" + "="*60)
     print("OPTION PORTFOLIO SUMMARY USING BINOMIAL")
     print("="*60)
-    sim_binomial = simulate_portfolio(portfolio, n_sims=10000, N=N_steps, horizon=horizonte_dias)
+    sim_binomial = simulate_portfolio(portfolio, n_sims=n_sim_pl_var_es, N=N_steps, horizon=horizonte_dias)
     pnl_binomial = sim_binomial['pnl']
     shocks_binomial = sim_binomial['shocks']
     var_binomial, es_binomial = var_es(pnl_binomial, alpha=0.01)

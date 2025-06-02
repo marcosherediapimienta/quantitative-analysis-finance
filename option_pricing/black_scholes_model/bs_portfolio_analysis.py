@@ -377,11 +377,12 @@ if __name__ == "__main__":
         {'type': 'put', 'style': 'european', 'S': 5912.17, 'K': 5900, 'T': 0.0849, 'r': 0.0421, 'qty': 10,   'market_price': 102.92},
     ]
     horizonte_dias = 10 / 252  # días de trading
+    n_sim_pl_var_es = 10000  # Default value for number of simulations
 
     print("\n" + "="*60)
     print("OPTION PORTFOLIO SUMMARY USING BLACK-SCHOLES")
     print("="*60)
-    sim_bs = simulate_portfolio(portfolio, n_sims=10000, horizon=horizonte_dias)
+    sim_bs = simulate_portfolio(portfolio, n_sims=n_sim_pl_var_es, horizon=horizonte_dias)
     pnl_bs = sim_bs['pnl']
     shocks_bs = sim_bs['shocks']
     var_bs, es_bs = var_es(pnl_bs, alpha=0.01)

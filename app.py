@@ -313,16 +313,15 @@ if menu == "Hedging Strategy":
     
     # Add conditional logic for model-specific settings
     if model == "Monte Carlo":
-        st.write("Monte Carlo model selected.")
         n_sim_main = st.number_input("Number of simulations for P&L and VaR/ES", value=50000, min_value=1000, step=1000, help="Number of scenarios for P&L and VaR/ES simulation.")
         n_sim_greeks = st.number_input("Number of simulations for Greeks", value=100000, min_value=1000, step=1000, help="Number of scenarios for Greeks calculation.")
         st.write("Note: The following input uses the Longstaff-Schwartz method.")
         N_steps = st.number_input("Number of steps (For short maturities, use fewer steps; for long maturities, use more steps)", value=100, min_value=1, step=1, help="Discretization steps for Monte Carlo model.")
     elif model == "Black-Scholes":
-        st.write("Black-Scholes model selected.")
+        n_sim_main = st.number_input("Number of simulations for P&L and VaR/ES", value=50000, min_value=1000, step=1000, help="Number of scenarios for P&L and VaR/ES simulation.")
         # Add Black-Scholes specific inputs here
     elif model == "Binomial":
-        st.write("Binomial model selected.")
+        n_sim_main = st.number_input("Number of simulations for P&L and VaR/ES", value=50000, min_value=1000, step=1000, help="Number of scenarios for P&L and VaR/ES simulation.")
         N_steps_binomial = st.number_input("Number of steps for Binomial tree", value=100, min_value=1, step=1, help="Discretization steps for Binomial model.")
     
     # Ensure portfolio options are customizable

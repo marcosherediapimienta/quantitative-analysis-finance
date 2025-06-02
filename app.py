@@ -96,21 +96,22 @@ if menu == "Portfolio Analysis - Black-Scholes":
     horizon = st.number_input("Horizon (e.g., enter 10/252 for a 10-day horizon)", value=0.0849, min_value=0.01, format="%.4f", help="Horizon for VaR calculation.")
     portfolio = []
     default_values = [
-        {'type': 'call', 'S': 5912.17, 'K': 5915, 'T': 0.0849, 'r': 0.0421, 'qty': -10, 'market_price': 111.93},
-        {'type': 'put', 'S': 5912.17, 'K': 5910, 'T': 0.0849, 'r': 0.0421, 'qty': -5, 'market_price': 106.89},
-        {'type': 'call', 'S': 5912.17, 'K': 5920, 'T': 0.0849, 'r': 0.0421, 'qty': 10, 'market_price': 103.66},
-        {'type': 'put', 'S': 5912.17, 'K': 5900, 'T': 0.0849, 'r': 0.0421, 'qty': 10, 'market_price': 102.92}
+        {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5915, 'T': 0.0849, 'r': 0.0421, 'qty': -10, 'market_price': 111.93},
+        {'type': 'put', 'style': 'american', 'S': 5912.17, 'K': 5910, 'T': 0.0849, 'r': 0.0421, 'qty': -5, 'market_price': 106.89},
+        {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5920, 'T': 0.0849, 'r': 0.0421, 'qty': 10, 'market_price': 103.66},
+        {'type': 'put', 'style': 'european', 'S': 5912.17, 'K': 5900, 'T': 0.0849, 'r': 0.0421, 'qty': 10, 'market_price': 102.92}
     ]
     for i in range(num_options):
         st.subheader(f"Option {i+1}")
         option_type = st.selectbox(f"Option type for Option {i+1}", ["call", "put"], index=["call", "put"].index(default_values[i]['type']), key=f"option_type_{i}", help="Call or put option.")
+        option_style = st.selectbox(f"Option style for Option {i+1}", ["european", "american"], index=["european", "american"].index(default_values[i]['style']), key=f"option_style_{i}", help="Exercise style of the option.")
         S = st.number_input(f"Spot price (S) for Option {i+1}", value=default_values[i]['S'], help="Current price of the underlying asset.", key=f"S_{i}")
         K = st.number_input(f"Strike price (K) for Option {i+1}", value=default_values[i]['K'], help="Strike price of the option.", key=f"K_{i}")
         T = st.number_input(f"Time to maturity (years) for Option {i+1}", value=default_values[i]['T'], min_value=0.01, format="%.4f", help="Time to maturity in years.", key=f"T_{i}")
         r = st.number_input(f"Risk-free rate (r, decimal) for Option {i+1}", value=default_values[i]['r'], min_value=0.0, max_value=1.0, step=0.0001, format="%.4f", help="Annual risk-free interest rate.", key=f"r_{i}")
         qty = st.number_input(f"Quantity for Option {i+1}", value=default_values[i]['qty'], step=1, help="Quantity of options in the portfolio.", key=f"qty_{i}")
         market_price = st.number_input(f"Market price for Option {i+1}", value=default_values[i]['market_price'], help="Observed market price of the option.", key=f"market_price_{i}")
-        portfolio.append({'type': option_type, 'S': S, 'K': K, 'T': T, 'r': r, 'qty': qty, 'market_price': market_price})
+        portfolio.append({'type': option_type, 'style': option_style, 'S': S, 'K': K, 'T': T, 'r': r, 'qty': qty, 'market_price': market_price})
     if st.button("Calculate Portfolio", key="bs_portfolio_btn"):
         with st.spinner("Calculating portfolio..."):
             try:
@@ -302,23 +303,33 @@ if menu == "Hedging Strategy":
         {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5920, 'T': 0.0849, 'r': 0.0421, 'qty': 10, 'market_price': 103.66},
         {'type': 'put', 'style': 'european', 'S': 5912.17, 'K': 5900, 'T': 0.0849, 'r': 0.0421, 'qty': 10, 'market_price': 102.92}
     ]
+    
+    # Add conditional logic for model-specific settings
+    if model == "Monte Carlo":
+        st.write("Monte Carlo model selected.")
+        n_sim_main = st.number_input("Number of simulations for P&L and VaR/ES", value=50000, min_value=1000, step=1000, help="Number of scenarios for P&L and VaR/ES simulation.")
+        n_sim_greeks = st.number_input("Number of simulations for Greeks", value=100000, min_value=1000, step=1000, help="Number of scenarios for Greeks calculation.")
+        st.write("Note: The following input uses the Longstaff-Schwartz method.")
+        N_steps = st.number_input("Number of steps (For short maturities, use fewer steps; for long maturities, use more steps)", value=100, min_value=1, step=1, help="Discretization steps for Monte Carlo model.")
+    elif model == "Black-Scholes":
+        st.write("Black-Scholes model selected.")
+        # Add Black-Scholes specific inputs here
+    elif model == "Binomial":
+        st.write("Binomial model selected.")
+        N_steps_binomial = st.number_input("Number of steps for Binomial tree", value=100, min_value=1, step=1, help="Discretization steps for Binomial model.")
+    
+    # Ensure portfolio options are customizable
     for i in range(num_options):
         st.subheader(f"Option {i+1}")
         option_type = st.selectbox(f"Option type for Option {i+1}", ["call", "put"], index=["call", "put"].index(default_values[i]['type']), key=f"option_type_{i}", help="Call or put option.")
+        option_style = st.selectbox(f"Option style for Option {i+1}", ["european", "american"], index=["european", "american"].index(default_values[i]['style']), key=f"option_style_{i}", help="Exercise style of the option.")
         S = st.number_input(f"Spot price (S) for Option {i+1}", value=default_values[i]['S'], help="Current price of the underlying asset.", key=f"S_{i}")
         K = st.number_input(f"Strike price (K) for Option {i+1}", value=default_values[i]['K'], help="Strike price of the option.", key=f"K_{i}")
         T = st.number_input(f"Time to maturity (years) for Option {i+1}", value=default_values[i]['T'], min_value=0.01, format="%.4f", help="Time to maturity in years.", key=f"T_{i}")
         r = st.number_input(f"Risk-free rate (r, decimal) for Option {i+1}", value=default_values[i]['r'], min_value=0.0, max_value=1.0, step=0.0001, format="%.4f", help="Annual risk-free interest rate.", key=f"r_{i}")
         qty = st.number_input(f"Quantity for Option {i+1}", value=default_values[i]['qty'], step=1, help="Quantity of options in the portfolio.", key=f"qty_{i}")
         market_price = st.number_input(f"Market price for Option {i+1}", value=default_values[i]['market_price'], help="Observed market price of the option.", key=f"market_price_{i}")
-        portfolio.append({'type': option_type, 'S': S, 'K': K, 'T': T, 'r': r, 'qty': qty, 'market_price': market_price})
-    # Show model-specific parameters
-    if model == "Monte Carlo":
-        n_sim_main = st.number_input("Number of simulations for P&L and VaR/ES", value=50000, min_value=1000, step=1000, help="Number of scenarios for P&L and VaR/ES simulation.")
-        n_sim_greeks = st.number_input("Number of simulations for Greeks", value=100000, min_value=1000, step=1000, help="Number of scenarios for Greeks calculation.")
-        N_steps = st.number_input("Number of steps (For short maturities, use fewer steps; for long maturities, use more steps)", value=100, min_value=1, step=1, help="Discretization steps for Monte Carlo model.")
-    elif model == "Binomial":
-        N_steps = st.number_input("Number of steps", value=100, min_value=1, step=1, help="Discretization steps for Binomial model.")
+        portfolio.append({'type': option_type, 'style': option_style, 'S': S, 'K': K, 'T': T, 'r': r, 'qty': qty, 'market_price': market_price})
     if st.button("Calculate Hedging Strategy", key="hedging_strategy_btn"):
         with st.spinner("Calculating hedging strategy..."):
             try:
@@ -387,6 +398,7 @@ if menu == "Hedging Strategy":
                         delta_cartera = greeks_total['delta']
                         hedge_opt = {
                             'type': 'call',
+                            'style': 'european',
                             'S': portfolio[0]['S'],
                             'K': portfolio[0]['K'],
                             'T': portfolio[0]['T'],
@@ -452,6 +464,7 @@ if menu == "Hedging Strategy":
                         vega_total = bsa.portfolio_greeks(portfolio)['vega']
                         hedge_opt_vega = {
                             'type': 'call',
+                            'style': 'european',
                             'S': portfolio[0]['S'],
                             'K': portfolio[0]['K'],
                             'T': portfolio[0]['T'],
@@ -505,10 +518,368 @@ if menu == "Hedging Strategy":
                         st.pyplot(fig)
                 elif model == "Binomial":
                     # Implement Binomial hedging logic here
-                    st.write("Binomial hedging logic not yet implemented.")
+                    value_binomial = bpa.portfolio_value(portfolio, N=N_steps_binomial)
+                    sim_binomial = bpa.simulate_portfolio(portfolio, n_sims=10000, N=N_steps_binomial, horizon=horizon)
+                    pnl_binomial = sim_binomial['pnl']
+                    shocks_binomial = sim_binomial['shocks']
+                    var_binomial, es_binomial = bpa.var_es(pnl_binomial, alpha=0.01)
+                    
+                    if hedge_strategy == "Delta Hedge":
+                        # Implement Delta hedging logic
+                        delta_hedge_fraction_binomial = 0.7  # Default to 70% coverage
+                        subyacentes = {}
+                        for opt in portfolio:
+                            key = opt.get('ticker', opt['S'])
+                            greeks = bpa.option_greeks(opt, N=N_steps_binomial)
+                            subyacentes.setdefault(key, {'S0': opt['S'], 'delta': 0})
+                            subyacentes[key]['delta'] += greeks['delta'] * opt['qty'] * delta_hedge_fraction_binomial
+                        pnl_binomial_hedged = []
+                        for i in range(len(pnl_binomial)):
+                            hedge_pnl = 0
+                            for key, v in subyacentes.items():
+                                S0 = v['S0']
+                                delta = v['delta']
+                                Z = shocks_binomial[key][i]
+                                for opt in portfolio:
+                                    if opt.get('ticker', opt['S']) == key:
+                                        iv = bpa.implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
+                                        if iv is None:
+                                            iv = 0.2
+                                        r = opt['r']
+                                        T_sim = horizon if horizon is not None else opt['T']
+                                        break
+                                S_T = S0 * np.exp((r - 0.5 * iv ** 2) * T_sim + iv * np.sqrt(T_sim) * Z)
+                                hedge_pnl += -delta * (S_T - S0)
+                            pnl_binomial_hedged.append(pnl_binomial[i] + hedge_pnl)
+                        pnl_binomial_hedged = np.array(pnl_binomial_hedged)
+                        var_binomial_hedged, es_binomial_hedged = bpa.var_es(pnl_binomial_hedged, alpha=0.01)
+                        st.write(f"Delta hedge per underlying:")
+                        for key, v in subyacentes.items():
+                            st.write(f"  Underlying {key}: delta = {v['delta']:.4f}")
+                        st.write(f"\nVaR after delta hedge (Binomial, 99%): {var_binomial_hedged:.2f}")
+                        st.write(f"ES after delta hedge (Binomial, 99%): {es_binomial_hedged:.2f}")
+                        st.write(f"VaR reduction: {var_binomial - var_binomial_hedged:.2f}")
+                        st.write(f"ES reduction: {es_binomial - es_binomial_hedged:.2f}")
+                        # Plot comparison of original and hedged P&L distribution
+                        fig, ax = plt.subplots(figsize=(14, 8))
+                        ax.hist(pnl_binomial, bins=50, color='lightblue', edgecolor='k', alpha=0.5, density=True, label='Original')
+                        ax.hist(pnl_binomial_hedged, bins=50, color='orange', edgecolor='k', alpha=0.5, density=True, label='Delta Hedge')
+                        ax.axvline(-var_binomial, color='blue', linestyle='--', label=f'VaR Original ({-var_binomial:.2f})')
+                        ax.axvline(-es_binomial, color='blue', linestyle=':', label=f'ES Original ({-es_binomial:.2f})')
+                        ax.axvline(-var_binomial_hedged, color='red', linestyle='--', label=f'VaR Delta ({-var_binomial_hedged:.2f})')
+                        ax.axvline(-es_binomial_hedged, color='red', linestyle=':', label=f'ES Delta ({-es_binomial_hedged:.2f})')
+                        ax.set_title('P&L Distribution Comparison (Binomial)')
+                        ax.set_xlabel('P&L')
+                        ax.set_ylabel('Density')
+                        ax.legend()
+                        st.pyplot(fig)
+                    elif hedge_strategy == "Delta+Gamma Hedge":
+                        # Implement Gamma + Delta hedging logic
+                        greeks_total = bpa.portfolio_greeks(portfolio, N=N_steps_binomial)
+                        gamma_cartera = greeks_total['gamma']
+                        delta_cartera = greeks_total['delta']
+                        hedge_opt = {
+                            'type': 'call',
+                            'style': 'european',
+                            'S': portfolio[0]['S'],
+                            'K': portfolio[0]['K'],
+                            'T': portfolio[0]['T'],
+                            'r': portfolio[0]['r'],
+                            'qty': 0,
+                            'market_price': portfolio[0]['market_price'],
+                        }
+                        greeks_hedge = bpa.option_greeks(hedge_opt, N=N_steps_binomial)
+                        gamma_hedge = greeks_hedge['gamma']
+                        gamma_hedge_fraction = 0.7
+                        qty_gamma_hedge = -gamma_cartera * gamma_hedge_fraction / gamma_hedge if gamma_hedge != 0 else 0
+                        hedge_opt['qty'] = qty_gamma_hedge
+                        portfolio_gamma_hedged = portfolio + [hedge_opt]
+                        greeks_total_gamma = bpa.portfolio_greeks(portfolio_gamma_hedged, N=N_steps_binomial)
+                        delta_gamma_hedged = greeks_total_gamma['delta']
+                        pnl_gamma_delta_hedged = []
+                        for i in range(len(pnl_binomial)):
+                            shocked_portfolio = []
+                            for opt in portfolio_gamma_hedged:
+                                key = opt.get('ticker', opt['S'])
+                                S0 = opt['S']
+                                iv = bpa.implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
+                                if iv is None:
+                                    iv = 0.2
+                                r = opt['r']
+                                T_sim = horizon if horizon is not None else opt['T']
+                                Z = shocks_binomial[key][i] if key in shocks_binomial else np.random.normal(0, 1)
+                                S_T = S0 * np.exp((r - 0.5 * iv ** 2) * T_sim + iv * np.sqrt(T_sim) * Z)
+                                shocked_opt = opt.copy()
+                                shocked_opt['S'] = S_T
+                                shocked_portfolio.append(shocked_opt)
+                            val = bpa.portfolio_value(shocked_portfolio, N=N_steps_binomial)
+                            hedge_pnl = 0
+                            S0 = portfolio[0]['S']
+                            delta = delta_gamma_hedged
+                            Z = shocks_binomial[portfolio[0].get('ticker', portfolio[0]['S'])][i]
+                            S_T = S0 * np.exp((portfolio[0]['r'] - 0.5 * iv ** 2) * T_sim + iv * np.sqrt(T_sim) * Z)
+                            hedge_pnl += -delta * (S_T - S0)
+                            pnl_gamma_delta_hedged.append(val - value_binomial + hedge_pnl)
+                        pnl_gamma_delta_hedged = np.array(pnl_gamma_delta_hedged)
+                        var_gamma_delta_hedged, es_gamma_delta_hedged = bpa.var_es(pnl_gamma_delta_hedged, alpha=0.01)
+                        st.write(f"Gamma hedge: qty = {qty_gamma_hedge:.4f} of ATM call (S={hedge_opt['S']}, K={hedge_opt['K']}) covering {gamma_hedge_fraction*100:.0f}% of gamma")
+                        st.write(f"Delta after gamma hedge: {delta_gamma_hedged:.4f}")
+                        st.write(f"\nVaR after gamma+delta hedge (Binomial, 99%): {var_gamma_delta_hedged:.2f}")
+                        st.write(f"ES after gamma+delta hedge (Binomial, 99%): {es_gamma_delta_hedged:.2f}")
+                        st.write(f"VaR reduction vs original: {var_binomial - var_gamma_delta_hedged:.2f}")
+                        st.write(f"ES reduction vs original: {es_binomial - es_gamma_delta_hedged:.2f}")
+                        # Plot comparison of original and Delta+Gamma hedged P&L distribution
+                        fig, ax = plt.subplots(figsize=(14, 8))
+                        ax.hist(pnl_binomial, bins=50, color='lightblue', edgecolor='k', alpha=0.5, density=True, label='Original')
+                        ax.hist(pnl_gamma_delta_hedged, bins=50, color='green', edgecolor='k', alpha=0.5, density=True, label='Gamma+Delta Hedge')
+                        ax.axvline(-var_binomial, color='blue', linestyle='--', label=f'VaR Original ({-var_binomial:.2f})')
+                        ax.axvline(-es_binomial, color='blue', linestyle=':', label=f'ES Original ({-es_binomial:.2f})')
+                        ax.axvline(-var_gamma_delta_hedged, color='green', linestyle='--', label=f'VaR Gamma+Delta ({-var_gamma_delta_hedged:.2f})')
+                        ax.axvline(-es_gamma_delta_hedged, color='green', linestyle=':', label=f'ES Gamma+Delta ({-es_gamma_delta_hedged:.2f})')
+                        ax.set_title('P&L Distribution Comparison (Binomial)')
+                        ax.set_xlabel('P&L')
+                        ax.set_ylabel('Density')
+                        ax.legend()
+                        st.pyplot(fig)
+                    elif hedge_strategy == "Vega Hedge":
+                        # Implement Vega hedging logic
+                        vega_total = bpa.portfolio_greeks(portfolio, N=N_steps_binomial)['vega']
+                        hedge_opt_vega = {
+                            'type': 'call',
+                            'style': 'european',
+                            'S': portfolio[0]['S'],
+                            'K': portfolio[0]['K'],
+                            'T': portfolio[0]['T'],
+                            'r': portfolio[0]['r'],
+                            'qty': 0,
+                            'market_price': portfolio[0]['market_price'],
+                        }
+                        greeks_hedge_vega = bpa.option_greeks(hedge_opt_vega, N=N_steps_binomial)
+                        vega_hedge = greeks_hedge_vega['vega']
+                        vega_hedge_fraction = 0.7
+                        qty_vega_hedge = -vega_total * vega_hedge_fraction / vega_hedge if vega_hedge != 0 else 0
+                        hedge_opt_vega['qty'] = qty_vega_hedge
+                        portfolio_vega_hedged = portfolio + [hedge_opt_vega]
+                        pnl_vega_hedged = []
+                        for i in range(len(pnl_binomial)):
+                            shocked_portfolio = []
+                            for opt in portfolio_vega_hedged:
+                                key = opt.get('ticker', opt['S'])
+                                S0 = opt['S']
+                                iv = bpa.implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
+                                if iv is None:
+                                    iv = 0.2
+                                r = opt['r']
+                                T_sim = horizon if horizon is not None else opt['T']
+                                Z = shocks_binomial[key][i] if key in shocks_binomial else np.random.normal(0, 1)
+                                S_T = S0 * np.exp((r - 0.5 * iv ** 2) * T_sim + iv * np.sqrt(T_sim) * Z)
+                                shocked_opt = opt.copy()
+                                shocked_opt['S'] = S_T
+                                shocked_portfolio.append(shocked_opt)
+                            val = bpa.portfolio_value(shocked_portfolio, N=N_steps_binomial)
+                            pnl_vega_hedged.append(val - value_binomial)
+                        pnl_vega_hedged = np.array(pnl_vega_hedged)
+                        var_vega_hedged, es_vega_hedged = bpa.var_es(pnl_vega_hedged, alpha=0.01)
+                        st.write(f"Vega hedge: qty = {qty_vega_hedge:.4f} of ATM call (S={hedge_opt_vega['S']}, K={hedge_opt_vega['K']}) covering {vega_hedge_fraction*100:.0f}% of vega")
+                        st.write(f"\nVaR after vega hedge (Binomial, 99%): {var_vega_hedged:.2f}")
+                        st.write(f"ES after vega hedge (Binomial, 99%): {es_vega_hedged:.2f}")
+                        st.write(f"VaR reduction vs original: {var_binomial - var_vega_hedged:.2f}")
+                        st.write(f"ES reduction vs original: {es_binomial - es_vega_hedged:.2f}")
+                        # Plot comparison of original and Vega hedged P&L distribution
+                        fig, ax = plt.subplots(figsize=(14, 8))
+                        ax.hist(pnl_binomial, bins=50, color='lightblue', edgecolor='k', alpha=0.5, density=True, label='Original')
+                        ax.hist(pnl_vega_hedged, bins=50, color='purple', edgecolor='k', alpha=0.5, density=True, label='Vega Hedge')
+                        ax.axvline(-var_binomial, color='blue', linestyle='--', label=f'VaR Original ({-var_binomial:.2f})')
+                        ax.axvline(-es_binomial, color='blue', linestyle=':', label=f'ES Original ({-es_binomial:.2f})')
+                        ax.axvline(-var_vega_hedged, color='purple', linestyle='--', label=f'VaR Vega ({-var_vega_hedged:.2f})')
+                        ax.axvline(-es_vega_hedged, color='purple', linestyle=':', label=f'ES Vega ({-es_vega_hedged:.2f})')
+                        ax.set_title('P&L Distribution Comparison (Binomial)')
+                        ax.set_xlabel('P&L')
+                        ax.set_ylabel('Density')
+                        ax.legend()
+                        st.pyplot(fig)
                 elif model == "Monte Carlo":
                     # Implement Monte Carlo hedging logic here
-                    st.write("Monte Carlo hedging logic not yet implemented.")
+                    value_mc = sum(mca.price_option_mc(opt, n_sim=n_sim_greeks, n_steps=N_steps) * opt['qty'] for opt in portfolio)
+                    sim_mc = mca.simulate_portfolio_mc_pricing(portfolio, n_sims=n_sim_main, n_steps=N_steps, horizon=horizon)
+                    pnl_mc = sim_mc['pnl']
+                    shocks_mc = sim_mc['shocks']
+                    var_mc, es_mc = mca.var_es(pnl_mc, alpha=0.01)
+                    
+                    if hedge_strategy == "Delta Hedge":
+                        # Implement Delta hedging logic
+                        delta_hedge_fraction_mc = 0.7  # Default to 70% coverage
+                        subyacentes = {}
+                        for opt in portfolio:
+                            key = opt.get('ticker', opt['S'])
+                            greeks = mca.option_greeks_mc(opt, n_sim=n_sim_greeks, n_steps=N_steps)
+                            subyacentes.setdefault(key, {'S0': opt['S'], 'delta': 0})
+                            subyacentes[key]['delta'] += greeks['delta'] * opt['qty'] * delta_hedge_fraction_mc
+                        pnl_mc_hedged = []
+                        for i in range(len(pnl_mc)):
+                            hedge_pnl = 0
+                            for key, v in subyacentes.items():
+                                S0 = v['S0']
+                                delta = v['delta']
+                                Z = shocks_mc[key][i]
+                                for opt in portfolio:
+                                    if opt.get('ticker', opt['S']) == key:
+                                        iv = mca.implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
+                                        if iv is None:
+                                            iv = 0.2
+                                        r = opt['r']
+                                        T_sim = horizon if horizon is not None else opt['T']
+                                        break
+                                S_T = S0 * np.exp((r - 0.5 * iv ** 2) * T_sim + iv * np.sqrt(T_sim) * Z)
+                                hedge_pnl += -delta * (S_T - S0)
+                            pnl_mc_hedged.append(pnl_mc[i] + hedge_pnl)
+                        pnl_mc_hedged = np.array(pnl_mc_hedged)
+                        var_mc_hedged, es_mc_hedged = mca.var_es(pnl_mc_hedged, alpha=0.01)
+                        st.write(f"Delta hedge per underlying:")
+                        for key, v in subyacentes.items():
+                            st.write(f"  Underlying {key}: delta = {v['delta']:.4f}")
+                        st.write(f"\nVaR after delta hedge (MC, 99%): {var_mc_hedged:.2f}")
+                        st.write(f"ES after delta hedge (MC, 99%): {es_mc_hedged:.2f}")
+                        st.write(f"VaR reduction: {var_mc - var_mc_hedged:.2f}")
+                        st.write(f"ES reduction: {es_mc - es_mc_hedged:.2f}")
+                        # Plot comparison of original and hedged P&L distribution
+                        fig, ax = plt.subplots(figsize=(14, 8))
+                        ax.hist(pnl_mc, bins=50, color='lightblue', edgecolor='k', alpha=0.5, density=True, label='Original')
+                        ax.hist(pnl_mc_hedged, bins=50, color='orange', edgecolor='k', alpha=0.5, density=True, label='Delta Hedge')
+                        ax.axvline(-var_mc, color='blue', linestyle='--', label=f'VaR Original ({-var_mc:.2f})')
+                        ax.axvline(-es_mc, color='blue', linestyle=':', label=f'ES Original ({-es_mc:.2f})')
+                        ax.axvline(-var_mc_hedged, color='red', linestyle='--', label=f'VaR Delta ({-var_mc_hedged:.2f})')
+                        ax.axvline(-es_mc_hedged, color='red', linestyle=':', label=f'ES Delta ({-es_mc_hedged:.2f})')
+                        ax.set_title('P&L Distribution Comparison (Monte Carlo)')
+                        ax.set_xlabel('P&L')
+                        ax.set_ylabel('Density')
+                        ax.legend()
+                        st.pyplot(fig)
+                    elif hedge_strategy == "Delta+Gamma Hedge":
+                        # Implement Gamma + Delta hedging logic
+                        greeks_total = mca.portfolio_greeks_mc(portfolio, n_sim=n_sim_greeks, n_steps=N_steps)
+                        gamma_cartera = greeks_total['gamma']
+                        delta_cartera = greeks_total['delta']
+                        hedge_opt = {
+                            'type': 'call',
+                            'style': 'european',
+                            'S': portfolio[0]['S'],
+                            'K': portfolio[0]['K'],
+                            'T': portfolio[0]['T'],
+                            'r': portfolio[0]['r'],
+                            'qty': 0,
+                            'market_price': portfolio[0]['market_price'],
+                        }
+                        greeks_hedge = mca.option_greeks_mc(hedge_opt, n_sim=n_sim_greeks, n_steps=N_steps)
+                        gamma_hedge = greeks_hedge['gamma']
+                        gamma_hedge_fraction = 0.7
+                        qty_gamma_hedge = -gamma_cartera * gamma_hedge_fraction / gamma_hedge if gamma_hedge != 0 else 0
+                        hedge_opt['qty'] = qty_gamma_hedge
+                        portfolio_gamma_hedged = portfolio + [hedge_opt]
+                        greeks_total_gamma = mca.portfolio_greeks_mc(portfolio_gamma_hedged, n_sim=n_sim_greeks, n_steps=N_steps)
+                        delta_gamma_hedged = greeks_total_gamma['delta']
+                        pnl_gamma_delta_hedged = []
+                        for i in range(len(pnl_mc)):
+                            shocked_portfolio = []
+                            for opt in portfolio_gamma_hedged:
+                                key = opt.get('ticker', opt['S'])
+                                S0 = opt['S']
+                                iv = mca.implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
+                                if iv is None:
+                                    iv = 0.2
+                                r = opt['r']
+                                T_sim = horizon if horizon is not None else opt['T']
+                                Z = shocks_mc[key][i] if key in shocks_mc else np.random.normal(0, 1)
+                                S_T = S0 * np.exp((r - 0.5 * iv ** 2) * T_sim + iv * np.sqrt(T_sim) * Z)
+                                shocked_opt = opt.copy()
+                                shocked_opt['S'] = S_T
+                                shocked_portfolio.append(shocked_opt)
+                            val = sum(mca.price_option_mc(opt, n_sim=n_sim_greeks, n_steps=N_steps) * opt['qty'] for opt in shocked_portfolio)
+                            hedge_pnl = 0
+                            S0 = portfolio[0]['S']
+                            delta = delta_gamma_hedged
+                            Z = shocks_mc[portfolio[0].get('ticker', portfolio[0]['S'])][i]
+                            S_T = S0 * np.exp((portfolio[0]['r'] - 0.5 * iv ** 2) * T_sim + iv * np.sqrt(T_sim) * Z)
+                            hedge_pnl += -delta * (S_T - S0)
+                            pnl_gamma_delta_hedged.append(val - value_mc + hedge_pnl)
+                        pnl_gamma_delta_hedged = np.array(pnl_gamma_delta_hedged)
+                        var_gamma_delta_hedged, es_gamma_delta_hedged = mca.var_es(pnl_gamma_delta_hedged, alpha=0.01)
+                        st.write(f"Gamma hedge: qty = {qty_gamma_hedge:.4f} of ATM call (S={hedge_opt['S']}, K={hedge_opt['K']}) covering {gamma_hedge_fraction*100:.0f}% of gamma")
+                        st.write(f"Delta after gamma hedge: {delta_gamma_hedged:.4f}")
+                        st.write(f"\nVaR after gamma+delta hedge (MC, 99%): {var_gamma_delta_hedged:.2f}")
+                        st.write(f"ES after gamma+delta hedge (MC, 99%): {es_gamma_delta_hedged:.2f}")
+                        st.write(f"VaR reduction vs original: {var_mc - var_gamma_delta_hedged:.2f}")
+                        st.write(f"ES reduction vs original: {es_mc - es_gamma_delta_hedged:.2f}")
+                        # Plot comparison of original and Delta+Gamma hedged P&L distribution
+                        fig, ax = plt.subplots(figsize=(14, 8))
+                        ax.hist(pnl_mc, bins=50, color='lightblue', edgecolor='k', alpha=0.5, density=True, label='Original')
+                        ax.hist(pnl_gamma_delta_hedged, bins=50, color='green', edgecolor='k', alpha=0.5, density=True, label='Gamma+Delta Hedge')
+                        ax.axvline(-var_mc, color='blue', linestyle='--', label=f'VaR Original ({-var_mc:.2f})')
+                        ax.axvline(-es_mc, color='blue', linestyle=':', label=f'ES Original ({-es_mc:.2f})')
+                        ax.axvline(-var_gamma_delta_hedged, color='green', linestyle='--', label=f'VaR Gamma+Delta ({-var_gamma_delta_hedged:.2f})')
+                        ax.axvline(-es_gamma_delta_hedged, color='green', linestyle=':', label=f'ES Gamma+Delta ({-es_gamma_delta_hedged:.2f})')
+                        ax.set_title('P&L Distribution Comparison (Monte Carlo)')
+                        ax.set_xlabel('P&L')
+                        ax.set_ylabel('Density')
+                        ax.legend()
+                        st.pyplot(fig)
+                    elif hedge_strategy == "Vega Hedge":
+                        # Implement Vega hedging logic
+                        vega_total = mca.portfolio_greeks_mc(portfolio, n_sim=n_sim_greeks, n_steps=N_steps)['vega']
+                        hedge_opt_vega = {
+                            'type': 'call',
+                            'style': 'european',
+                            'S': portfolio[0]['S'],
+                            'K': portfolio[0]['K'],
+                            'T': portfolio[0]['T'],
+                            'r': portfolio[0]['r'],
+                            'qty': 0,
+                            'market_price': portfolio[0]['market_price'],
+                        }
+                        greeks_hedge_vega = mca.option_greeks_mc(hedge_opt_vega, n_sim=n_sim_greeks, n_steps=N_steps)
+                        vega_hedge = greeks_hedge_vega['vega']
+                        vega_hedge_fraction = 0.7
+                        qty_vega_hedge = -vega_total * vega_hedge_fraction / vega_hedge if vega_hedge != 0 else 0
+                        hedge_opt_vega['qty'] = qty_vega_hedge
+                        portfolio_vega_hedged = portfolio + [hedge_opt_vega]
+                        pnl_vega_hedged = []
+                        for i in range(len(pnl_mc)):
+                            shocked_portfolio = []
+                            for opt in portfolio_vega_hedged:
+                                key = opt.get('ticker', opt['S'])
+                                S0 = opt['S']
+                                iv = mca.implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
+                                if iv is None:
+                                    iv = 0.2
+                                r = opt['r']
+                                T_sim = horizon if horizon is not None else opt['T']
+                                Z = shocks_mc[key][i] if key in shocks_mc else np.random.normal(0, 1)
+                                S_T = S0 * np.exp((r - 0.5 * iv ** 2) * T_sim + iv * np.sqrt(T_sim) * Z)
+                                shocked_opt = opt.copy()
+                                shocked_opt['S'] = S_T
+                                shocked_portfolio.append(shocked_opt)
+                            val = sum(mca.price_option_mc(opt, n_sim=n_sim_greeks, n_steps=N_steps) * opt['qty'] for opt in shocked_portfolio)
+                            pnl_vega_hedged.append(val - value_mc)
+                        pnl_vega_hedged = np.array(pnl_vega_hedged)
+                        var_vega_hedged, es_vega_hedged = mca.var_es(pnl_vega_hedged, alpha=0.01)
+                        st.write(f"Vega hedge: qty = {qty_vega_hedge:.4f} of ATM call (S={hedge_opt_vega['S']}, K={hedge_opt_vega['K']}) covering {vega_hedge_fraction*100:.0f}% of vega")
+                        st.write(f"\nVaR after vega hedge (MC, 99%): {var_vega_hedged:.2f}")
+                        st.write(f"ES after vega hedge (MC, 99%): {es_vega_hedged:.2f}")
+                        st.write(f"VaR reduction vs original: {var_mc - var_vega_hedged:.2f}")
+                        st.write(f"ES reduction vs original: {es_mc - es_vega_hedged:.2f}")
+                        # Plot comparison of original and Vega hedged P&L distribution
+                        fig, ax = plt.subplots(figsize=(14, 8))
+                        ax.hist(pnl_mc, bins=50, color='lightblue', edgecolor='k', alpha=0.5, density=True, label='Original')
+                        ax.hist(pnl_vega_hedged, bins=50, color='purple', edgecolor='k', alpha=0.5, density=True, label='Vega Hedge')
+                        ax.axvline(-var_mc, color='blue', linestyle='--', label=f'VaR Original ({-var_mc:.2f})')
+                        ax.axvline(-es_mc, color='blue', linestyle=':', label=f'ES Original ({-es_mc:.2f})')
+                        ax.axvline(-var_vega_hedged, color='purple', linestyle='--', label=f'VaR Vega ({-var_vega_hedged:.2f})')
+                        ax.axvline(-es_vega_hedged, color='purple', linestyle=':', label=f'ES Vega ({-es_vega_hedged:.2f})')
+                        ax.set_title('P&L Distribution Comparison (Monte Carlo)')
+                        ax.set_xlabel('P&L')
+                        ax.set_ylabel('Density')
+                        ax.legend()
+                        st.pyplot(fig)
             except Exception as e:
                 st.error(f"Error in calculation: {e}")
 

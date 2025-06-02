@@ -326,9 +326,9 @@ if __name__ == "__main__":
     ]
     horizonte_dias = 10 / 252
     N_steps = 20
-    n_sim_main = 1000      # Para P&L y VaR/ES
-    n_sim_greeks = 1000   # Para griegas
-    n_sim_sens = 1000     # Para sensibilidades
+    n_sim_main = 10000      # Para P&L y VaR/ES
+    n_sim_greeks = 10000   # Para griegas
+    n_sim_sens = 10000     # Para sensibilidades
 
     # Use direct calculation for portfolio valuation
     initial_portfolio_value = sum(price_option_mc(opt, n_sim=n_sim_greeks, n_steps=N_steps) * opt['qty'] for opt in portfolio)

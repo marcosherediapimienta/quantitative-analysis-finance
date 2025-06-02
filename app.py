@@ -293,6 +293,8 @@ if menu == "Hedging Strategy":
     model = st.selectbox("Select Model:", ["Black-Scholes", "Binomial", "Monte Carlo"], index=0)
     # Select hedging strategy
     hedge_strategy = st.selectbox("Select Hedging Strategy:", ["Delta Hedge", "Delta+Gamma Hedge", "Vega Hedge"], index=0)
+    # Select percentage of coverage for hedging
+    coverage_percentage = st.number_input("Hedging (%):", value=70, min_value=0, max_value=100, step=1, help="Percentage of the portfolio to be hedged.")
     # Select VaR horizon after selecting hedge
     horizon = st.number_input("Horizon (e.g., enter 10/252 for a 10-day horizon)", value=0.0849, min_value=0.01, format="%.4f", help="Horizon for VaR calculation.")
     num_options = st.number_input("Number of options in portfolio", min_value=1, max_value=10, value=4, step=1, help="Number of different options in the portfolio.")
@@ -344,7 +346,7 @@ if menu == "Hedging Strategy":
                     var_bs, es_bs = bsa.var_es(pnl_bs, alpha=0.01)
                     if hedge_strategy == "Delta Hedge":
                         # Implement Delta hedging logic
-                        delta_hedge_fraction_bs = 0.7  # Default to 70% coverage
+                        delta_hedge_fraction_bs = coverage_percentage / 100.0  # Use selected coverage percentage
                         subyacentes = {}
                         for opt in portfolio:
                             key = opt.get('ticker', opt['S'])
@@ -408,7 +410,7 @@ if menu == "Hedging Strategy":
                         }
                         greeks_hedge = bsa.option_greeks(hedge_opt)
                         gamma_hedge = greeks_hedge['gamma']
-                        gamma_hedge_fraction = 0.7
+                        gamma_hedge_fraction = coverage_percentage / 100.0  # Use selected coverage percentage
                         qty_gamma_hedge = -gamma_cartera * gamma_hedge_fraction / gamma_hedge if gamma_hedge != 0 else 0
                         hedge_opt['qty'] = qty_gamma_hedge
                         portfolio_gamma_hedged = portfolio + [hedge_opt]
@@ -474,7 +476,7 @@ if menu == "Hedging Strategy":
                         }
                         greeks_hedge_vega = bsa.option_greeks(hedge_opt_vega)
                         vega_hedge = greeks_hedge_vega['vega']
-                        vega_hedge_fraction = 0.7
+                        vega_hedge_fraction = coverage_percentage / 100.0  # Use selected coverage percentage
                         qty_vega_hedge = -vega_total * vega_hedge_fraction / vega_hedge if vega_hedge != 0 else 0
                         hedge_opt_vega['qty'] = qty_vega_hedge
                         portfolio_vega_hedged = portfolio + [hedge_opt_vega]
@@ -526,7 +528,7 @@ if menu == "Hedging Strategy":
                     
                     if hedge_strategy == "Delta Hedge":
                         # Implement Delta hedging logic
-                        delta_hedge_fraction_binomial = 0.7  # Default to 70% coverage
+                        delta_hedge_fraction_binomial = coverage_percentage / 100.0  # Use selected coverage percentage
                         subyacentes = {}
                         for opt in portfolio:
                             key = opt.get('ticker', opt['S'])
@@ -590,7 +592,7 @@ if menu == "Hedging Strategy":
                         }
                         greeks_hedge = bpa.option_greeks(hedge_opt, N=N_steps_binomial)
                         gamma_hedge = greeks_hedge['gamma']
-                        gamma_hedge_fraction = 0.7
+                        gamma_hedge_fraction = coverage_percentage / 100.0  # Use selected coverage percentage
                         qty_gamma_hedge = -gamma_cartera * gamma_hedge_fraction / gamma_hedge if gamma_hedge != 0 else 0
                         hedge_opt['qty'] = qty_gamma_hedge
                         portfolio_gamma_hedged = portfolio + [hedge_opt]
@@ -656,7 +658,7 @@ if menu == "Hedging Strategy":
                         }
                         greeks_hedge_vega = bpa.option_greeks(hedge_opt_vega, N=N_steps_binomial)
                         vega_hedge = greeks_hedge_vega['vega']
-                        vega_hedge_fraction = 0.7
+                        vega_hedge_fraction = coverage_percentage / 100.0  # Use selected coverage percentage
                         qty_vega_hedge = -vega_total * vega_hedge_fraction / vega_hedge if vega_hedge != 0 else 0
                         hedge_opt_vega['qty'] = qty_vega_hedge
                         portfolio_vega_hedged = portfolio + [hedge_opt_vega]
@@ -708,7 +710,7 @@ if menu == "Hedging Strategy":
                     
                     if hedge_strategy == "Delta Hedge":
                         # Implement Delta hedging logic
-                        delta_hedge_fraction_mc = 0.7  # Default to 70% coverage
+                        delta_hedge_fraction_mc = coverage_percentage / 100.0  # Use selected coverage percentage
                         subyacentes = {}
                         for opt in portfolio:
                             key = opt.get('ticker', opt['S'])
@@ -772,7 +774,7 @@ if menu == "Hedging Strategy":
                         }
                         greeks_hedge = mca.option_greeks_mc(hedge_opt, n_sim=n_sim_greeks, n_steps=N_steps)
                         gamma_hedge = greeks_hedge['gamma']
-                        gamma_hedge_fraction = 0.7
+                        gamma_hedge_fraction = coverage_percentage / 100.0  # Use selected coverage percentage
                         qty_gamma_hedge = -gamma_cartera * gamma_hedge_fraction / gamma_hedge if gamma_hedge != 0 else 0
                         hedge_opt['qty'] = qty_gamma_hedge
                         portfolio_gamma_hedged = portfolio + [hedge_opt]
@@ -838,7 +840,7 @@ if menu == "Hedging Strategy":
                         }
                         greeks_hedge_vega = mca.option_greeks_mc(hedge_opt_vega, n_sim=n_sim_greeks, n_steps=N_steps)
                         vega_hedge = greeks_hedge_vega['vega']
-                        vega_hedge_fraction = 0.7
+                        vega_hedge_fraction = coverage_percentage / 100.0  # Use selected coverage percentage
                         qty_vega_hedge = -vega_total * vega_hedge_fraction / vega_hedge if vega_hedge != 0 else 0
                         hedge_opt_vega['qty'] = qty_vega_hedge
                         portfolio_vega_hedged = portfolio + [hedge_opt_vega]

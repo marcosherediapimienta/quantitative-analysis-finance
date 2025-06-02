@@ -216,8 +216,6 @@ def run_sensitivity_analysis_bs(portfolio, vis_dir, selected_strategy):
         ('Delta-Gamma Hedge', portfolio_gamma_delta_hedged),
         ('Vega Hedge', portfolio_vega_hedged),
     ]
-    # Filter strategies based on selection
-    hedge_strategies = [s for s in hedge_strategies if s[0] == 'Original' or s[0] == selected_strategy]
     # 1. Sensibilidad Spot (±10%)
     spot_base = portfolio[0]['S']
     spot_range = np.linspace(spot_base*0.9, spot_base*1.1, 21)

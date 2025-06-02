@@ -154,15 +154,6 @@ if menu == "Portfolio Analysis - Black-Scholes":
             except Exception as e:
                 st.error(f"Error in calculation: {e}")
 
-    if st.button("Run Sensitivity Analysis", key="bs_sensitivity_btn"):
-        with st.spinner("Running sensitivity analysis..."):
-            try:
-                # Run sensitivity analysis
-                bsa.run_sensitivity_analysis_bs(portfolio, vis_dir="visualizations")
-                st.success("Sensitivity analysis completed. Check the visualizations directory for results.")
-            except Exception as e:
-                st.error(f"Error in sensitivity analysis: {e}")
-
 elif menu == "Portfolio Analysis - Binomial":
     st.write("Binomial portfolio model selected.")
     # Add Binomial portfolio logic here

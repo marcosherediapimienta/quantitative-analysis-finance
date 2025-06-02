@@ -232,7 +232,7 @@ elif menu == "Portfolio Analysis - Monte Carlo":
     n_sim_main = st.number_input("Number of simulations for P&L and VaR/ES", value=50000, min_value=1000, step=1000, help="Number of scenarios for P&L and VaR/ES simulation.")
     n_sim_greeks = st.number_input("Number of simulations for Greeks", value=100000, min_value=1000, step=1000, help="Number of scenarios for Greeks calculation.")
     st.write("Note: The following input uses the Longstaff-Schwartz method.")
-    N_steps = st.number_input("Number of steps (For short maturities, use fewer steps; for long maturities, use more steps)", value=100, min_value=1, step=1, help="Discretization steps for Monte Carlo model.")
+    N_steps = st.number_input("Number of steps (Monte Carlo)", value=st.session_state.get("N_steps_single", 100), min_value=1, step=1, key="N_steps_single", help="Discretization steps for Monte Carlo model.")
     horizon = st.number_input("Horizon (e.g., enter 10/252 for a 10-day horizon)", value=0.0849, min_value=0.01, format="%.4f", help="Horizon for VaR calculation.")
     portfolio = []
     default_values = [
@@ -1007,8 +1007,13 @@ if menu == "Single Option Analysis":
     with cols[2]:
         r = st.number_input("Risk-free rate (r, decimal)", value=st.session_state.get("r_single", 0.05), key="r_single", min_value=0.0, max_value=1.0, step=0.01, help="Annual risk-free interest rate (as decimal, e.g. 0.03 for 3%).")
         market_price = st.number_input("Option market price", value=st.session_state.get("market_price_single", 10.0), key="market_price_single", min_value=0.0, help="Observed market price of the option.")
-        N = st.number_input("Number of steps (Binomial/MC)", value=st.session_state.get("N_single", 100), min_value=1, step=1, key="N_single", help="Discretization steps for Binomial/Monte Carlo models.")
-        n_sim = st.number_input("Number of Monte Carlo simulations", value=st.session_state.get("n_sim_single", 10000), min_value=1000, step=1000, key="n_sim_single", help="Number of scenarios for risk simulation.")
+        if model == "Binomial":
+            N_steps = st.number_input("Number of steps (Binomial)", value=st.session_state.get("N_single", 100), min_value=1, step=1, key="N_single", help="Discretization steps for Binomial model.")
+        if model == "Monte Carlo":
+            n_sim = st.number_input("Number of Monte Carlo simulations", value=st.session_state.get("n_sim_single", 10000), min_value=1000, step=1000, key="n_sim_single", help="Number of scenarios for risk simulation.")
+            N_steps = 1  # Default to 1 for European options
+            if option_style == "American":
+                N_steps = st.number_input("Number of steps (Monte Carlo)", value=st.session_state.get("N_steps_single", 100), min_value=1, step=1, key="N_steps_single", help="Discretization steps for Monte Carlo model.")
     # Validación básica
     if T <= 0:
         st.error("Maturity must be positive.")
@@ -1027,16 +1032,16 @@ if menu == "Single Option Analysis":
                 elif model == "Binomial":
                     if option_style == "European":
                         iv = bpa.implied_volatility_option(market_price, S, K, T, r, option_type)
-                        price = bpa.binomial_european_option_price(S, K, T, r, iv, int(N), option_type)
-                        greeks = bpa.binomial_greeks_european_option(S, K, T, r, iv, int(N), option_type)
+                        price = bpa.binomial_european_option_price(S, K, T, r, iv, int(N_steps), option_type)
+                        greeks = bpa.binomial_greeks_european_option(S, K, T, r, iv, int(N_steps), option_type)
                     else:
                         iv = bsa.implied_volatility_option(market_price, S, K, T, r, option_type)  # Use Black-Scholes for IV
-                        price = bpa.binomial_american_option_price(S, K, T, r, iv, int(N), option_type)
-                        greeks = bpa.binomial_greeks_american_option(S, K, T, r, iv, int(N), option_type)
+                        price = bpa.binomial_american_option_price(S, K, T, r, iv, int(N_steps), option_type)
+                        greeks = bpa.binomial_greeks_american_option(S, K, T, r, iv, int(N_steps), option_type)
                 elif model == "Monte Carlo":
                     opt = {'type': option_type, 'style': option_style.lower(), 'S': S, 'K': K, 'T': T, 'r': r, 'qty': 1, 'market_price': market_price}
-                    price = mca.price_option_mc(opt, n_sim=int(n_sim), n_steps=int(N))
-                    greeks = mca.option_greeks_mc(opt, n_sim=int(n_sim), n_steps=int(N))
+                    price = mca.price_option_mc(opt, n_sim=int(n_sim), n_steps=int(N_steps))
+                    greeks = mca.option_greeks_mc(opt, n_sim=int(n_sim), n_steps=int(N_steps))
                     iv = mca.implied_volatility_option(market_price, S, K, T, r, option_type)
                 # Resultados destacados
                 col1, col2 = st.columns(2)

@@ -975,6 +975,8 @@ if menu == "Sensitivity Analysis":
                     st.write(pd.read_csv(os.path.join(bpa.VIS_DIR, 'sensitivity_vol_all.csv')))
             except Exception as e:
                 st.error(f"Error in calculation: {e}")
+            except Exception as e:
+                st.error(f"Error in sensitivity analysis calculation: {e}")
 
 if menu == "Introduction":
     st.markdown('<div class="title-conference">Option Pricing & Portfolio Risk App</div>', unsafe_allow_html=True)

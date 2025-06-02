@@ -172,9 +172,44 @@ def gamma_bs(S, K, T, r, sigma):
     return norm.pdf(d1) / (S * sigma * np.sqrt(T))
 
 def run_sensitivity_analysis_binomial(portfolio, N):
-    # Define portfolio_gamma_hedged and portfolio_vega_hedged before using them
-    portfolio_gamma_hedged = portfolio + [{'type': 'call', 'style': 'european', 'S': portfolio[0]['S'], 'K': portfolio[0]['K'], 'T': portfolio[0]['T'], 'r': portfolio[0]['r'], 'qty': 0, 'market_price': portfolio[0]['market_price']}]
-    portfolio_vega_hedged = portfolio + [{'type': 'call', 'style': 'european', 'S': portfolio[0]['S'], 'K': portfolio[0]['K'], 'T': portfolio[0]['T'], 'r': portfolio[0]['r'], 'qty': 0, 'market_price': portfolio[0]['market_price']}]
+    # Define portfolio_gamma_hedged and portfolio_vega_hedged with appropriate hedging quantities
+    greeks_total = portfolio_greeks(portfolio, N)
+    gamma_cartera = greeks_total['gamma']
+    vega_total = greeks_total['vega']
+    hedge_opt_gamma = {
+        'type': 'call',
+        'style': 'european',
+        'S': portfolio[0]['S'],
+        'K': portfolio[0]['K'],
+        'T': portfolio[0]['T'],
+        'r': portfolio[0]['r'],
+        'qty': 0,
+        'market_price': portfolio[0]['market_price'],
+    }
+    greeks_hedge_gamma = option_greeks(hedge_opt_gamma, N)
+    gamma_hedge = greeks_hedge_gamma['gamma']
+    gamma_hedge_fraction = 0.7
+    qty_gamma_hedge = -gamma_cartera * gamma_hedge_fraction / gamma_hedge if gamma_hedge != 0 else 0
+    hedge_opt_gamma['qty'] = qty_gamma_hedge
+    portfolio_gamma_hedged = portfolio + [hedge_opt_gamma]
+
+    hedge_opt_vega = {
+        'type': 'call',
+        'style': 'european',
+        'S': portfolio[0]['S'],
+        'K': portfolio[0]['K'],
+        'T': portfolio[0]['T'],
+        'r': portfolio[0]['r'],
+        'qty': 0,
+        'market_price': portfolio[0]['market_price'],
+    }
+    greeks_hedge_vega = option_greeks(hedge_opt_vega, N)
+    vega_hedge = greeks_hedge_vega['vega']
+    vega_hedge_fraction = 0.7
+    qty_vega_hedge = -vega_total * vega_hedge_fraction / vega_hedge if vega_hedge != 0 else 0
+    hedge_opt_vega['qty'] = qty_vega_hedge
+    portfolio_vega_hedged = portfolio + [hedge_opt_vega]
+
     hedge_strategies = [
         ('Original', portfolio),
         ('Delta Hedge', portfolio + [{

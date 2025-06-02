@@ -74,7 +74,8 @@ menu = st.sidebar.selectbox(
         "Portfolio Analysis - Black-Scholes",
         "Portfolio Analysis - Binomial",
         "Portfolio Analysis - Monte Carlo",
-        "Hedging Strategy"
+        "Hedging Strategy",
+        "Sensitivity Analysis"  # New section for sensitivity analysis
     ],
     index=0
 )
@@ -152,6 +153,15 @@ if menu == "Portfolio Analysis - Black-Scholes":
                 st.pyplot(fig)
             except Exception as e:
                 st.error(f"Error in calculation: {e}")
+
+    if st.button("Run Sensitivity Analysis", key="bs_sensitivity_btn"):
+        with st.spinner("Running sensitivity analysis..."):
+            try:
+                # Run sensitivity analysis
+                bsa.run_sensitivity_analysis_bs(portfolio, vis_dir="visualizations")
+                st.success("Sensitivity analysis completed. Check the visualizations directory for results.")
+            except Exception as e:
+                st.error(f"Error in sensitivity analysis: {e}")
 
 elif menu == "Portfolio Analysis - Binomial":
     st.write("Binomial portfolio model selected.")
@@ -884,6 +894,45 @@ if menu == "Hedging Strategy":
                         st.pyplot(fig)
             except Exception as e:
                 st.error(f"Error in calculation: {e}")
+
+if menu == "Sensitivity Analysis":
+    st.write("Sensitivity Analysis selected.")
+    # Select model for sensitivity analysis
+    model = st.selectbox("Select Model:", ["Black-Scholes", "Binomial", "Monte Carlo"], index=0)
+    # Select hedging strategy
+    hedge_strategy = st.selectbox("Select Hedging Strategy:", ["Delta Hedge", "Delta+Gamma Hedge", "Vega Hedge"], index=0)
+    # Select percentage of coverage for hedging
+    coverage_percentage = st.number_input("Hedging Coverage (%):", value=70, min_value=0, max_value=100, step=1, help="Percentage of the portfolio to be hedged.")
+    # Select VaR horizon
+    horizon = st.number_input("Horizon (e.g., enter 10/252 for a 10-day horizon)", value=0.0849, min_value=0.01, format="%.4f", help="Horizon for VaR calculation.")
+    # Select number of options in portfolio
+    num_options = st.number_input("Number of options in portfolio", min_value=1, max_value=10, value=4, step=1, help="Number of different options in the portfolio.")
+    portfolio = []
+    default_values = [
+        {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5915, 'T': 0.0849, 'r': 0.0421, 'qty': -10, 'market_price': 111.93},
+        {'type': 'put', 'style': 'american', 'S': 5912.17, 'K': 5910, 'T': 0.0849, 'r': 0.0421, 'qty': -5, 'market_price': 106.89},
+        {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5920, 'T': 0.0849, 'r': 0.0421, 'qty': 10, 'market_price': 103.66},
+        {'type': 'put', 'style': 'european', 'S': 5912.17, 'K': 5900, 'T': 0.0849, 'r': 0.0421, 'qty': 10, 'market_price': 102.92}
+    ]
+    for i in range(num_options):
+        st.subheader(f"Option {i+1}")
+        option_type = st.selectbox(f"Option type for Option {i+1}", ["call", "put"], index=["call", "put"].index(default_values[i]['type']), key=f"option_type_{i}", help="Call or put option.")
+        option_style = st.selectbox(f"Option style for Option {i+1}", ["european", "american"], index=["european", "american"].index(default_values[i]['style']), key=f"option_style_{i}", help="Exercise style of the option.")
+        S = st.number_input(f"Spot price (S) for Option {i+1}", value=default_values[i]['S'], help="Current price of the underlying asset.", key=f"S_{i}")
+        K = st.number_input(f"Strike price (K) for Option {i+1}", value=default_values[i]['K'], help="Strike price of the option.", key=f"K_{i}")
+        T = st.number_input(f"Time to maturity (years) for Option {i+1}", value=default_values[i]['T'], min_value=0.01, format="%.4f", help="Time to maturity in years.", key=f"T_{i}")
+        r = st.number_input(f"Risk-free rate (r, decimal) for Option {i+1}", value=default_values[i]['r'], min_value=0.0, max_value=1.0, step=0.0001, format="%.4f", help="Annual risk-free interest rate.", key=f"r_{i}")
+        qty = st.number_input(f"Quantity for Option {i+1}", value=default_values[i]['qty'], step=1, help="Quantity of options in the portfolio.", key=f"qty_{i}")
+        market_price = st.number_input(f"Market price for Option {i+1}", value=default_values[i]['market_price'], help="Observed market price of the option.", key=f"market_price_{i}")
+        portfolio.append({'type': option_type, 'style': option_style, 'S': S, 'K': K, 'T': T, 'r': r, 'qty': qty, 'market_price': market_price})
+    if st.button("Run Sensitivity Analysis", key="bs_sensitivity_btn"):
+        with st.spinner("Running sensitivity analysis..."):
+            try:
+                # Run sensitivity analysis
+                bsa.run_sensitivity_analysis_bs(portfolio, vis_dir="visualizations")
+                st.success("Sensitivity analysis completed. Check the visualizations directory for results.")
+            except Exception as e:
+                st.error(f"Error in sensitivity analysis: {e}")
 
 if menu == "Introduction":
     st.markdown('<div class="title-conference">Option Pricing & Portfolio Risk App</div>', unsafe_allow_html=True)

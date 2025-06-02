@@ -102,7 +102,7 @@ if menu == "Portfolio Analysis - Black-Scholes":
     portfolio = []
     default_values = [
         {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5915, 'T': 0.0849, 'r': 0.0421, 'qty': -10, 'market_price': 111.93},
-        {'type': 'put', 'style': 'american', 'S': 5912.17, 'K': 5910, 'T': 0.0849, 'r': 0.0421, 'qty': -5, 'market_price': 106.89},
+        {'type': 'put', 'style': 'european', 'S': 5912.17, 'K': 5910, 'T': 0.0849, 'r': 0.0421, 'qty': -5, 'market_price': 106.89},
         {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5920, 'T': 0.0849, 'r': 0.0421, 'qty': 10, 'market_price': 103.66},
         {'type': 'put', 'style': 'european', 'S': 5912.17, 'K': 5900, 'T': 0.0849, 'r': 0.0421, 'qty': 10, 'market_price': 102.92}
     ]

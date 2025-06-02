@@ -367,6 +367,19 @@ if menu == "Hedging Strategy":
                         st.write(f"ES after delta hedge (BS, 99%): {es_bs_hedged:.2f}")
                         st.write(f"VaR reduction: {var_bs - var_bs_hedged:.2f}")
                         st.write(f"ES reduction: {es_bs - es_bs_hedged:.2f}")
+                        # Plot comparison of original and hedged P&L distribution
+                        fig, ax = plt.subplots(figsize=(14, 8))
+                        ax.hist(pnl_bs, bins=50, color='lightblue', edgecolor='k', alpha=0.5, density=True, label='Original')
+                        ax.hist(pnl_bs_hedged, bins=50, color='orange', edgecolor='k', alpha=0.5, density=True, label='Delta Hedge')
+                        ax.axvline(-var_bs, color='blue', linestyle='--', label=f'VaR Original ({-var_bs:.2f})')
+                        ax.axvline(-es_bs, color='blue', linestyle=':', label=f'ES Original ({-es_bs:.2f})')
+                        ax.axvline(-var_bs_hedged, color='red', linestyle='--', label=f'VaR Delta ({-var_bs_hedged:.2f})')
+                        ax.axvline(-es_bs_hedged, color='red', linestyle=':', label=f'ES Delta ({-es_bs_hedged:.2f})')
+                        ax.set_title('P&L Distribution Comparison (Black-Scholes)')
+                        ax.set_xlabel('P&L')
+                        ax.set_ylabel('Density')
+                        ax.legend()
+                        st.pyplot(fig)
                     elif hedge_strategy == "Delta+Gamma Hedge":
                         # Implement Gamma + Delta hedging logic
                         greeks_total = bsa.portfolio_greeks(portfolio)
@@ -421,6 +434,19 @@ if menu == "Hedging Strategy":
                         st.write(f"ES after gamma+delta hedge (BS, 99%): {es_gamma_delta_hedged:.2f}")
                         st.write(f"VaR reduction vs original: {var_bs - var_gamma_delta_hedged:.2f}")
                         st.write(f"ES reduction vs original: {es_bs - es_gamma_delta_hedged:.2f}")
+                        # Plot comparison of original and Delta+Gamma hedged P&L distribution
+                        fig, ax = plt.subplots(figsize=(14, 8))
+                        ax.hist(pnl_bs, bins=50, color='lightblue', edgecolor='k', alpha=0.5, density=True, label='Original')
+                        ax.hist(pnl_gamma_delta_hedged, bins=50, color='green', edgecolor='k', alpha=0.5, density=True, label='Gamma+Delta Hedge')
+                        ax.axvline(-var_bs, color='blue', linestyle='--', label=f'VaR Original ({-var_bs:.2f})')
+                        ax.axvline(-es_bs, color='blue', linestyle=':', label=f'ES Original ({-es_bs:.2f})')
+                        ax.axvline(-var_gamma_delta_hedged, color='green', linestyle='--', label=f'VaR Gamma+Delta ({-var_gamma_delta_hedged:.2f})')
+                        ax.axvline(-es_gamma_delta_hedged, color='green', linestyle=':', label=f'ES Gamma+Delta ({-es_gamma_delta_hedged:.2f})')
+                        ax.set_title('P&L Distribution Comparison (Black-Scholes)')
+                        ax.set_xlabel('P&L')
+                        ax.set_ylabel('Density')
+                        ax.legend()
+                        st.pyplot(fig)
                     elif hedge_strategy == "Vega Hedge":
                         # Implement Vega hedging logic
                         vega_total = bsa.portfolio_greeks(portfolio)['vega']
@@ -464,6 +490,19 @@ if menu == "Hedging Strategy":
                         st.write(f"ES after vega hedge (BS, 99%): {es_vega_hedged:.2f}")
                         st.write(f"VaR reduction vs original: {var_bs - var_vega_hedged:.2f}")
                         st.write(f"ES reduction vs original: {es_bs - es_vega_hedged:.2f}")
+                        # Plot comparison of original and Vega hedged P&L distribution
+                        fig, ax = plt.subplots(figsize=(14, 8))
+                        ax.hist(pnl_bs, bins=50, color='lightblue', edgecolor='k', alpha=0.5, density=True, label='Original')
+                        ax.hist(pnl_vega_hedged, bins=50, color='purple', edgecolor='k', alpha=0.5, density=True, label='Vega Hedge')
+                        ax.axvline(-var_bs, color='blue', linestyle='--', label=f'VaR Original ({-var_bs:.2f})')
+                        ax.axvline(-es_bs, color='blue', linestyle=':', label=f'ES Original ({-es_bs:.2f})')
+                        ax.axvline(-var_vega_hedged, color='purple', linestyle='--', label=f'VaR Vega ({-var_vega_hedged:.2f})')
+                        ax.axvline(-es_vega_hedged, color='purple', linestyle=':', label=f'ES Vega ({-es_vega_hedged:.2f})')
+                        ax.set_title('P&L Distribution Comparison (Black-Scholes)')
+                        ax.set_xlabel('P&L')
+                        ax.set_ylabel('Density')
+                        ax.legend()
+                        st.pyplot(fig)
                 elif model == "Binomial":
                     # Implement Binomial hedging logic here
                     st.write("Binomial hedging logic not yet implemented.")

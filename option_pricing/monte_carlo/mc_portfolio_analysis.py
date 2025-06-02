@@ -1,12 +1,20 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 import numpy as np
-np.random.seed(42)
 from scipy.optimize import brentq
 from scipy.stats import norm
 import matplotlib.pyplot as plt
+import copy
+import pandas as pd
 
-from monte_carlo.american_options.american_MC import american_option_longstaff_schwartz, american_mc_greeks
-from monte_carlo.european_options.european_MC import monte_carlo_european_option, mc_greeks
-from binomial_model.american_options.american_binomial import get_historical_volatility
+from option_pricing.monte_carlo.american_options.american_MC import american_option_longstaff_schwartz, american_mc_greeks
+from option_pricing.monte_carlo.european_options.european_MC import monte_carlo_european_option, mc_greeks
+from option_pricing.binomial_model.american_options.american_binomial import get_historical_volatility
+
+# Definir ruta robusta para visualizaciones
+VIS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "visualizations")
+os.makedirs(VIS_DIR, exist_ok=True)
 
 # Estructura de una opción en la cartera:
 # {
@@ -19,6 +27,9 @@ from binomial_model.american_options.american_binomial import get_historical_vol
 #   'qty': cantidad (positiva: long, negativa: short),
 #   'market_price': precio de mercado (para IV)
 # }
+
+# Set a fixed seed for reproducibility
+np.random.seed(42)
 
 def black_scholes_call_price(S, K, T, r, sigma):
     d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
@@ -60,7 +71,7 @@ def implied_volatility_option(market_price, S, K, T, r, option_type='call', tol=
     except Exception:
         return None
 
-def price_option_mc(opt, n_sim=10000, n_steps=50):
+def price_option_mc(opt, n_sim=1000, n_steps=50):
     iv = implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
     if iv is None:
         ticker = opt.get('ticker', None)
@@ -68,13 +79,14 @@ def price_option_mc(opt, n_sim=10000, n_steps=50):
             iv = get_historical_volatility(ticker)
         else:
             iv = 0.2
+    seed = 42  # Fixed seed for reproducibility
     if opt['style'] == 'american':
-        price = american_option_longstaff_schwartz(opt['S'], opt['K'], opt['T'], opt['r'], iv, n_sim, n_steps, opt['type'])
+        price = american_option_longstaff_schwartz(opt['S'], opt['K'], opt['T'], opt['r'], iv, n_sim, n_steps, opt['type'], seed=seed)
     else:
-        price = monte_carlo_european_option(opt['S'], opt['K'], opt['T'], opt['r'], iv, n_sim, opt['type'])
+        price = monte_carlo_european_option(opt['S'], opt['K'], opt['T'], opt['r'], iv, n_sim, opt['type'], seed=seed)
     return price
 
-def option_greeks_mc(opt, n_sim=10000, n_steps=50):
+def option_greeks_mc(opt, n_sim=1000, n_steps=50):
     iv = implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
     if iv is None:
         ticker = opt.get('ticker', None)
@@ -88,7 +100,7 @@ def option_greeks_mc(opt, n_sim=10000, n_steps=50):
         greeks = mc_greeks(opt['S'], opt['K'], opt['T'], opt['r'], iv, n_sim, opt['type'])
     return greeks
 
-def portfolio_greeks_mc(portfolio, n_sim=10000, n_steps=50):
+def portfolio_greeks_mc(portfolio, n_sim=1000, n_steps=50):
     total = {'delta': 0, 'gamma': 0, 'vega': 0, 'theta': 0, 'rho': 0}
     for opt in portfolio:
         greeks = option_greeks_mc(opt, n_sim, n_steps)
@@ -143,17 +155,190 @@ def gamma_bs(S, K, T, r, sigma):
     d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
     return norm.pdf(d1) / (S * sigma * np.sqrt(T))
 
+def run_sensitivity_analysis_mc(portfolio, N_steps, n_sim_sens, vis_dir, horizon):
+    import numpy as np
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    import copy
+    import os
+    from .mc_portfolio_analysis import portfolio_greeks_mc, price_option_mc
+    
+    # Constants
+    N_STEPS = N_steps  # Clarify this is steps for MC simulation
+    n_sim_greeks = n_sim_sens  # Use the same number of simulations for greeks as for sensitivity
+    FIG_SIZE = (12, 7)
+    MARKER_SIZE = 80
+    ANNOTATION_OFFSET = (0, 10)
+    
+    # Helper function to price a portfolio
+    def price_portfolio(portfolio, n_sim, n_steps):
+        return sum(price_option_mc(opt, n_sim=n_sim, n_steps=n_steps) * opt['qty'] for opt in portfolio)
+    
+    # Initialize hedge strategies
+    base_portfolio = portfolio[0]
+    hedge_opt_mc = {
+        'type': 'call',
+        'style': 'european',
+        'S': portfolio[0]['S'],
+        'K': portfolio[0]['K'],
+        'T': portfolio[0]['T'],
+        'r': portfolio[0]['r'],
+        'qty': 0,
+        'market_price': portfolio[0]['market_price'],
+    }
+    greeks_hedge_mc = option_greeks_mc(hedge_opt_mc, n_sim=n_sim_greeks, n_steps=N_STEPS)
+    
+    # Define 'greeks_hedge_vega_mc' before its usage
+    hedge_opt_vega_mc = {
+        'type': 'call',
+        'style': 'european',
+        'S': portfolio[0]['S'],
+        'K': portfolio[0]['K'],
+        'T': portfolio[0]['T'],
+        'r': portfolio[0]['r'],
+        'qty': 0,
+        'market_price': portfolio[0]['market_price'],
+    }
+    greeks_hedge_vega_mc = option_greeks_mc(hedge_opt_vega_mc, n_sim=n_sim_greeks, n_steps=N_STEPS)
+    
+    # Now use 'greeks_hedge_vega_mc' in the code
+    hedge_strategies = [
+        ('Original', copy.deepcopy(portfolio)),
+        ('Delta Hedge', copy.deepcopy(portfolio) + [{
+            'type': 'call', 
+            'style': 'european', 
+            'S': base_portfolio['S'], 
+            'K': base_portfolio['K'], 
+            'T': base_portfolio['T'], 
+            'r': base_portfolio['r'], 
+            'qty': -portfolio_greeks_mc(portfolio, n_sim=n_sim_greeks, n_steps=N_STEPS)['delta'], 
+            'market_price': base_portfolio['market_price']
+        }]),
+        ('Gamma-Delta Hedge', copy.deepcopy(portfolio) + [{
+            'type': 'call',
+            'style': 'european',
+            'S': base_portfolio['S'],
+            'K': base_portfolio['K'],
+            'T': base_portfolio['T'],
+            'r': base_portfolio['r'],
+            'qty': -portfolio_greeks_mc(portfolio, n_sim=n_sim_greeks, n_steps=N_STEPS)['gamma'] / greeks_hedge_mc['gamma'],
+            'market_price': base_portfolio['market_price']
+        }]),
+        ('Vega Hedge', copy.deepcopy(portfolio) + [{
+            'type': 'call',
+            'style': 'european',
+            'S': base_portfolio['S'],
+            'K': base_portfolio['K'],
+            'T': base_portfolio['T'],
+            'r': base_portfolio['r'],
+            'qty': -portfolio_greeks_mc(portfolio, n_sim=n_sim_greeks, n_steps=N_STEPS)['vega'] / greeks_hedge_vega_mc['vega'],
+            'market_price': base_portfolio['market_price']
+        }])
+    ]
+    
+    # Calculate initial portfolio value
+    initial_portfolio_value = price_portfolio(portfolio, n_sim_greeks, N_STEPS)
+    
+    # Common plotting function
+    def plot_sensitivity(x_range, x_label, title, file_name, rows_data, idx_base=10, idx_low=0, idx_high=20):
+        plt.figure(figsize=FIG_SIZE)
+        for name, port in hedge_strategies:
+            values = []
+            for x in x_range:
+                port_mod = copy.deepcopy(port)
+                # Apply modification based on parameter type
+                if x_label == 'Spot':
+                    for opt in port_mod:
+                        opt['S'] = x
+                elif x_label == 'Risk-free rate (r)':
+                    for opt in port_mod:
+                        opt['r'] = x
+                elif x_label == 'Volatility multiplier':
+                    for opt in port_mod:
+                        iv = implied_volatility_option(opt['market_price'], opt['S'], opt['K'], 
+                                                       opt['T'], opt['r'], opt['type']) or 0.2
+                        if opt['type'] == 'call':
+                            opt['market_price'] = black_scholes_call_price(opt['S'], opt['K'], opt['T'], 
+                                                                         opt['r'], iv*x)
+                        else:
+                            opt['market_price'] = black_scholes_put_price(opt['S'], opt['K'], opt['T'], 
+                                                                        opt['r'], iv*x)
+                
+                values.append(price_portfolio(port_mod, n_sim_sens, N_STEPS))
+            
+            # Plotting
+            plt.plot(x_range, values, label=name)
+            plt.scatter([x_range[idx_low], x_range[idx_base], x_range[idx_high]],
+                        [values[idx_low], values[idx_base], values[idx_high]],
+                        marker='o', s=MARKER_SIZE)
+            
+            # Store results
+            base = initial_portfolio_value if name == 'Original' else values[idx_base]
+            rows_data.append({
+                'Strategy': name,
+                'Base': base,
+                f'-10%': values[idx_low],
+                f'+10%': values[idx_high],
+                f'Δ-10%': values[idx_low] - base,
+                f'Δ+10%': values[idx_high] - base
+            })
+        
+        plt.xlabel(x_label)
+        plt.ylabel('Portfolio Value')
+        plt.title(title)
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        plt.savefig(os.path.join(VIS_DIR, file_name))
+        plt.close()
+    
+    # 1. Spot Sensitivity (±10%)
+    spot_base = base_portfolio['S']
+    spot_range = np.linspace(spot_base*0.9, spot_base*1.1, 21)
+    spot_rows = []
+    print("\n=== Spot Sensitivity (±10%) ===")
+    plot_sensitivity(spot_range, 'Spot', 'Sensitivity to Spot - All Strategies', 
+                   'sensitivity_spot_mc.png', spot_rows)
+    df_spot = pd.DataFrame(spot_rows)
+    df_spot.to_csv(os.path.join(VIS_DIR, 'sensitivity_spot_mc.csv'), index=False)
+    
+    # 2. Interest Rate Sensitivity (±1%)
+    r_base = base_portfolio['r']
+    r_range = np.linspace(r_base-0.01, r_base+0.01, 21)
+    r_rows = []
+    print("\n=== r Sensitivity (±1%) ===")
+    plot_sensitivity(r_range, 'Risk-free rate (r)', 'Sensitivity to r - All Strategies', 
+                   'sensitivity_r_mc.png', r_rows)
+    df_r = pd.DataFrame(r_rows)
+    df_r.to_csv(os.path.join(VIS_DIR, 'sensitivity_r_mc.csv'), index=False)
+    
+    # 3. Volatility Sensitivity (±20%)
+    vol_range = np.linspace(0.8, 1.2, 21)
+    vol_rows = []
+    print("\n=== Volatility Sensitivity (±20%) ===")
+    plot_sensitivity(vol_range, 'Volatility multiplier', 
+                   'Sensitivity to Volatility - All Strategies', 
+                   'sensitivity_vol_mc.png', vol_rows)
+    df_vol = pd.DataFrame(vol_rows)
+    df_vol.to_csv(os.path.join(VIS_DIR, 'sensitivity_vol_mc.csv'), index=False)
+
 if __name__ == "__main__":
     portfolio = [
-        {'type': 'call', 'style': 'european', 'S': 5802.82, 'K': 5800, 'T': 0.0849, 'r': 0.0421, 'qty': -10, 'market_price': 152.80},
-        {'type': 'put',  'style': 'european', 'S': 5802.82, 'K': 5800, 'T': 0.0849, 'r': 0.0421, 'qty': -5,  'market_price': 147.20},
-        {'type': 'call', 'style': 'european', 'S': 5802.82, 'K': 5900, 'T': 0.0849, 'r': 0.0421, 'qty': 5,   'market_price': 80.00},
+        {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5915, 'T': 0.0849, 'r': 0.0421, 'qty': -10, 'market_price': 111.93},
+        {'type': 'put',  'style': 'american', 'S': 5912.17, 'K': 5910, 'T': 0.0849, 'r': 0.0421, 'qty': -5,  'market_price': 106.89},
+        {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5920, 'T': 0.0849, 'r': 0.0421, 'qty': 10,   'market_price': 103.66},
+        {'type': 'put', 'style': 'european', 'S': 5912.17, 'K': 5900, 'T': 0.0849, 'r': 0.0421, 'qty': 10,   'market_price': 102.92},
+
     ]
     horizonte_dias = 10 / 252
-    N_steps = 100
-    n_sim_main = 50000      # Para P&L y VaR/ES
-    n_sim_greeks = 100000   # Para griegas
-    n_sim_sens = 20000      # Para sensibilidades
+    N_steps = 20
+    n_sim_main = 1000      # Para P&L y VaR/ES
+    n_sim_greeks = 1000   # Para griegas
+    n_sim_sens = 1000     # Para sensibilidades
+
+    # Use direct calculation for portfolio valuation
+    initial_portfolio_value = sum(price_option_mc(opt, n_sim=n_sim_greeks, n_steps=N_steps) * opt['qty'] for opt in portfolio)
+    value_mc = sum(price_option_mc(opt, n_sim=n_sim_greeks, n_steps=N_steps) * opt['qty'] for opt in portfolio)
 
     print("\n" + "="*60)
     print("OPTION PORTFOLIO SUMMARY USING MONTE CARLO (MC MODELS)")
@@ -162,7 +347,6 @@ if __name__ == "__main__":
     pnl_mc = sim_mc['pnl']
     shocks_mc = sim_mc['shocks']
     var_mc, es_mc = var_es(pnl_mc, alpha=0.01)
-    value_mc = sum(price_option_mc(opt, n_sim=n_sim_greeks, n_steps=N_steps) * opt['qty'] for opt in portfolio)
     greeks_total_mc = portfolio_greeks_mc(portfolio, n_sim=n_sim_greeks, n_steps=N_steps)
     for i, opt in enumerate(portfolio, 1):
         price_mc = price_option_mc(opt, n_sim=n_sim_greeks, n_steps=N_steps)
@@ -203,7 +387,7 @@ if __name__ == "__main__":
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig('histogram_pnl_portfolio_mc.png')
+    plt.savefig(os.path.join(VIS_DIR, 'histogram_pnl_portfolio_mc.png'))
     plt.close()
 
     # ===========================
@@ -212,12 +396,13 @@ if __name__ == "__main__":
     print("\n" + "="*60)
     print("DELTA HEDGING ANALYSIS (MONTE CARLO)")
     print("="*60)
+    delta_hedge_fraction_mc = 0.7  # Default to 70% coverage
     subyacentes_mc = {}
     for opt in portfolio:
         key = opt.get('ticker', opt['S'])
         greeks_mc = option_greeks_mc(opt, n_sim=n_sim_greeks, n_steps=N_steps)
         subyacentes_mc.setdefault(key, {'S0': opt['S'], 'delta': 0})
-        subyacentes_mc[key]['delta'] += greeks_mc['delta'] * opt['qty']
+        subyacentes_mc[key]['delta'] += greeks_mc['delta'] * opt['qty'] * delta_hedge_fraction_mc
     pnl_mc_hedged = []
     for i in range(len(pnl_mc)):
         hedge_pnl = 0
@@ -290,7 +475,7 @@ if __name__ == "__main__":
             shocked_opt = opt.copy()
             shocked_opt['S'] = S_T
             shocked_portfolio.append(shocked_opt)
-        val = sum(price_option_mc(opt, n_sim=500, n_steps=N_steps) * opt['qty'] for opt in shocked_portfolio)
+        val = sum(price_option_mc(opt, n_sim=n_sim_greeks, n_steps=N_steps) for opt in shocked_portfolio)
         hedge_pnl = 0
         S0 = portfolio[0]['S']
         delta = delta_gamma_hedged_mc
@@ -329,34 +514,29 @@ if __name__ == "__main__":
     }
     greeks_hedge_vega_mc = option_greeks_mc(hedge_opt_vega_mc, n_sim=n_sim_greeks, n_steps=N_steps)
     vega_hedge_mc = greeks_hedge_vega_mc['vega']
-    vega_hedge_fraction = 0.7  # 50% de la vega neta
+    vega_hedge_fraction = 0.7  # 70% de la vega neta
     qty_vega_hedge_mc = -vega_total_mc * vega_hedge_fraction / vega_hedge_mc if vega_hedge_mc != 0 else 0
     hedge_opt_vega_mc['qty'] = qty_vega_hedge_mc
-    # 3. Crea nueva cartera con vega hedge
     portfolio_vega_hedged_mc = portfolio + [hedge_opt_vega_mc]
     # 4. Simula P&L con vega hedge usando los mismos shocks
     pnl_vega_hedged_mc = []
     for i in range(len(pnl_mc)):
-        shocked_portfolio = []
-        for opt in portfolio_vega_hedged_mc:
-            key = opt.get('ticker', opt['S'])
-            S0 = opt['S']
-            iv = implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
-            if iv is None:
-                ticker = opt.get('ticker', None)
-                if ticker is not None:
-                    iv = get_historical_volatility(ticker)
-                else:
-                    iv = 0.2
-            r = opt['r']
-            T_sim = horizonte_dias if horizonte_dias is not None else opt['T']
-            Z = shocks_mc[key][i] if key in shocks_mc else np.random.normal(0, 1)
+        hedge_pnl = 0
+        for key, v in subyacentes_mc.items():
+            S0 = v['S0']
+            delta = v['delta']
+            Z = shocks_mc[key][i]
+            for opt in portfolio:
+                if opt.get('ticker', opt['S']) == key:
+                    iv = implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
+                    if iv is None:
+                        iv = 0.2
+                    r = opt['r']
+                    T_sim = horizonte_dias if horizonte_dias is not None else opt['T']
+                    break
             S_T = S0 * np.exp((r - 0.5 * iv ** 2) * T_sim + iv * np.sqrt(T_sim) * Z)
-            shocked_opt = opt.copy()
-            shocked_opt['S'] = S_T
-            shocked_portfolio.append(shocked_opt)
-        val = sum(price_option_mc(opt, n_sim=500, n_steps=N_steps) * opt['qty'] for opt in shocked_portfolio)
-        pnl_vega_hedged_mc.append(val - value_mc)
+            hedge_pnl += -delta * (S_T - S0)
+        pnl_vega_hedged_mc.append(pnl_mc[i] + hedge_pnl)
     pnl_vega_hedged_mc = np.array(pnl_vega_hedged_mc)
     var_vega_hedged_mc, es_vega_hedged_mc = var_es(pnl_vega_hedged_mc, alpha=0.01)
     print(f"Vega hedge: qty = {qty_vega_hedge_mc:.4f} of ATM call (S={hedge_opt_vega_mc['S']}, K={hedge_opt_vega_mc['K']}) covering {vega_hedge_fraction*100:.0f}% of vega")
@@ -389,7 +569,7 @@ if __name__ == "__main__":
     plt.legend(loc='upper left', fontsize=10, ncol=2)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig('histogram_compare_mc.png')
+    plt.savefig(os.path.join(VIS_DIR, 'histogram_compare_mc.png'))
     plt.close()
 
     # ===========================
@@ -401,13 +581,34 @@ if __name__ == "__main__":
 
     # Estrategias de hedge
     hedge_strategies = [
-        ('Original', portfolio),
-        ('Delta Hedge', portfolio + [{
+        ('Original', copy.deepcopy(portfolio)),
+        ('Delta Hedge', copy.deepcopy(portfolio) + [{
             'type': 'call', 'style': 'european', 'S': portfolio[0]['S'], 'K': portfolio[0]['K'], 'T': portfolio[0]['T'], 'r': portfolio[0]['r'], 'qty': -portfolio_greeks_mc(portfolio, n_sim=n_sim_greeks, n_steps=N_steps)['delta'], 'market_price': portfolio[0]['market_price']
         }]),
-        ('Delta-Gamma Hedge', portfolio_gamma_hedged_mc),
-        ('Vega Hedge', portfolio_vega_hedged_mc),
+        ('Gamma-Delta Hedge', copy.deepcopy(portfolio) + [{
+            'type': 'call',
+            'style': 'european',
+            'S': portfolio[0]['S'],
+            'K': portfolio[0]['K'],
+            'T': portfolio[0]['T'],
+            'r': portfolio[0]['r'],
+            'qty': -portfolio_greeks_mc(portfolio, n_sim=n_sim_greeks, n_steps=N_steps)['gamma'] / greeks_hedge_mc['gamma'],
+            'market_price': portfolio[0]['market_price']
+        }]),
+        ('Vega Hedge', copy.deepcopy(portfolio) + [{
+            'type': 'call',
+            'style': 'european',
+            'S': portfolio[0]['S'],
+            'K': portfolio[0]['K'],
+            'T': portfolio[0]['T'],
+            'r': portfolio[0]['r'],
+            'qty': -portfolio_greeks_mc(portfolio, n_sim=n_sim_greeks, n_steps=N_steps)['vega'] / greeks_hedge_vega_mc['vega'],
+            'market_price': portfolio[0]['market_price']
+        }])
     ]
+
+    # Calculate initial portfolio value for sensitivity analysis
+    initial_portfolio_value = sum(price_option_mc(opt, n_sim=n_sim_greeks, n_steps=N_steps) * opt['qty'] for opt in portfolio)
 
     # 1. Sensibilidad Spot (±10%)
     spot_base = portfolio[0]['S']
@@ -418,10 +619,11 @@ if __name__ == "__main__":
     plt.figure(figsize=(12,7))
     print("\n=== Spot Sensitivity (±10%) ===")
     print(f"{'Strategy':<20}{'Base':>12}{'-10%':>12}{'+10%':>12}{'Δ-10%':>12}{'Δ+10%':>12}")
+    spot_rows = []
     for name, port in hedge_strategies:
         values = []
         for S in spot_range:
-            port_mod = [opt.copy() for opt in port]
+            port_mod = copy.deepcopy(port)
             for opt in port_mod:
                 opt['S'] = S
             values.append(sum(price_option_mc(opt, n_sim=n_sim_sens, n_steps=N_steps) * opt['qty'] for opt in port_mod))
@@ -429,21 +631,31 @@ if __name__ == "__main__":
         plt.scatter([spot_range[spot_idx_low], spot_range[spot_idx_base], spot_range[spot_idx_high]],
                     [values[spot_idx_low], values[spot_idx_base], values[spot_idx_high]],
                     marker='o', s=80)
-        for idx, label in zip([spot_idx_low, spot_idx_base, spot_idx_high], ['-10%', 'Base', '+10%']):
-            plt.annotate(f"{label}\n{values[idx]:.2f}", (spot_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
-        base = values[spot_idx_base]
+        for idx in [spot_idx_low, spot_idx_base, spot_idx_high]:
+            plt.annotate('', (spot_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
+        base = initial_portfolio_value if name == 'Original' else values[spot_idx_base]  # Use initial portfolio value only for 'Original'
         low = values[spot_idx_low]
         high = values[spot_idx_high]
         dlow = low - base
         dhigh = high - base
         print(f"{name:<20}{base:12.4f}{low:12.4f}{high:12.4f}{dlow:12.4f}{dhigh:12.4f}")
+        spot_rows.append({
+            'Strategy': name,
+            'Base': base,
+            '-10%': low,
+            '+10%': high,
+            'Δ-10%': dlow,
+            'Δ+10%': dhigh
+        })
+    df_spot = pd.DataFrame(spot_rows)
+    df_spot.to_csv(os.path.join(VIS_DIR, 'sensitivity_spot_mc.csv'), index=False)
     plt.xlabel('Spot')
     plt.ylabel('Portfolio Value')
     plt.title('Sensitivity to Spot - All Strategies')
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig('sensitivity_spot_mc.png')
+    plt.savefig(os.path.join(VIS_DIR, 'sensitivity_spot_mc.png'))
     plt.close()
 
     # 2. Sensibilidad tipo de interés (±1%)
@@ -455,10 +667,11 @@ if __name__ == "__main__":
     plt.figure(figsize=(12,7))
     print("\n=== r Sensitivity (±1%) ===")
     print(f"{'Strategy':<20}{'Base':>12}{'-1%':>12}{'+1%':>12}{'Δ-1%':>12}{'Δ+1%':>12}")
+    r_rows = []
     for name, port in hedge_strategies:
         values = []
         for r in r_range:
-            port_mod = [opt.copy() for opt in port]
+            port_mod = copy.deepcopy(port)
             for opt in port_mod:
                 opt['r'] = r
             values.append(sum(price_option_mc(opt, n_sim=n_sim_sens, n_steps=N_steps) * opt['qty'] for opt in port_mod))
@@ -466,36 +679,47 @@ if __name__ == "__main__":
         plt.scatter([r_range[r_idx_low], r_range[r_idx_base], r_range[r_idx_high]],
                     [values[r_idx_low], values[r_idx_base], values[r_idx_high]],
                     marker='o', s=80)
-        for idx, label in zip([r_idx_low, r_idx_base, r_idx_high], ['-1%', 'Base', '+1%']):
-            plt.annotate(f"{label}\n{values[idx]:.2f}", (r_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
-        base = values[r_idx_base]
+        for idx in [r_idx_low, r_idx_base, r_idx_high]:
+            plt.annotate('', (r_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
+        base = initial_portfolio_value if name == 'Original' else values[r_idx_base]  # Use initial portfolio value only for 'Original'
         low = values[r_idx_low]
         high = values[r_idx_high]
         dlow = low - base
         dhigh = high - base
         print(f"{name:<20}{base:12.4f}{low:12.4f}{high:12.4f}{dlow:12.4f}{dhigh:12.4f}")
+        r_rows.append({
+            'Strategy': name,
+            'Base': base,
+            '-1%': low,
+            '+1%': high,
+            'Δ-1%': dlow,
+            'Δ+1%': dhigh
+        })
+    df_r = pd.DataFrame(r_rows)
+    df_r.to_csv(os.path.join(VIS_DIR, 'sensitivity_r_mc.csv'), index=False)
     plt.xlabel('Risk-free rate (r)')
     plt.ylabel('Portfolio Value')
     plt.title('Sensitivity to r - All Strategies')
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig('sensitivity_r_mc.png')
+    plt.savefig(os.path.join(VIS_DIR, 'sensitivity_r_mc.png'))
     plt.close()
 
     # 3. Sensibilidad volatilidad (±20%)
     plt.figure(figsize=(12,7))
     vol_base = 1.0
-    vol_range = np.linspace(0.8, 1.2, 21)  # multiplicador de la volatilidad implícita
+    vol_range = np.linspace(0.8, 1.2, 21)
     vol_idx_low = 0
     vol_idx_base = 10
     vol_idx_high = 20
     print("\n=== Volatility Sensitivity (±20%) ===")
     print(f"{'Strategy':<20}{'Base':>12}{'-20%':>12}{'+20%':>12}{'Δ-20%':>12}{'Δ+20%':>12}")
+    vol_rows = []
     for name, port in hedge_strategies:
         values = []
         for vol_mult in vol_range:
-            port_mod = [opt.copy() for opt in port]
+            port_mod = copy.deepcopy(port)
             for opt in port_mod:
                 iv = implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
                 if iv is None:
@@ -506,21 +730,31 @@ if __name__ == "__main__":
         plt.scatter([vol_range[vol_idx_low], vol_range[vol_idx_base], vol_range[vol_idx_high]],
                     [values[vol_idx_low], values[vol_idx_base], values[vol_idx_high]],
                     marker='o', s=80)
-        for idx, label in zip([vol_idx_low, vol_idx_base, vol_idx_high], ['-20%', 'Base', '+20%']):
-            plt.annotate(f"{label}\n{values[idx]:.2f}", (vol_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
-        base = values[vol_idx_base]
+        for idx in [vol_idx_low, vol_idx_base, vol_idx_high]:
+            plt.annotate('', (vol_range[idx], values[idx]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8)
+        base = initial_portfolio_value if name == 'Original' else values[vol_idx_base]  # Use initial portfolio value only for 'Original'
         low = values[vol_idx_low]
         high = values[vol_idx_high]
         dlow = low - base
         dhigh = high - base
         print(f"{name:<20}{base:12.4f}{low:12.4f}{high:12.4f}{dlow:12.4f}{dhigh:12.4f}")
+        vol_rows.append({
+            'Strategy': name,
+            'Base': base,
+            '-20%': low,
+            '+20%': high,
+            'Δ-20%': dlow,
+            'Δ+20%': dhigh
+        })
+    df_vol = pd.DataFrame(vol_rows)
+    df_vol.to_csv(os.path.join(VIS_DIR, 'sensitivity_vol_mc.csv'), index=False)
     plt.xlabel('Volatility multiplier')
     plt.ylabel('Portfolio Value')
     plt.title('Sensitivity to Volatility - All Strategies')
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig('sensitivity_vol_mc.png')
+    plt.savefig(os.path.join(VIS_DIR, 'sensitivity_vol_mc.png'))
     plt.close()
 
     print('Sensitivity analysis completed. PNG files generated.') 

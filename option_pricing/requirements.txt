@@ -4,5 +4,4 @@ pandas
 matplotlib
 scipy
 yfinance
-matplotlib.pyplot
-seaborn
+

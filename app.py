@@ -887,11 +887,11 @@ if menu == "Hedging Strategy":
                 st.error(f"Error in calculation: {e}")
 
 if menu == "Sensitivity Analysis":
-    st.write("Sensitivity Analysis selected.")
+    st.write("Sensitivity Analysis selected.* all strategies will be run")  #all strategies will be run
     # Select model for hedging strategy
     model = st.selectbox("Select Model:", ["Black-Scholes", "Binomial", "Monte Carlo"], index=0)
-    # Select hedging strategy
-    hedge_strategy = st.selectbox("Select Hedging Strategy:", ["Delta Hedge", "Delta+Gamma Hedge", "Vega Hedge"], index=0)
+    # Remove the select box for hedging strategy
+    # hedge_strategy = st.selectbox("Select Hedging Strategy:", ["Delta Hedge", "Delta+Gamma Hedge", "Vega Hedge"], index=0)
     # Select percentage of coverage for hedging
     coverage_percentage = st.number_input("Hedging (%):", value=70, min_value=0, max_value=100, step=1, help="Percentage of the portfolio to be hedged.")
     # Select VaR horizon after selecting hedge
@@ -923,7 +923,7 @@ if menu == "Sensitivity Analysis":
             try:
                 if model == "Black-Scholes":
                     # Run sensitivity analysis for Black-Scholes
-                    bsa.run_sensitivity_analysis_bs(portfolio, bsa.VIS_DIR, hedge_strategy)
+                    bsa.run_sensitivity_analysis_bs(portfolio, bsa.VIS_DIR, selected_strategy='all')  # Provide default value for selected_strategy
                     st.success("Sensitivity analysis completed. Check the visualizations directory for results.")
                     # Display graphs and numerical tables
                     st.image(os.path.join(bsa.VIS_DIR, 'sensitivity_spot_all_bs.png'))

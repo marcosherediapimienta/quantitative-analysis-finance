@@ -152,15 +152,72 @@ def var_es(pnl, alpha=0.01):
     es = -pnl_sorted[pnl_sorted <= -var].mean()
     return var, es
 
-def run_sensitivity_analysis_bs(portfolio, vis_dir):
+def run_sensitivity_analysis_bs(portfolio, vis_dir, selected_strategy):
+    if not portfolio:
+        raise ValueError("Portfolio is empty. Please provide a valid portfolio.")
+    # Define portfolio_gamma_hedged and portfolio_vega_hedged
+    greeks_total = portfolio_greeks(portfolio)
+    gamma_cartera = greeks_total['gamma']
+    delta_cartera = greeks_total['delta']
+    vega_total = greeks_total['vega']
+    # Delta-Gamma Hedge
+    hedge_opt_gamma = {
+        'type': 'call',
+        'style': 'european',
+        'S': portfolio[0]['S'],
+        'K': portfolio[0]['K'],
+        'T': portfolio[0]['T'],
+        'r': portfolio[0]['r'],
+        'qty': 0,
+        'market_price': portfolio[0]['market_price'],
+    }
+    greeks_hedge_gamma = option_greeks(hedge_opt_gamma)
+    gamma_hedge = greeks_hedge_gamma['gamma']
+    gamma_hedge_fraction = 0.7
+    qty_gamma_hedge = -gamma_cartera * gamma_hedge_fraction / gamma_hedge if gamma_hedge != 0 else 0
+    hedge_opt_gamma['qty'] = qty_gamma_hedge
+    portfolio_gamma_hedged = portfolio + [hedge_opt_gamma]
+    greeks_total_gamma = portfolio_greeks(portfolio_gamma_hedged)
+    delta_gamma_hedged = greeks_total_gamma['delta']
+    # Adjust delta hedge for gamma hedged portfolio
+    hedge_opt_delta = {
+        'type': 'call',
+        'style': 'european',
+        'S': portfolio[0]['S'],
+        'K': portfolio[0]['K'],
+        'T': portfolio[0]['T'],
+        'r': portfolio[0]['r'],
+        'qty': -delta_gamma_hedged,
+        'market_price': portfolio[0]['market_price'],
+    }
+    portfolio_gamma_delta_hedged = portfolio_gamma_hedged + [hedge_opt_delta]
+    # Vega Hedge
+    hedge_opt_vega = {
+        'type': 'call',
+        'style': 'european',
+        'S': portfolio[0]['S'],
+        'K': portfolio[0]['K'],
+        'T': portfolio[0]['T'],
+        'r': portfolio[0]['r'],
+        'qty': 0,
+        'market_price': portfolio[0]['market_price'],
+    }
+    greeks_hedge_vega = option_greeks(hedge_opt_vega)
+    vega_hedge = greeks_hedge_vega['vega']
+    vega_hedge_fraction = 0.7
+    qty_vega_hedge = -vega_total * vega_hedge_fraction / vega_hedge if vega_hedge != 0 else 0
+    hedge_opt_vega['qty'] = qty_vega_hedge
+    portfolio_vega_hedged = portfolio + [hedge_opt_vega]
     hedge_strategies = [
         ('Original', portfolio),
         ('Delta Hedge', portfolio + [{
-            'type': 'call', 'S': portfolio[0]['S'], 'K': portfolio[0]['K'], 'T': portfolio[0]['T'], 'r': portfolio[0]['r'], 'qty': -portfolio_greeks(portfolio)['delta'], 'market_price': portfolio[0]['market_price']
+            'type': 'call', 'S': portfolio[0]['S'], 'K': portfolio[0]['K'], 'T': portfolio[0]['T'], 'r': portfolio[0]['r'], 'qty': -delta_cartera, 'market_price': portfolio[0]['market_price']
         }]),
-        ('Delta-Gamma Hedge', portfolio_gamma_hedged),
+        ('Delta-Gamma Hedge', portfolio_gamma_delta_hedged),
         ('Vega Hedge', portfolio_vega_hedged),
     ]
+    # Filter strategies based on selection
+    hedge_strategies = [s for s in hedge_strategies if s[0] == 'Original' or s[0] == selected_strategy]
     # 1. Sensibilidad Spot (±10%)
     spot_base = portfolio[0]['S']
     spot_range = np.linspace(spot_base*0.9, spot_base*1.1, 21)
@@ -199,7 +256,7 @@ def run_sensitivity_analysis_bs(portfolio, vis_dir):
     df_spot.to_csv(os.path.join(vis_dir, 'sensitivity_spot_all_bs.csv'), index=False)
     plt.xlabel('Spot')
     plt.ylabel('Portfolio Value')
-    plt.title('Sensitivity to Spot - All Strategies (BS)')
+    plt.title('Sensitivity to Spot - Selected Strategies (BS)')
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -243,7 +300,7 @@ def run_sensitivity_analysis_bs(portfolio, vis_dir):
     df_r.to_csv(os.path.join(vis_dir, 'sensitivity_r_all_bs.csv'), index=False)
     plt.xlabel('Risk-free rate (r)')
     plt.ylabel('Portfolio Value')
-    plt.title('Sensitivity to r - All Strategies (BS)')
+    plt.title('Sensitivity to r - Selected Strategies (BS)')
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -294,7 +351,7 @@ def run_sensitivity_analysis_bs(portfolio, vis_dir):
     df_vol.to_csv(os.path.join(vis_dir, 'sensitivity_vol_all_bs.csv'), index=False)
     plt.xlabel('Volatility multiplier')
     plt.ylabel('Portfolio Value')
-    plt.title('Sensitivity to Volatility - All Strategies (BS)')
+    plt.title('Sensitivity to Volatility - Selected Strategies (BS)')
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -552,4 +609,4 @@ if __name__ == "__main__":
     print("SENSITIVITY ANALYSIS (BLACK-SCHOLES) - PORTFOLIO VALUE")
     print("="*60)
 
-    run_sensitivity_analysis_bs(portfolio, VIS_DIR) 
+    run_sensitivity_analysis_bs(portfolio, VIS_DIR, 'Delta Hedge') 

@@ -171,12 +171,17 @@ def gamma_bs(S, K, T, r, sigma):
     d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
     return norm.pdf(d1) / (S * sigma * np.sqrt(T))
 
-def run_sensitivity_analysis_binomial(portfolio, N, vis_dir):
+def run_sensitivity_analysis_binomial(portfolio, N):
+    # Define portfolio_gamma_hedged and portfolio_vega_hedged before using them
+    portfolio_gamma_hedged = portfolio + [{'type': 'call', 'style': 'european', 'S': portfolio[0]['S'], 'K': portfolio[0]['K'], 'T': portfolio[0]['T'], 'r': portfolio[0]['r'], 'qty': 0, 'market_price': portfolio[0]['market_price']}]
+    portfolio_vega_hedged = portfolio + [{'type': 'call', 'style': 'european', 'S': portfolio[0]['S'], 'K': portfolio[0]['K'], 'T': portfolio[0]['T'], 'r': portfolio[0]['r'], 'qty': 0, 'market_price': portfolio[0]['market_price']}]
     hedge_strategies = [
         ('Original', portfolio),
         ('Delta Hedge', portfolio + [{
             'type': 'call', 'style': 'european', 'S': portfolio[0]['S'], 'K': portfolio[0]['K'], 'T': portfolio[0]['T'], 'r': portfolio[0]['r'], 'qty': -portfolio_greeks(portfolio, N)['delta'], 'market_price': portfolio[0]['market_price']
         }]),
+        ('Delta-Gamma Hedge', portfolio_gamma_hedged),
+        ('Vega Hedge', portfolio_vega_hedged),
     ]
     # 1. Sensibilidad Spot (±10%)
     spot_base = portfolio[0]['S']
@@ -213,14 +218,14 @@ def run_sensitivity_analysis_binomial(portfolio, N, vis_dir):
             'Δ+10%': dhigh
         })
     df_spot = pd.DataFrame(spot_rows)
-    df_spot.to_csv(os.path.join(vis_dir, 'sensitivity_spot_all.csv'), index=False)
+    df_spot.to_csv(os.path.join(VIS_DIR, 'sensitivity_spot_all.csv'), index=False)
     plt.xlabel('Spot')
     plt.ylabel('Portfolio Value')
     plt.title('Sensitivity to Spot - All Strategies (Binomial)')
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig(os.path.join(vis_dir, 'sensitivity_spot_all.png'))
+    plt.savefig(os.path.join(VIS_DIR, 'sensitivity_spot_all.png'))
     plt.close()
     # 2. Sensibilidad tipo de interés (±1%)
     r_base = portfolio[0]['r']
@@ -257,14 +262,14 @@ def run_sensitivity_analysis_binomial(portfolio, N, vis_dir):
             'Δ+1%': dhigh
         })
     df_r = pd.DataFrame(r_rows)
-    df_r.to_csv(os.path.join(vis_dir, 'sensitivity_r_all.csv'), index=False)
+    df_r.to_csv(os.path.join(VIS_DIR, 'sensitivity_r_all.csv'), index=False)
     plt.xlabel('Risk-free rate (r)')
     plt.ylabel('Portfolio Value')
     plt.title('Sensitivity to r - All Strategies (Binomial)')
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig(os.path.join(vis_dir, 'sensitivity_r_all.png'))
+    plt.savefig(os.path.join(VIS_DIR, 'sensitivity_r_all.png'))
     plt.close()
     # 3. Sensibilidad volatilidad (±20%)
     plt.figure(figsize=(12,7))
@@ -304,17 +309,19 @@ def run_sensitivity_analysis_binomial(portfolio, N, vis_dir):
             'Δ+20%': dhigh
         })
     df_vol = pd.DataFrame(vol_rows)
-    df_vol.to_csv(os.path.join(vis_dir, 'sensitivity_vol_all.csv'), index=False)
+    df_vol.to_csv(os.path.join(VIS_DIR, 'sensitivity_vol_all.csv'), index=False)
     plt.xlabel('Volatility multiplier')
     plt.ylabel('Portfolio Value')
     plt.title('Sensitivity to Volatility - All Strategies (Binomial)')
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig(os.path.join(vis_dir, 'sensitivity_vol_all.png'))
+    plt.savefig(os.path.join(VIS_DIR, 'sensitivity_vol_all.png'))
     plt.close()
 
 if __name__ == "__main__":
+    # Define the number of steps for the binomial model
+    N = 100  # or any appropriate default value
     # --- Definición de la cartera ---
     portfolio = [
         {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5915, 'T': 0.0849, 'r': 0.0421, 'qty': -10, 'market_price': 111.93},
@@ -566,7 +573,7 @@ if __name__ == "__main__":
     hedge_strategies = [
         ('Original', portfolio),
         ('Delta Hedge', portfolio + [{
-            'type': 'call', 'style': 'european', 'S': portfolio[0]['S'], 'K': portfolio[0]['K'], 'T': portfolio[0]['T'], 'r': portfolio[0]['r'], 'qty': -portfolio_greeks(portfolio, N=N_steps)['delta'], 'market_price': portfolio[0]['market_price']
+            'type': 'call', 'style': 'european', 'S': portfolio[0]['S'], 'K': portfolio[0]['K'], 'T': portfolio[0]['T'], 'r': portfolio[0]['r'], 'qty': -portfolio_greeks(portfolio, N)['delta'], 'market_price': portfolio[0]['market_price']
         }]),
         ('Delta-Gamma Hedge', portfolio_gamma_hedged),
         ('Vega Hedge', portfolio_vega_hedged),

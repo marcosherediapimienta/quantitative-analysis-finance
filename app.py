@@ -909,9 +909,9 @@ if menu == "Sensitivity Analysis":
     # Add conditional logic for model-specific settings
     if model == "Monte Carlo":
         st.write("Monte Carlo model selected.")
-        n_sim_main = st.number_input("Number of simulations for P&L and VaR/ES", value=1000, min_value=1000, step=1000, help="Number of scenarios for P&L and VaR/ES simulation.")
-        n_sim_greeks = st.number_input("Number of simulations for Greeks", value=1000, min_value=1000, step=1000, help="Number of scenarios for Greeks calculation.")
-        n_sim_sens = st.number_input("Number of simulations for Sensitivities", value=1000, min_value=1000, step=1000, help="Number of scenarios for sensitivity analysis.")
+        n_sim_main = st.number_input("Number of simulations for P&L and VaR/ES", value=1000, min_value=1000, step=1000, help="Number of scenarios for P&L and VaR/ES simulation.", key="n_sim_main_sensitivity")
+        n_sim_greeks = st.number_input("Number of simulations for Greeks", value=1000, min_value=1000, step=1000, help="Number of scenarios for Greeks calculation.", key="n_sim_greeks_sensitivity")
+        n_sim_sens = st.number_input("Number of simulations for Sensitivities", value=1000, min_value=1000, step=1000, help="Number of scenarios for sensitivity analysis.", key="n_sim_sens_sensitivity")
         st.write("Note: The following input uses the Longstaff-Schwartz method.")
         N_steps = st.number_input("Number of steps (For short maturities, use fewer steps; for long maturities, use more steps)", value=100, min_value=1, step=1, help="Discretization steps for Monte Carlo model.")
     elif model == "Black-Scholes":
@@ -919,7 +919,7 @@ if menu == "Sensitivity Analysis":
         # Add Black-Scholes specific inputs here
     elif model == "Binomial":
         st.write("Binomial model selected.")
-        N_steps_binomial = st.number_input("Number of steps for Binomial tree", value=100, min_value=1, step=1, help="Discretization steps for Binomial model.")
+        N_steps_binomial = st.number_input("Number of steps for Binomial tree", value=100, min_value=1, step=1, help="Discretization steps for Binomial model.", key="N_steps_binomial_sensitivity")
     
     # Ensure portfolio options are customizable
     for i in range(num_options):
@@ -963,7 +963,16 @@ if menu == "Sensitivity Analysis":
                     st.write(pd.read_csv(os.path.join(vis_dir, 'sensitivity_r_mc.csv')))
                     st.write(pd.read_csv(os.path.join(vis_dir, 'sensitivity_vol_mc.csv')))
                 elif model == "Binomial":
-                    st.write("Binomial model selected.")
+                    bpa.run_sensitivity_analysis_binomial(portfolio, N_steps_binomial)
+                    st.success("Sensitivity analysis completed. Check the visualizations directory for results.")
+                    # Display graphs and numerical tables
+                    st.image(os.path.join(bpa.VIS_DIR, 'sensitivity_spot_all.png'))
+                    st.image(os.path.join(bpa.VIS_DIR, 'sensitivity_r_all.png'))
+                    st.image(os.path.join(bpa.VIS_DIR, 'sensitivity_vol_all.png'))
+                    st.write("Numerical tables:")
+                    st.write(pd.read_csv(os.path.join(bpa.VIS_DIR, 'sensitivity_spot_all.csv')))
+                    st.write(pd.read_csv(os.path.join(bpa.VIS_DIR, 'sensitivity_r_all.csv')))
+                    st.write(pd.read_csv(os.path.join(bpa.VIS_DIR, 'sensitivity_vol_all.csv')))
             except Exception as e:
                 st.error(f"Error in calculation: {e}")
 

@@ -89,6 +89,10 @@ st.sidebar.markdown('''
 </div>
 ''', unsafe_allow_html=True)
 
+# Set the correct visualization directory
+vis_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'visualizations')
+os.makedirs(vis_dir, exist_ok=True)
+
 # Implement logic for each portfolio model
 if menu == "Portfolio Analysis - Black-Scholes":
     st.write("Black-Scholes portfolio model selected.")
@@ -907,6 +911,7 @@ if menu == "Sensitivity Analysis":
         st.write("Monte Carlo model selected.")
         n_sim_main = st.number_input("Number of simulations for P&L and VaR/ES", value=1000, min_value=1000, step=1000, help="Number of scenarios for P&L and VaR/ES simulation.")
         n_sim_greeks = st.number_input("Number of simulations for Greeks", value=1000, min_value=1000, step=1000, help="Number of scenarios for Greeks calculation.")
+        n_sim_sens = st.number_input("Number of simulations for Sensitivities", value=1000, min_value=1000, step=1000, help="Number of scenarios for sensitivity analysis.")
         st.write("Note: The following input uses the Longstaff-Schwartz method.")
         N_steps = st.number_input("Number of steps (For short maturities, use fewer steps; for long maturities, use more steps)", value=100, min_value=1, step=1, help="Discretization steps for Monte Carlo model.")
     elif model == "Black-Scholes":
@@ -945,7 +950,18 @@ if menu == "Sensitivity Analysis":
                     st.write(pd.read_csv(os.path.join(bsa.VIS_DIR, 'sensitivity_r_all_bs.csv')))
                     st.write(pd.read_csv(os.path.join(bsa.VIS_DIR, 'sensitivity_vol_all_bs.csv')))
                 elif model == "Monte Carlo":
-                    st.write("Monte Carlo model selected.")
+                    vis_dir = os.path.join(os.path.dirname(__file__), 'visualizations')
+                    os.makedirs(vis_dir, exist_ok=True)
+                    mca.run_sensitivity_analysis_mc(portfolio, N_steps, n_sim_greeks, vis_dir, horizon)
+                    st.success("Sensitivity analysis completed. Check the visualizations directory for results.")
+                    # Display graphs and numerical tables
+                    st.image(os.path.join(vis_dir, 'sensitivity_spot_mc.png'))
+                    st.image(os.path.join(vis_dir, 'sensitivity_r_mc.png'))
+                    st.image(os.path.join(vis_dir, 'sensitivity_vol_mc.png'))
+                    st.write("Numerical tables:")
+                    st.write(pd.read_csv(os.path.join(vis_dir, 'sensitivity_spot_mc.csv')))
+                    st.write(pd.read_csv(os.path.join(vis_dir, 'sensitivity_r_mc.csv')))
+                    st.write(pd.read_csv(os.path.join(vis_dir, 'sensitivity_vol_mc.csv')))
                 elif model == "Binomial":
                     st.write("Binomial model selected.")
             except Exception as e:

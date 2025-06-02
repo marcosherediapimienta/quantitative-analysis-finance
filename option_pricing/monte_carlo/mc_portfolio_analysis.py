@@ -161,7 +161,7 @@ def run_sensitivity_analysis_mc(portfolio, N_steps, n_sim_sens, vis_dir, horizon
     
     # Constants
     N_STEPS = N_steps  # Clarify this is steps for MC simulation
-    n_sim_greeks = 10000
+    n_sim_greeks = n_sim_sens  # Use the same number of simulations for greeks as for sensitivity
     FIG_SIZE = (12, 7)
     MARKER_SIZE = 80
     ANNOTATION_OFFSET = (0, 10)
@@ -172,6 +172,32 @@ def run_sensitivity_analysis_mc(portfolio, N_steps, n_sim_sens, vis_dir, horizon
     
     # Initialize hedge strategies
     base_portfolio = portfolio[0]
+    hedge_opt_mc = {
+        'type': 'call',
+        'style': 'european',
+        'S': portfolio[0]['S'],
+        'K': portfolio[0]['K'],
+        'T': portfolio[0]['T'],
+        'r': portfolio[0]['r'],
+        'qty': 0,
+        'market_price': portfolio[0]['market_price'],
+    }
+    greeks_hedge_mc = option_greeks_mc(hedge_opt_mc, n_sim=n_sim_greeks, n_steps=N_STEPS)
+    
+    # Define 'greeks_hedge_vega_mc' before its usage
+    hedge_opt_vega_mc = {
+        'type': 'call',
+        'style': 'european',
+        'S': portfolio[0]['S'],
+        'K': portfolio[0]['K'],
+        'T': portfolio[0]['T'],
+        'r': portfolio[0]['r'],
+        'qty': 0,
+        'market_price': portfolio[0]['market_price'],
+    }
+    greeks_hedge_vega_mc = option_greeks_mc(hedge_opt_vega_mc, n_sim=n_sim_greeks, n_steps=N_STEPS)
+    
+    # Now use 'greeks_hedge_vega_mc' in the code
     hedge_strategies = [
         ('Original', copy.deepcopy(portfolio)),
         ('Delta Hedge', copy.deepcopy(portfolio) + [{

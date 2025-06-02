@@ -115,11 +115,12 @@ if menu == "Portfolio Analysis - Black-Scholes":
         with st.spinner("Calculating portfolio..."):
             try:
                 np.random.seed(42)  # Set seed for reproducibility
-                value_bs = sum(bsa.price_option(opt)[0] * opt['qty'] for opt in portfolio)
+                value_bs = bsa.portfolio_value(portfolio)
                 greeks_total_bs = bsa.portfolio_greeks(portfolio)
                 # Simulate P&L distribution using bs_portfolio_analysis
                 sim_bs = bsa.simulate_portfolio(portfolio, n_sims=10000, horizon=horizon)
                 pnl_bs = sim_bs['pnl']
+                # Calculate var_bs before using it
                 var_bs, es_bs = bsa.var_es(pnl_bs, alpha=0.01)
                 # Display portfolio Greeks first
                 st.write("Portfolio Greeks:")
@@ -322,10 +323,14 @@ if menu == "Hedging Strategy":
         with st.spinner("Calculating hedging strategy..."):
             try:
                 if model == "Black-Scholes":
+                    # Calculate value_bs before using it in the hedging strategy
+                    value_bs = bsa.portfolio_value(portfolio)
                     # Simulate P&L distribution using bs_portfolio_analysis
                     sim_bs = bsa.simulate_portfolio(portfolio, n_sims=10000, horizon=horizon)
                     pnl_bs = sim_bs['pnl']
                     shocks_bs = sim_bs['shocks']
+                    # Calculate var_bs before using it in the hedging strategy
+                    var_bs, es_bs = bsa.var_es(pnl_bs, alpha=0.01)
                     if hedge_strategy == "Delta Hedge":
                         # Implement Delta hedging logic
                         delta_hedge_fraction_bs = 0.7  # Default to 70% coverage

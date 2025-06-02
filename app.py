@@ -933,7 +933,7 @@ if menu == "Sensitivity Analysis":
         market_price = st.number_input(f"Market price for Option {i+1}", value=default_values[i]['market_price'], help="Observed market price of the option.", key=f"market_price_{i}")
         portfolio.append({'type': option_type, 'style': option_style, 'S': S, 'K': K, 'T': T, 'r': r, 'qty': qty, 'market_price': market_price})
 
-    if st.button("Calculate Hedging Strategy", key="hedging_strategy_btn"):
+    if st.button("Calculate Sensitivity Analysis", key="hedging_strategy_btn"):
         with st.spinner("Calculating hedging strategy and sensitivity analysis..."):
             try:
                 if model == "Black-Scholes":

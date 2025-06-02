@@ -90,7 +90,7 @@ st.sidebar.markdown('''
 ''', unsafe_allow_html=True)
 
 # Set the correct visualization directory
-vis_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'visualizations')
+vis_dir = os.path.join(os.path.dirname(__file__), 'visualizations')
 os.makedirs(vis_dir, exist_ok=True)
 
 # Implement logic for each portfolio model
@@ -952,16 +952,16 @@ if menu == "Sensitivity Analysis":
                 elif model == "Monte Carlo":
                     vis_dir = os.path.join(os.path.dirname(__file__), 'visualizations')
                     os.makedirs(vis_dir, exist_ok=True)
-                    mca.run_sensitivity_analysis_mc(portfolio, N_steps, n_sim_greeks, vis_dir, horizon)
+                    mca.run_sensitivity_analysis_mc(portfolio, N_steps, n_sim_greeks, bsa.VIS_DIR, horizon)
                     st.success("Sensitivity analysis completed. Check the visualizations directory for results.")
                     # Display graphs and numerical tables
-                    st.image(os.path.join(vis_dir, 'sensitivity_spot_mc.png'))
-                    st.image(os.path.join(vis_dir, 'sensitivity_r_mc.png'))
-                    st.image(os.path.join(vis_dir, 'sensitivity_vol_mc.png'))
+                    st.image(os.path.join(bsa.VIS_DIR, 'sensitivity_spot_mc.png'))
+                    st.image(os.path.join(bsa.VIS_DIR, 'sensitivity_r_mc.png'))
+                    st.image(os.path.join(bsa.VIS_DIR, 'sensitivity_vol_mc.png'))
                     st.write("Numerical tables:")
-                    st.write(pd.read_csv(os.path.join(vis_dir, 'sensitivity_spot_mc.csv')))
-                    st.write(pd.read_csv(os.path.join(vis_dir, 'sensitivity_r_mc.csv')))
-                    st.write(pd.read_csv(os.path.join(vis_dir, 'sensitivity_vol_mc.csv')))
+                    st.write(pd.read_csv(os.path.join(bsa.VIS_DIR, 'sensitivity_spot_mc.csv')))
+                    st.write(pd.read_csv(os.path.join(bsa.VIS_DIR, 'sensitivity_r_mc.csv')))
+                    st.write(pd.read_csv(os.path.join(bsa.VIS_DIR, 'sensitivity_vol_mc.csv')))
                 elif model == "Binomial":
                     bpa.run_sensitivity_analysis_binomial(portfolio, N_steps_binomial)
                     st.success("Sensitivity analysis completed. Check the visualizations directory for results.")

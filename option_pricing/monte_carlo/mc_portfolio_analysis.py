@@ -12,6 +12,10 @@ from option_pricing.monte_carlo.american_options.american_MC import american_opt
 from option_pricing.monte_carlo.european_options.european_MC import monte_carlo_european_option, mc_greeks
 from option_pricing.binomial_model.american_options.american_binomial import get_historical_volatility
 
+# Definir ruta robusta para visualizaciones
+VIS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "visualizations")
+os.makedirs(VIS_DIR, exist_ok=True)
+
 # Estructura de una opción en la cartera:
 # {
 #   'type': 'call' o 'put',
@@ -285,7 +289,7 @@ def run_sensitivity_analysis_mc(portfolio, N_steps, n_sim_sens, vis_dir, horizon
         plt.legend()
         plt.grid(True, alpha=0.3)
         plt.tight_layout()
-        plt.savefig(os.path.join(vis_dir, file_name))
+        plt.savefig(os.path.join(VIS_DIR, file_name))
         plt.close()
     
     # 1. Spot Sensitivity (±10%)
@@ -296,7 +300,7 @@ def run_sensitivity_analysis_mc(portfolio, N_steps, n_sim_sens, vis_dir, horizon
     plot_sensitivity(spot_range, 'Spot', 'Sensitivity to Spot - All Strategies', 
                    'sensitivity_spot_mc.png', spot_rows)
     df_spot = pd.DataFrame(spot_rows)
-    df_spot.to_csv(os.path.join(vis_dir, 'sensitivity_spot_mc.csv'), index=False)
+    df_spot.to_csv(os.path.join(VIS_DIR, 'sensitivity_spot_mc.csv'), index=False)
     
     # 2. Interest Rate Sensitivity (±1%)
     r_base = base_portfolio['r']
@@ -306,7 +310,7 @@ def run_sensitivity_analysis_mc(portfolio, N_steps, n_sim_sens, vis_dir, horizon
     plot_sensitivity(r_range, 'Risk-free rate (r)', 'Sensitivity to r - All Strategies', 
                    'sensitivity_r_mc.png', r_rows)
     df_r = pd.DataFrame(r_rows)
-    df_r.to_csv(os.path.join(vis_dir, 'sensitivity_r_mc.csv'), index=False)
+    df_r.to_csv(os.path.join(VIS_DIR, 'sensitivity_r_mc.csv'), index=False)
     
     # 3. Volatility Sensitivity (±20%)
     vol_range = np.linspace(0.8, 1.2, 21)
@@ -316,7 +320,7 @@ def run_sensitivity_analysis_mc(portfolio, N_steps, n_sim_sens, vis_dir, horizon
                    'Sensitivity to Volatility - All Strategies', 
                    'sensitivity_vol_mc.png', vol_rows)
     df_vol = pd.DataFrame(vol_rows)
-    df_vol.to_csv(os.path.join(vis_dir, 'sensitivity_vol_mc.csv'), index=False)
+    df_vol.to_csv(os.path.join(VIS_DIR, 'sensitivity_vol_mc.csv'), index=False)
 
 if __name__ == "__main__":
     portfolio = [
@@ -383,8 +387,6 @@ if __name__ == "__main__":
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    VIS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "visualizations")
-    os.makedirs(VIS_DIR, exist_ok=True)
     plt.savefig(os.path.join(VIS_DIR, 'histogram_pnl_portfolio_mc.png'))
     plt.close()
 

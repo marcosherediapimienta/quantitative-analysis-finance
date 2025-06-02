@@ -277,10 +277,10 @@ def run_sensitivity_analysis_mc(portfolio, N_steps, n_sim_sens, vis_dir, horizon
             rows_data.append({
                 'Strategy': name,
                 'Base': base,
-                f'{x_label.split()[0]} Low': values[idx_low],
-                f'{x_label.split()[0]} High': values[idx_high],
-                f'Δ{x_label.split()[0]} Low': values[idx_low] - base,
-                f'Δ{x_label.split()[0]} High': values[idx_high] - base
+                f'-10%': values[idx_low],
+                f'+10%': values[idx_high],
+                f'Δ-10%': values[idx_low] - base,
+                f'Δ+10%': values[idx_high] - base
             })
         
         plt.xlabel(x_label)

@@ -289,6 +289,10 @@ if menu == "Hedging Strategy":
     st.write("Hedging Strategy selected.")
     # Select model for hedging strategy
     model = st.selectbox("Select Model:", ["Black-Scholes", "Binomial", "Monte Carlo"], index=0)
+    # Select hedging strategy
+    hedge_strategy = st.selectbox("Select Hedging Strategy:", ["Delta Hedge", "Delta+Gamma Hedge", "Vega Hedge"], index=0)
+    # Select VaR horizon after selecting hedge
+    horizon = st.number_input("Horizon (e.g., enter 10/252 for a 10-day horizon)", value=0.0849, min_value=0.01, format="%.4f", help="Horizon for VaR calculation.")
     num_options = st.number_input("Number of options in portfolio", min_value=1, max_value=10, value=4, step=1, help="Number of different options in the portfolio.")
     portfolio = []
     default_values = [
@@ -307,25 +311,154 @@ if menu == "Hedging Strategy":
         qty = st.number_input(f"Quantity for Option {i+1}", value=default_values[i]['qty'], step=1, help="Quantity of options in the portfolio.", key=f"qty_{i}")
         market_price = st.number_input(f"Market price for Option {i+1}", value=default_values[i]['market_price'], help="Observed market price of the option.", key=f"market_price_{i}")
         portfolio.append({'type': option_type, 'S': S, 'K': K, 'T': T, 'r': r, 'qty': qty, 'market_price': market_price})
-    
     # Show model-specific parameters
     if model == "Monte Carlo":
         n_sim_main = st.number_input("Number of simulations for P&L and VaR/ES", value=50000, min_value=1000, step=1000, help="Number of scenarios for P&L and VaR/ES simulation.")
         n_sim_greeks = st.number_input("Number of simulations for Greeks", value=100000, min_value=1000, step=1000, help="Number of scenarios for Greeks calculation.")
         N_steps = st.number_input("Number of steps (For short maturities, use fewer steps; for long maturities, use more steps)", value=100, min_value=1, step=1, help="Discretization steps for Monte Carlo model.")
-        horizon = st.number_input("Horizon (e.g., enter 10/252 for a 10-day horizon)", value=0.0849, min_value=0.01, format="%.4f", help="Horizon for VaR calculation.")
     elif model == "Binomial":
         N_steps = st.number_input("Number of steps", value=100, min_value=1, step=1, help="Discretization steps for Binomial model.")
-        horizon = st.number_input("Horizon (e.g., enter 10/252 for a 10-day horizon)", value=0.0849, min_value=0.01, format="%.4f", help="Horizon for VaR calculation.")
-    elif model == "Black-Scholes":
-        horizon = st.number_input("Horizon (e.g., enter 10/252 for a 10-day horizon)", value=0.0849, min_value=0.01, format="%.4f", help="Horizon for VaR calculation.")
-    
     if st.button("Calculate Hedging Strategy", key="hedging_strategy_btn"):
         with st.spinner("Calculating hedging strategy..."):
             try:
                 if model == "Black-Scholes":
-                    # Implement Black-Scholes hedging logic here
-                    st.write("Black-Scholes hedging logic not yet implemented.")
+                    # Simulate P&L distribution using bs_portfolio_analysis
+                    sim_bs = bsa.simulate_portfolio(portfolio, n_sims=10000, horizon=horizon)
+                    pnl_bs = sim_bs['pnl']
+                    shocks_bs = sim_bs['shocks']
+                    if hedge_strategy == "Delta Hedge":
+                        # Implement Delta hedging logic
+                        delta_hedge_fraction_bs = 0.7  # Default to 70% coverage
+                        subyacentes = {}
+                        for opt in portfolio:
+                            key = opt.get('ticker', opt['S'])
+                            greeks = bsa.option_greeks(opt)
+                            subyacentes.setdefault(key, {'S0': opt['S'], 'delta': 0})
+                            subyacentes[key]['delta'] += greeks['delta'] * opt['qty'] * delta_hedge_fraction_bs
+                        pnl_bs_hedged = []
+                        for i in range(len(pnl_bs)):
+                            hedge_pnl = 0
+                            for key, v in subyacentes.items():
+                                S0 = v['S0']
+                                delta = v['delta']
+                                Z = shocks_bs[key][i]
+                                for opt in portfolio:
+                                    if opt.get('ticker', opt['S']) == key:
+                                        iv = bsa.implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
+                                        if iv is None:
+                                            iv = 0.2
+                                        r = opt['r']
+                                        T_sim = horizon if horizon is not None else opt['T']
+                                        break
+                                S_T = S0 * np.exp((r - 0.5 * iv ** 2) * T_sim + iv * np.sqrt(T_sim) * Z)
+                                hedge_pnl += -delta * (S_T - S0)
+                            pnl_bs_hedged.append(pnl_bs[i] + hedge_pnl)
+                        pnl_bs_hedged = np.array(pnl_bs_hedged)
+                        var_bs_hedged, es_bs_hedged = bsa.var_es(pnl_bs_hedged, alpha=0.01)
+                        st.write(f"Delta hedge per underlying:")
+                        for key, v in subyacentes.items():
+                            st.write(f"  Underlying {key}: delta = {v['delta']:.4f}")
+                        st.write(f"\nVaR after delta hedge (BS, 99%): {var_bs_hedged:.2f}")
+                        st.write(f"ES after delta hedge (BS, 99%): {es_bs_hedged:.2f}")
+                        st.write(f"VaR reduction: {var_bs - var_bs_hedged:.2f}")
+                        st.write(f"ES reduction: {es_bs - es_bs_hedged:.2f}")
+                    elif hedge_strategy == "Delta+Gamma Hedge":
+                        # Implement Gamma + Delta hedging logic
+                        greeks_total = bsa.portfolio_greeks(portfolio)
+                        gamma_cartera = greeks_total['gamma']
+                        delta_cartera = greeks_total['delta']
+                        hedge_opt = {
+                            'type': 'call',
+                            'S': portfolio[0]['S'],
+                            'K': portfolio[0]['K'],
+                            'T': portfolio[0]['T'],
+                            'r': portfolio[0]['r'],
+                            'qty': 0,
+                            'market_price': portfolio[0]['market_price'],
+                        }
+                        greeks_hedge = bsa.option_greeks(hedge_opt)
+                        gamma_hedge = greeks_hedge['gamma']
+                        gamma_hedge_fraction = 0.7
+                        qty_gamma_hedge = -gamma_cartera * gamma_hedge_fraction / gamma_hedge if gamma_hedge != 0 else 0
+                        hedge_opt['qty'] = qty_gamma_hedge
+                        portfolio_gamma_hedged = portfolio + [hedge_opt]
+                        greeks_total_gamma = bsa.portfolio_greeks(portfolio_gamma_hedged)
+                        delta_gamma_hedged = greeks_total_gamma['delta']
+                        pnl_gamma_delta_hedged = []
+                        for i in range(len(pnl_bs)):
+                            shocked_portfolio = []
+                            for opt in portfolio_gamma_hedged:
+                                key = opt.get('ticker', opt['S'])
+                                S0 = opt['S']
+                                iv = bsa.implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
+                                if iv is None:
+                                    iv = 0.2
+                                r = opt['r']
+                                T_sim = horizon if horizon is not None else opt['T']
+                                Z = shocks_bs[key][i] if key in shocks_bs else np.random.normal(0, 1)
+                                S_T = S0 * np.exp((r - 0.5 * iv ** 2) * T_sim + iv * np.sqrt(T_sim) * Z)
+                                shocked_opt = opt.copy()
+                                shocked_opt['S'] = S_T
+                                shocked_portfolio.append(shocked_opt)
+                            val = bsa.portfolio_value(shocked_portfolio)
+                            hedge_pnl = 0
+                            S0 = portfolio[0]['S']
+                            delta = delta_gamma_hedged
+                            Z = shocks_bs[portfolio[0].get('ticker', portfolio[0]['S'])][i]
+                            S_T = S0 * np.exp((portfolio[0]['r'] - 0.5 * iv ** 2) * T_sim + iv * np.sqrt(T_sim) * Z)
+                            hedge_pnl += -delta * (S_T - S0)
+                            pnl_gamma_delta_hedged.append(val - value_bs + hedge_pnl)
+                        pnl_gamma_delta_hedged = np.array(pnl_gamma_delta_hedged)
+                        var_gamma_delta_hedged, es_gamma_delta_hedged = bsa.var_es(pnl_gamma_delta_hedged, alpha=0.01)
+                        st.write(f"Gamma hedge: qty = {qty_gamma_hedge:.4f} of ATM call (S={hedge_opt['S']}, K={hedge_opt['K']}) covering {gamma_hedge_fraction*100:.0f}% of gamma")
+                        st.write(f"Delta after gamma hedge: {delta_gamma_hedged:.4f}")
+                        st.write(f"\nVaR after gamma+delta hedge (BS, 99%): {var_gamma_delta_hedged:.2f}")
+                        st.write(f"ES after gamma+delta hedge (BS, 99%): {es_gamma_delta_hedged:.2f}")
+                        st.write(f"VaR reduction vs original: {var_bs - var_gamma_delta_hedged:.2f}")
+                        st.write(f"ES reduction vs original: {es_bs - es_gamma_delta_hedged:.2f}")
+                    elif hedge_strategy == "Vega Hedge":
+                        # Implement Vega hedging logic
+                        vega_total = bsa.portfolio_greeks(portfolio)['vega']
+                        hedge_opt_vega = {
+                            'type': 'call',
+                            'S': portfolio[0]['S'],
+                            'K': portfolio[0]['K'],
+                            'T': portfolio[0]['T'],
+                            'r': portfolio[0]['r'],
+                            'qty': 0,
+                            'market_price': portfolio[0]['market_price'],
+                        }
+                        greeks_hedge_vega = bsa.option_greeks(hedge_opt_vega)
+                        vega_hedge = greeks_hedge_vega['vega']
+                        vega_hedge_fraction = 0.7
+                        qty_vega_hedge = -vega_total * vega_hedge_fraction / vega_hedge if vega_hedge != 0 else 0
+                        hedge_opt_vega['qty'] = qty_vega_hedge
+                        portfolio_vega_hedged = portfolio + [hedge_opt_vega]
+                        pnl_vega_hedged = []
+                        for i in range(len(pnl_bs)):
+                            shocked_portfolio = []
+                            for opt in portfolio_vega_hedged:
+                                key = opt.get('ticker', opt['S'])
+                                S0 = opt['S']
+                                iv = bsa.implied_volatility_option(opt['market_price'], opt['S'], opt['K'], opt['T'], opt['r'], opt['type'])
+                                if iv is None:
+                                    iv = 0.2
+                                r = opt['r']
+                                T_sim = horizon if horizon is not None else opt['T']
+                                Z = shocks_bs[key][i] if key in shocks_bs else np.random.normal(0, 1)
+                                S_T = S0 * np.exp((r - 0.5 * iv ** 2) * T_sim + iv * np.sqrt(T_sim) * Z)
+                                shocked_opt = opt.copy()
+                                shocked_opt['S'] = S_T
+                                shocked_portfolio.append(shocked_opt)
+                            val = bsa.portfolio_value(shocked_portfolio)
+                            pnl_vega_hedged.append(val - value_bs)
+                        pnl_vega_hedged = np.array(pnl_vega_hedged)
+                        var_vega_hedged, es_vega_hedged = bsa.var_es(pnl_vega_hedged, alpha=0.01)
+                        st.write(f"Vega hedge: qty = {qty_vega_hedge:.4f} of ATM call (S={hedge_opt_vega['S']}, K={hedge_opt_vega['K']}) covering {vega_hedge_fraction*100:.0f}% of vega")
+                        st.write(f"\nVaR after vega hedge (BS, 99%): {var_vega_hedged:.2f}")
+                        st.write(f"ES after vega hedge (BS, 99%): {es_vega_hedged:.2f}")
+                        st.write(f"VaR reduction vs original: {var_bs - var_vega_hedged:.2f}")
+                        st.write(f"ES reduction vs original: {es_bs - es_vega_hedged:.2f}")
                 elif model == "Binomial":
                     # Implement Binomial hedging logic here
                     st.write("Binomial hedging logic not yet implemented.")

@@ -122,10 +122,13 @@ if menu == "Introduction":
     comments = st.sidebar.text_area("📝 Additional comments", placeholder="Share your thoughts...")
     # Submit button
     if st.sidebar.button("Submit Feedback"):
-        # Save the feedback to a CSV file
-        with open('feedback.csv', 'a') as f:
-            f.write(f"{rating},{comments}\n")
-        st.sidebar.success("🎉 Thank you for your feedback! We appreciate your input.")
+        try:
+            # Save the feedback to a CSV file
+            with open('feedback.csv', 'a') as f:
+                f.write(f"{rating},{comments}\n")
+            st.sidebar.success("🎉 Thank you for your feedback! We appreciate your input.")
+        except Exception as e:
+            st.sidebar.error(f"Error saving feedback: {e}")
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
 if menu == "Single Option Analysis":

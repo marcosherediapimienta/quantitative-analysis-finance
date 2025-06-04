@@ -7,6 +7,11 @@ import pandas as pd
 from option_pricing.black_scholes_model import bs_portfolio_analysis as bsa
 from option_pricing.binomial_model import binomial_portfolio_analysis as bpa
 from option_pricing.monte_carlo import mc_portfolio_analysis as mca
+import yfinance as yf
+
+# Set the correct visualization directory
+vis_dir = os.path.join(os.path.dirname(__file__), 'visualizations')
+os.makedirs(vis_dir, exist_ok=True)
 
 # Set a fixed random seed for reproducibility
 np.random.seed(42)
@@ -75,7 +80,7 @@ menu = st.sidebar.selectbox(
         "Portfolio Analysis - Binomial",
         "Portfolio Analysis - Monte Carlo",
         "Hedging Strategy",
-        "Sensitivity Analysis"  # New section for sensitivity analysis
+        "Sensitivity Analysis" 
     ],
     index=0
 )
@@ -89,13 +94,143 @@ st.sidebar.markdown('''
 </div>
 ''', unsafe_allow_html=True)
 
-# Set the correct visualization directory
-vis_dir = os.path.join(os.path.dirname(__file__), 'visualizations')
-os.makedirs(vis_dir, exist_ok=True)
+if menu == "Introduction":
+    st.markdown('<div class="title-conference">Option Pricing & Portfolio Risk App</div>', unsafe_allow_html=True)
+    st.markdown('<div class="subtitle-conference">A cutting-edge tool for pricing options, analyzing portfolio risk, and comparing financial models.</div>', unsafe_allow_html=True)
+    st.markdown("""
+    **🚀 Quick Start Guide:**
+    - **Navigate** through the sections using the sidebar.
+    - For single options, **select your model** and option type (European/American).
+    - For portfolios, **define your positions** and assess risk metrics.
+    - **Visualize** and compare results with interactive charts.
+    """)
+    st.markdown("""
+    **💡 About This App:**
+    Designed for quantitative finance professionals, students, and researchers, this application offers a comprehensive interface to explore and compare key models for option pricing and portfolio risk. All within a user-friendly environment.
+    
+    **Key Features:**
+    - 📊 **Interactive Visualizations**: Gain insights with dynamic charts and graphs.
+    - 📈 **Comprehensive Analysis**: Dive into detailed analyses of Greeks, VaR, ES, and more.
+    - 🔍 **Model Comparison**: Evaluate different financial models side by side.
+    - 🛠️ **User-Friendly Interface**: Intuitive design for seamless navigation.
+    
+    **Get Started Now!**
+    """)
+    # Add feedback form below the personal information card with enhanced styling
+    st.sidebar.markdown('<div style="background-color:#23272b; padding:20px; border-radius:10px; margin-top:20px;">', unsafe_allow_html=True)
+    st.sidebar.header("💬 We value your feedback!", anchor=None)
+    st.sidebar.write("Please let us know how you feel about the app. Your insights help us improve!")
+    # Rating input with customizable slider
+    rating = st.sidebar.slider("🌟 Rate your experience", min_value=1, max_value=5, value=3, step=1)
+    # Text input for comments with placeholder
+    comments = st.sidebar.text_area("📝 Additional comments", placeholder="Share your thoughts...")
+    # Submit button
+    if st.sidebar.button("Submit Feedback"):
+        # Save the feedback to a CSV file
+        with open('feedback.csv', 'a') as f:
+            f.write(f"{rating},{comments}\n")
+        st.sidebar.success("🎉 Thank you for your feedback! We appreciate your input.")
+    st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
-# Implement logic for each portfolio model
+if menu == "Single Option Analysis":
+    st.header("🔍 Single Option Analysis")
+    st.write("Select your model and option type to begin analyzing single options.")
+    cols = st.columns(3)
+    with cols[0]:
+        model = st.selectbox("Model", ["Black-Scholes", "Binomial", "Monte Carlo"], key="model_single", help="Pricing model for this option.")
+        option_style = st.selectbox("Option style", ["European", "American"], key="option_style_single", help="Exercise style of the option.")
+        option_type = st.selectbox("Option type", ["call", "put"], key="option_type_single", help="Call or put option.")
+    with cols[1]:
+        S = st.number_input("Spot price (S)", value=st.session_state.get("S_single", 100.0), key="S_single", help="Current price of the underlying asset.")
+        K = st.number_input("Strike price (K)", value=st.session_state.get("K_single", 100.0), key="K_single", help="Strike price of the option.")
+        T = st.number_input("Time to maturity (years)", value=st.session_state.get("T_single", 1.0), key="T_single", min_value=0.01, help="Time to maturity in years.")
+    with cols[2]:
+        r = st.number_input("Risk-free rate (r, decimal)", value=st.session_state.get("r_single", 0.05), key="r_single", min_value=0.0, max_value=1.0, step=0.01, help="Annual risk-free interest rate (as decimal, e.g. 0.03 for 3%).")
+        market_price = st.number_input("Option market price", value=st.session_state.get("market_price_single", 10.0), key="market_price_single", min_value=0.0, help="Observed market price of the option.")
+        if model == "Binomial":
+            N_steps = st.number_input("Number of steps (Binomial)", value=st.session_state.get("N_single", 100), min_value=1, step=1, key="N_single", help="Discretization steps for Binomial model.")
+        if model == "Monte Carlo":
+            n_sim = st.number_input("Number of Monte Carlo simulations", value=st.session_state.get("n_sim_single", 10000), min_value=1000, step=1000, key="n_sim_single", help="Number of scenarios for risk simulation.")
+            N_steps = 1  # Default to 1 for European options
+            if option_style == "American":
+                N_steps = st.number_input("Number of steps (Monte Carlo)", value=st.session_state.get("N_steps_single", 100), min_value=1, step=1, key="N_steps_single", help="Discretization steps for Monte Carlo model.")
+    # Validación básica
+    if T <= 0:
+        st.error("Maturity must be positive.")
+    if st.button("Calculate Option", key="single_option_btn"):
+        with st.spinner("Calculating option price and Greeks..."):
+            try:
+                if model == "Black-Scholes":
+                    if option_style == "European":
+                        opt = {'type': option_type, 'S': S, 'K': K, 'T': T, 'r': r, 'market_price': market_price}
+                        price, iv = bsa.price_option(opt)
+                        greeks = bsa.option_greeks(opt)
+                    else:
+                        st.info("Black-Scholes is not suitable for American options. Use Binomial or Monte Carlo.")
+                        price = None
+                        greeks = None
+                elif model == "Binomial":
+                    if option_style == "European":
+                        iv = bpa.implied_volatility_option(market_price, S, K, T, r, option_type)
+                        price = bpa.binomial_european_option_price(S, K, T, r, iv, int(N_steps), option_type)
+                        greeks = bpa.binomial_greeks_european_option(S, K, T, r, iv, int(N_steps), option_type)
+                    else:
+                        iv = bsa.implied_volatility_option(market_price, S, K, T, r, option_type)  # Use Black-Scholes for IV
+                        price = bpa.binomial_american_option_price(S, K, T, r, iv, int(N_steps), option_type)
+                        greeks = bpa.binomial_greeks_american_option(S, K, T, r, iv, int(N_steps), option_type)
+                elif model == "Monte Carlo":
+                    opt = {'type': option_type, 'style': option_style.lower(), 'S': S, 'K': K, 'T': T, 'r': r, 'qty': 1, 'market_price': market_price}
+                    price = mca.price_option_mc(opt, n_sim=int(n_sim), n_steps=int(N_steps))
+                    greeks = mca.option_greeks_mc(opt, n_sim=int(n_sim), n_steps=int(N_steps))
+                    iv = mca.implied_volatility_option(market_price, S, K, T, r, option_type)
+                # Resultados destacados
+                col1, col2 = st.columns(2)
+                if price is not None:
+                    col1.metric("Model Price", f"{price:.4f}")
+                if iv is not None:
+                    col2.metric("Implied Volatility", f"{iv:.4f}")
+                st.markdown("---")
+                if greeks is not None:
+                    st.write("Greeks:")
+                    st.json(greeks)
+            except Exception as e:
+                st.error(f"Error in calculation: {e}")
+
+    # Stock quote terminal in sidebar
+    st.sidebar.subheader("📈 Asset Quote Terminal")
+    st.sidebar.write("Enter a symbol for stocks, ETFs, indices, etc.")
+    ticker_symbol = st.sidebar.text_input("Enter asset symbol", value="AAPL", max_chars=10)
+    if ticker_symbol:
+        try:
+            stock = yf.Ticker(ticker_symbol)
+            stock_info = stock.info
+            current_price = stock_info.get('currentPrice', 'N/A')
+            company_name = stock_info.get('longName', 'N/A')
+            change_percent = stock_info.get('regularMarketChangePercent', 'N/A')
+            volume = stock_info.get('volume', 'N/A')
+            st.sidebar.write(f"**{company_name} ({ticker_symbol.upper()})**")
+            st.sidebar.write(f"Price: ${current_price if current_price != 'N/A' else 'Data not available'}")
+            st.sidebar.write(f"Change: {change_percent if change_percent != 'N/A' else 'Data not available'}%")
+            st.sidebar.write(f"Volume: {volume if volume != 'N/A' else 'Data not available'}")
+            # Plot asset price history
+            hist = stock.history(period="1mo")
+            if not hist.empty:
+                fig, ax = plt.subplots()
+                ax.plot(hist.index, hist['Close'], label='Close Price')
+                ax.set_title(f'{company_name} Price History')
+                ax.set_xlabel('Date')
+                ax.set_ylabel('Price ($)')
+                ax.legend()
+                st.sidebar.pyplot(fig)
+            else:
+                st.sidebar.write("No historical data available.")
+        except Exception as e:
+            st.sidebar.error(f"Error fetching data for {ticker_symbol}: {e}")
+
 if menu == "Portfolio Analysis - Black-Scholes":
-    st.write("Black-Scholes portfolio model selected.")
+    st.header("📊 Portfolio Analysis - Black-Scholes")
+    st.subheader("Analyze your portfolio using the Black-Scholes model")
+    st.write("Configure your portfolio and analyze risk metrics with precision.")
     # Add Black-Scholes portfolio logic here
     num_options = st.number_input("Number of options in portfolio", min_value=1, max_value=10, value=4, step=1, help="Number of different options in the portfolio.")
     horizon = st.number_input("Horizon (e.g., enter 10/252 for a 10-day horizon)", value=0.0849, min_value=0.01, format="%.4f", help="Horizon for VaR calculation.")
@@ -158,8 +293,41 @@ if menu == "Portfolio Analysis - Black-Scholes":
             except Exception as e:
                 st.error(f"Error in calculation: {e}")
 
+    # Stock quote terminal in sidebar
+    st.sidebar.subheader("📈 Terminal")
+    st.sidebar.write("Enter a symbol for stocks")
+    ticker_symbol = st.sidebar.text_input("Enter asset symbol", value="AAPL", max_chars=10)
+    if ticker_symbol:
+        try:
+            stock = yf.Ticker(ticker_symbol)
+            stock_info = stock.info
+            current_price = stock_info.get('currentPrice', 'N/A')
+            company_name = stock_info.get('longName', 'N/A')
+            change_percent = stock_info.get('regularMarketChangePercent', 'N/A')
+            volume = stock_info.get('volume', 'N/A')
+            st.sidebar.write(f"**{company_name} ({ticker_symbol.upper()})**")
+            st.sidebar.write(f"Price: ${current_price if current_price != 'N/A' else 'Data not available'}")
+            st.sidebar.write(f"Change: {change_percent if change_percent != 'N/A' else 'Data not available'}%")
+            st.sidebar.write(f"Volume: {volume if volume != 'N/A' else 'Data not available'}")
+            # Plot asset price history
+            hist = stock.history(period="1mo")
+            if not hist.empty:
+                fig, ax = plt.subplots()
+                ax.plot(hist.index, hist['Close'], label='Close Price')
+                ax.set_title(f'{company_name} Price History')
+                ax.set_xlabel('Date')
+                ax.set_ylabel('Price ($)')
+                ax.legend()
+                st.sidebar.pyplot(fig)
+            else:
+                st.sidebar.write("No historical data available.")
+        except Exception as e:
+            st.sidebar.error(f"Error fetching data for {ticker_symbol}: {e}")
+
 elif menu == "Portfolio Analysis - Binomial":
-    st.write("Binomial portfolio model selected.")
+    st.header("📊 Portfolio Analysis - Binomial")
+    st.subheader("Analyze your portfolio using the Binomial model")
+    st.write("Configure your portfolio and assess risk metrics with the Binomial model.")
     # Add Binomial portfolio logic here
     num_options = st.number_input("Number of options in portfolio", min_value=1, max_value=10, value=4, step=1, help="Number of different options in the portfolio.")
     N_steps = st.number_input("Number of steps", value=100, min_value=1, step=1, help="Discretization steps for Binomial model.")
@@ -217,16 +385,48 @@ elif menu == "Portfolio Analysis - Binomial":
                 ax.hist(pnl_binomial, bins=50, color='skyblue', edgecolor='k', alpha=0.5, density=True, label='Original')
                 ax.axvline(-var_binomial, color='red', linestyle='--', label=f'VaR (99%) {-var_binomial:.2f}')
                 ax.axvline(-es_binomial, color='orange', linestyle=':', label=f'ES (99%) {-es_binomial:.2f}')
-                ax.set_title('Simulated P&L Distribution of the Portfolio (BINOMIAL)')
+                ax.set_title('Simulated P&L Distribution of the Portfolio (Binomial)')
                 ax.set_xlabel('P&L')
                 ax.set_ylabel('Density')
                 ax.legend()
                 st.pyplot(fig)
             except Exception as e:
                 st.error(f"Error in calculation: {e}")
+    # Stock quote terminal in sidebar
+    st.sidebar.subheader("📈 Terminal")
+    st.sidebar.write("Enter a symbol for stocks")
+    ticker_symbol = st.sidebar.text_input("Enter asset symbol", value="AAPL", max_chars=10)
+    if ticker_symbol:
+        try:
+            stock = yf.Ticker(ticker_symbol)
+            stock_info = stock.info
+            current_price = stock_info.get('currentPrice', 'N/A')
+            company_name = stock_info.get('longName', 'N/A')
+            change_percent = stock_info.get('regularMarketChangePercent', 'N/A')
+            volume = stock_info.get('volume', 'N/A')
+            st.sidebar.write(f"**{company_name} ({ticker_symbol.upper()})**")
+            st.sidebar.write(f"Price: ${current_price if current_price != 'N/A' else 'Data not available'}")
+            st.sidebar.write(f"Change: {change_percent if change_percent != 'N/A' else 'Data not available'}%")
+            st.sidebar.write(f"Volume: {volume if volume != 'N/A' else 'Data not available'}")
+            # Plot asset price history
+            hist = stock.history(period="1mo")
+            if not hist.empty:
+                fig, ax = plt.subplots()
+                ax.plot(hist.index, hist['Close'], label='Close Price')
+                ax.set_title(f'{company_name} Price History')
+                ax.set_xlabel('Date')
+                ax.set_ylabel('Price ($)')
+                ax.legend()
+                st.sidebar.pyplot(fig)
+            else:
+                st.sidebar.write("No historical data available.")
+        except Exception as e:
+            st.sidebar.error(f"Error fetching data for {ticker_symbol}: {e}")
 
 elif menu == "Portfolio Analysis - Monte Carlo":
-    st.write("Monte Carlo portfolio model selected.")
+    st.header("📊 Portfolio Analysis - Monte Carlo")
+    st.subheader("Analyze your portfolio using the Monte Carlo model")
+    st.write("Configure your portfolio and evaluate risk metrics with the Monte Carlo simulation.")
     # Add Monte Carlo portfolio logic here
     num_options = st.number_input("Number of options in portfolio", min_value=1, max_value=10, value=4, step=1, help="Number of different options in the portfolio.")
     n_sim_main = st.number_input("Number of simulations for P&L and VaR/ES", value=50000, min_value=1000, step=1000, help="Number of scenarios for P&L and VaR/ES simulation.")
@@ -284,16 +484,48 @@ elif menu == "Portfolio Analysis - Monte Carlo":
                 ax.hist(pnl_mc, bins=50, color='skyblue', edgecolor='k', alpha=0.5, density=True, label='Original')
                 ax.axvline(-var_mc, color='red', linestyle='--', label=f'VaR (99%) {-var_mc:.2f}')
                 ax.axvline(-es_mc, color='orange', linestyle=':', label=f'ES (99%) {-es_mc:.2f}')
-                ax.set_title('Simulated P&L Distribution of the Portfolio (MONTE CARLO)')
+                ax.set_title('Simulated P&L Distribution of the Portfolio (Monte Carlo)')
                 ax.set_xlabel('P&L')
                 ax.set_ylabel('Density')
                 ax.legend()
                 st.pyplot(fig)
             except Exception as e:
                 st.error(f"Error in calculation: {e}")
+    # Stock quote terminal in sidebar
+    st.sidebar.subheader("📈 Terminal")
+    st.sidebar.write("Enter a symbol for stocks")
+    ticker_symbol = st.sidebar.text_input("Enter asset symbol", value="AAPL", max_chars=10)
+    if ticker_symbol:
+        try:
+            stock = yf.Ticker(ticker_symbol)
+            stock_info = stock.info
+            current_price = stock_info.get('currentPrice', 'N/A')
+            company_name = stock_info.get('longName', 'N/A')
+            change_percent = stock_info.get('regularMarketChangePercent', 'N/A')
+            volume = stock_info.get('volume', 'N/A')
+            st.sidebar.write(f"**{company_name} ({ticker_symbol.upper()})**")
+            st.sidebar.write(f"Price: ${current_price if current_price != 'N/A' else 'Data not available'}")
+            st.sidebar.write(f"Change: {change_percent if change_percent != 'N/A' else 'Data not available'}%")
+            st.sidebar.write(f"Volume: {volume if volume != 'N/A' else 'Data not available'}")
+            # Plot asset price history
+            hist = stock.history(period="1mo")
+            if not hist.empty:
+                fig, ax = plt.subplots()
+                ax.plot(hist.index, hist['Close'], label='Close Price')
+                ax.set_title(f'{company_name} Price History')
+                ax.set_xlabel('Date')
+                ax.set_ylabel('Price ($)')
+                ax.legend()
+                st.sidebar.pyplot(fig)
+            else:
+                st.sidebar.write("No historical data available.")
+        except Exception as e:
+            st.sidebar.error(f"Error fetching data for {ticker_symbol}: {e}")
 
 if menu == "Hedging Strategy":
-    st.write("Hedging Strategy selected.")
+    st.header("🛡️ Hedging Strategy")
+    st.subheader("Optimize and protect your portfolio by choosing the right hedging.")
+    st.write("Select your model and hedging strategy to manage portfolio risk effectively.")
     # Select model for hedging strategy
     model = st.selectbox("Select Model:", ["Black-Scholes", "Binomial", "Monte Carlo"], index=0)
     # Select hedging strategy
@@ -888,9 +1120,42 @@ if menu == "Hedging Strategy":
                         st.pyplot(fig)
             except Exception as e:
                 st.error(f"Error in calculation: {e}")
+    # Stock quote terminal in sidebar
+    st.sidebar.subheader("📈 Terminal")
+    st.sidebar.write("Enter a symbol for stocks")
+    ticker_symbol = st.sidebar.text_input("Enter asset symbol", value="AAPL", max_chars=10)
+    if ticker_symbol:
+        try:
+            stock = yf.Ticker(ticker_symbol)
+            stock_info = stock.info
+            current_price = stock_info.get('currentPrice', 'N/A')
+            company_name = stock_info.get('longName', 'N/A')
+            change_percent = stock_info.get('regularMarketChangePercent', 'N/A')
+            volume = stock_info.get('volume', 'N/A')
+            st.sidebar.write(f"**{company_name} ({ticker_symbol.upper()})**")
+            st.sidebar.write(f"Price: ${current_price if current_price != 'N/A' else 'Data not available'}")
+            st.sidebar.write(f"Change: {change_percent if change_percent != 'N/A' else 'Data not available'}%")
+            st.sidebar.write(f"Volume: {volume if volume != 'N/A' else 'Data not available'}")
+            # Plot asset price history
+            hist = stock.history(period="1mo")
+            if not hist.empty:
+                fig, ax = plt.subplots()
+                ax.plot(hist.index, hist['Close'], label='Close Price')
+                ax.set_title(f'{company_name} Price History')
+                ax.set_xlabel('Date')
+                ax.set_ylabel('Price ($)')
+                ax.legend()
+                st.sidebar.pyplot(fig)
+            else:
+                st.sidebar.write("No historical data available.")
+        except Exception as e:
+            st.sidebar.error(f"Error fetching data for {ticker_symbol}: {e}")
 
 if menu == "Sensitivity Analysis":
-   # Select model for hedging strategy
+    st.header("🔬 Sensitivity Analysis")
+    st.subheader("Understand your portfolio by analyzing different sensitivities.")
+    st.write("Select your model and analyze how different market factors affect your portfolio's performance.")
+    # Select model for hedging strategy
     model = st.selectbox("Select Model:", ["Black-Scholes", "Binomial", "Monte Carlo"], index=0)
     # Select percentage of coverage for hedging
     coverage_percentage = st.number_input("Hedging (%):", value=70, min_value=0, max_value=100, step=1, help="Percentage of the portfolio to be hedged.")
@@ -977,83 +1242,36 @@ if menu == "Sensitivity Analysis":
             except Exception as e:
                 st.error(f"Error in sensitivity analysis calculation: {e}")
 
-if menu == "Introduction":
-    st.markdown('<div class="title-conference">Option Pricing & Portfolio Risk App</div>', unsafe_allow_html=True)
-    st.markdown('<div class="subtitle-conference">A robust and visual tool for pricing European and American options, portfolio risk analysis, and model comparison.</div>', unsafe_allow_html=True)
-    st.markdown("""
-    **Instructions:**
-    - Select a section from the sidebar.
-    - For single options, choose model and type (European/American).
-    - For portfolios, define your positions and analyze risk.
-    - View and compare results visually.
-    """)
-    st.markdown("""
-    **About:**
-    This application is designed for quantitative finance professionals, students, and researchers. It provides a unified interface to explore and compare the most important models for option pricing and portfolio risk, including Greeks, VaR, ES, and more.
-    """)
-
-if menu == "Single Option Analysis":
-    st.header("Single Option Analysis")
-    cols = st.columns(3)
-    with cols[0]:
-        model = st.selectbox("Model", ["Black-Scholes", "Binomial", "Monte Carlo"], key="model_single", help="Pricing model for this option.")
-        option_style = st.selectbox("Option style", ["European", "American"], key="option_style_single", help="Exercise style of the option.")
-        option_type = st.selectbox("Option type", ["call", "put"], key="option_type_single", help="Call or put option.")
-    with cols[1]:
-        S = st.number_input("Spot price (S)", value=st.session_state.get("S_single", 100.0), key="S_single", help="Current price of the underlying asset.")
-        K = st.number_input("Strike price (K)", value=st.session_state.get("K_single", 100.0), key="K_single", help="Strike price of the option.")
-        T = st.number_input("Time to maturity (years)", value=st.session_state.get("T_single", 1.0), key="T_single", min_value=0.01, help="Time to maturity in years.")
-    with cols[2]:
-        r = st.number_input("Risk-free rate (r, decimal)", value=st.session_state.get("r_single", 0.05), key="r_single", min_value=0.0, max_value=1.0, step=0.01, help="Annual risk-free interest rate (as decimal, e.g. 0.03 for 3%).")
-        market_price = st.number_input("Option market price", value=st.session_state.get("market_price_single", 10.0), key="market_price_single", min_value=0.0, help="Observed market price of the option.")
-        if model == "Binomial":
-            N_steps = st.number_input("Number of steps (Binomial)", value=st.session_state.get("N_single", 100), min_value=1, step=1, key="N_single", help="Discretization steps for Binomial model.")
-        if model == "Monte Carlo":
-            n_sim = st.number_input("Number of Monte Carlo simulations", value=st.session_state.get("n_sim_single", 10000), min_value=1000, step=1000, key="n_sim_single", help="Number of scenarios for risk simulation.")
-            N_steps = 1  # Default to 1 for European options
-            if option_style == "American":
-                N_steps = st.number_input("Number of steps (Monte Carlo)", value=st.session_state.get("N_steps_single", 100), min_value=1, step=1, key="N_steps_single", help="Discretization steps for Monte Carlo model.")
-    # Validación básica
-    if T <= 0:
-        st.error("Maturity must be positive.")
-    if st.button("Calculate Option", key="single_option_btn"):
-        with st.spinner("Calculating option price and Greeks..."):
-            try:
-                if model == "Black-Scholes":
-                    if option_style == "European":
-                        opt = {'type': option_type, 'S': S, 'K': K, 'T': T, 'r': r, 'market_price': market_price}
-                        price, iv = bsa.price_option(opt)
-                        greeks = bsa.option_greeks(opt)
-                    else:
-                        st.info("Black-Scholes is not suitable for American options. Use Binomial or Monte Carlo.")
-                        price = None
-                        greeks = None
-                elif model == "Binomial":
-                    if option_style == "European":
-                        iv = bpa.implied_volatility_option(market_price, S, K, T, r, option_type)
-                        price = bpa.binomial_european_option_price(S, K, T, r, iv, int(N_steps), option_type)
-                        greeks = bpa.binomial_greeks_european_option(S, K, T, r, iv, int(N_steps), option_type)
-                    else:
-                        iv = bsa.implied_volatility_option(market_price, S, K, T, r, option_type)  # Use Black-Scholes for IV
-                        price = bpa.binomial_american_option_price(S, K, T, r, iv, int(N_steps), option_type)
-                        greeks = bpa.binomial_greeks_american_option(S, K, T, r, iv, int(N_steps), option_type)
-                elif model == "Monte Carlo":
-                    opt = {'type': option_type, 'style': option_style.lower(), 'S': S, 'K': K, 'T': T, 'r': r, 'qty': 1, 'market_price': market_price}
-                    price = mca.price_option_mc(opt, n_sim=int(n_sim), n_steps=int(N_steps))
-                    greeks = mca.option_greeks_mc(opt, n_sim=int(n_sim), n_steps=int(N_steps))
-                    iv = mca.implied_volatility_option(market_price, S, K, T, r, option_type)
-                # Resultados destacados
-                col1, col2 = st.columns(2)
-                if price is not None:
-                    col1.metric("Model Price", f"{price:.4f}")
-                if iv is not None:
-                    col2.metric("Implied Volatility", f"{iv:.4f}")
-                st.markdown("---")
-                if greeks is not None:
-                    st.write("Greeks:")
-                    st.json(greeks)
-            except Exception as e:
-                st.error(f"Error in calculation: {e}")
-
+# Stock quote terminal in sidebar
+    st.sidebar.subheader("📈 Terminal")
+    st.sidebar.write("Enter a symbol for stocks")
+    ticker_symbol = st.sidebar.text_input("Enter asset symbol", value="AAPL", max_chars=10)
+    if ticker_symbol:
+        try:
+            stock = yf.Ticker(ticker_symbol)
+            stock_info = stock.info
+            current_price = stock_info.get('currentPrice', 'N/A')
+            company_name = stock_info.get('longName', 'N/A')
+            change_percent = stock_info.get('regularMarketChangePercent', 'N/A')
+            volume = stock_info.get('volume', 'N/A')
+            st.sidebar.write(f"**{company_name} ({ticker_symbol.upper()})**")
+            st.sidebar.write(f"Price: ${current_price if current_price != 'N/A' else 'Data not available'}")
+            st.sidebar.write(f"Change: {change_percent if change_percent != 'N/A' else 'Data not available'}%")
+            st.sidebar.write(f"Volume: {volume if volume != 'N/A' else 'Data not available'}")
+            # Plot asset price history
+            hist = stock.history(period="1mo")
+            if not hist.empty:
+                fig, ax = plt.subplots()
+                ax.plot(hist.index, hist['Close'], label='Close Price')
+                ax.set_title(f'{company_name} Price History')
+                ax.set_xlabel('Date')
+                ax.set_ylabel('Price ($)')
+                ax.legend()
+                st.sidebar.pyplot(fig)
+            else:
+                st.sidebar.write("No historical data available.")
+        except Exception as e:
+            st.sidebar.error(f"Error fetching data for {ticker_symbol}: {e}")
+            
 st.markdown('<div class="footer-conference">Developed by Marcos Heredia Pimienta, Quantitative Risk Analyst</div>', unsafe_allow_html=True)
 

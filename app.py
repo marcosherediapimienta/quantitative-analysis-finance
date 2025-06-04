@@ -206,7 +206,7 @@ if menu == "Single Option Analysis":
 
 if menu == "Portfolio Analysis - Black-Scholes":
     st.header("📊 Portfolio Analysis - Black-Scholes")
-    st.subheader("Evaluate your portfolio using the Black-Scholes model")
+    st.subheader("Analyze your portfolio using the Black-Scholes model")
     st.write("Configure your portfolio and analyze risk metrics with precision")
     num_options = st.number_input("Number of options in portfolio", min_value=1, max_value=10, value=4, step=1, help="Specify the number of different options in the portfolio.")
     horizon = st.number_input("Horizon (e.g., enter 10/252 for a 10-day horizon)", value=0.0849, min_value=0.01, format="%.4f", help="Set the horizon for VaR calculation.")
@@ -375,7 +375,7 @@ elif menu == "Portfolio Analysis - Binomial":
 
 elif menu == "Portfolio Analysis - Monte Carlo":
     st.header("📊 Portfolio Analysis - Monte Carlo")
-    st.subheader("Explore your portfolio using the Monte Carlo model")
+    st.subheader("Analyze your portfolio using the Monte Carlo model")
     st.write("Configure your portfolio and evaluate risk metrics with the Monte Carlo simulation.")
     num_options = st.number_input("Number of options in portfolio", min_value=1, max_value=10, value=4, step=1, help="Specify the number of different options in the portfolio.")
     n_sim_main = st.number_input("Number of simulations for P&L and VaR/ES", value=50000, min_value=1000, step=1000, help="Define the number of scenarios for P&L and VaR/ES simulation.")

@@ -204,8 +204,6 @@ if menu == "Single Option Analysis":
     st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
-
-# Implement logic for each portfolio model
 if menu == "Portfolio Analysis - Black-Scholes":
     st.header("📊 Portfolio Analysis - Black-Scholes")
     st.subheader("Evaluate your portfolio using the Black-Scholes model")
@@ -288,7 +286,6 @@ if menu == "Portfolio Analysis - Black-Scholes":
     form_url = "https://docs.google.com/forms/d/e/1FAIpQLSecDfBXdXynYHyouLub1ZT3AsYWa4V1N3O_OnvUKxiA21bnjg/viewform?usp=header"
     st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
-
 
 elif menu == "Portfolio Analysis - Binomial":
     st.header("📊 Portfolio Analysis - Binomial")
@@ -376,7 +373,6 @@ elif menu == "Portfolio Analysis - Binomial":
     st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
-
 elif menu == "Portfolio Analysis - Monte Carlo":
     st.header("📊 Portfolio Analysis - Monte Carlo")
     st.subheader("Explore your portfolio using the Monte Carlo model")
@@ -462,7 +458,6 @@ elif menu == "Portfolio Analysis - Monte Carlo":
     form_url = "https://docs.google.com/forms/d/e/1FAIpQLSecDfBXdXynYHyouLub1ZT3AsYWa4V1N3O_OnvUKxiA21bnjg/viewform?usp=header"
     st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
-
 
 if menu == "Hedging Strategy":
     st.header("🛡️ Hedging Strategy")
@@ -1047,7 +1042,6 @@ if menu == "Hedging Strategy":
     st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
-
 if menu == "Sensitivity Analysis":
     st.header("🔬 Sensitivity Analysis")
     st.subheader("Stress-test your portfolio against market shocks")
@@ -1156,6 +1150,5 @@ if menu == "Sensitivity Analysis":
     form_url = "https://docs.google.com/forms/d/e/1FAIpQLSecDfBXdXynYHyouLub1ZT3AsYWa4V1N3O_OnvUKxiA21bnjg/viewform?usp=header"
     st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
-
 
 st.markdown('<div class="footer-conference">Developed by Marcos Heredia Pimienta, Quantitative Risk Analyst</div>', unsafe_allow_html=True)

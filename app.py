@@ -112,28 +112,19 @@ if menu == "Introduction":
     </div>
     ''', unsafe_allow_html=True)
 
-    # Add feedback form below the personal information card with enhanced styling
+    # Enlace al formulario de Google
     st.sidebar.markdown('<div style="background-color:#23272b; padding:20px; border-radius:10px; margin-top:20px;">', unsafe_allow_html=True)
     st.sidebar.header("💬 We value your feedback!", anchor=None)
     st.sidebar.write("Please let us know how you feel about the app. Your insights help us improve!")
-    # Rating input with customizable slider
-    rating = st.sidebar.slider("🌟 Rate your experience", min_value=1, max_value=5, value=3, step=1)
-    # Text input for comments with placeholder
-    comments = st.sidebar.text_area("📝 Additional comments", placeholder="Share your thoughts...")
-    # Submit button
-    if st.sidebar.button("Submit Feedback"):
-        try:
-            # Save the feedback to a CSV file
-            with open('feedback.csv', 'a') as f:
-                f.write(f"{rating},{comments}\n")
-            st.sidebar.success("🎉 Thank you for your feedback! We appreciate your input.")
-        except Exception as e:
-            st.sidebar.error(f"Error saving feedback: {e}")
+
+    # Hipervínculo al formulario
+    form_url = "https://docs.google.com/forms/d/e/1FAIpQLSecDfBXdXynYHyouLub1ZT3AsYWa4V1N3O_OnvUKxiA21bnjg/viewform?usp=header"
+    st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
 if menu == "Single Option Analysis":
     st.header("🔍 Single Option Analysis")
-    st.write("Select your model and option type to begin analyzing single options.")
+    st.write("Select your model and option type to begin analyzing single options")
     cols = st.columns(3)
     with cols[0]:
         model = st.selectbox("Model", ["Black-Scholes", "Binomial", "Monte Carlo"], key="model_single", help="Choose the pricing model for this option.")
@@ -194,12 +185,31 @@ if menu == "Single Option Analysis":
                     st.json(greeks)
             except Exception as e:
                 st.error(f"Error in calculation: {e}")
+     # Personal info card below the sidebar menu
+    st.sidebar.markdown('''
+    <div style="background-color:#23272b; border-radius:12px; padding:1.2em 1.2em 1em 1.2em; margin-top:1.5em; margin-bottom:1.5em; box-shadow:0 2px 8px rgba(0,0,0,0.15); max-width:320px;">
+        <div style="font-size:1.1rem; font-weight:700; color:#90caf9; margin-bottom:0.2em;">Marcos Heredia Pimienta</div>
+        <div style="color:#b0bec5; font-size:0.98rem; margin-bottom:0.4em;">MSc in Quantitative Finance, Universitat Autònoma de Barcelona</div>
+        <div style="color:#e0e0e0; font-size:0.95rem; margin-bottom:0.4em;">Quantitative Risk Analyst</div>
+    </div>
+    ''', unsafe_allow_html=True)
+
+    # Enlace al formulario de Google
+    st.sidebar.markdown('<div style="background-color:#23272b; padding:20px; border-radius:10px; margin-top:20px;">', unsafe_allow_html=True)
+    st.sidebar.header("💬 We value your feedback!", anchor=None)
+    st.sidebar.write("Please let us know how you feel about the app. Your insights help us improve!")
+
+    # Hipervínculo al formulario
+    form_url = "https://docs.google.com/forms/d/e/1FAIpQLSecDfBXdXynYHyouLub1ZT3AsYWa4V1N3O_OnvUKxiA21bnjg/viewform?usp=header"
+    st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
+    st.sidebar.markdown('</div>', unsafe_allow_html=True)
+
 
 # Implement logic for each portfolio model
 if menu == "Portfolio Analysis - Black-Scholes":
     st.header("📊 Portfolio Analysis - Black-Scholes")
     st.subheader("Evaluate your portfolio using the Black-Scholes model")
-    st.write("Configure your portfolio and analyze risk metrics with precision.")
+    st.write("Configure your portfolio and analyze risk metrics with precision")
     num_options = st.number_input("Number of options in portfolio", min_value=1, max_value=10, value=4, step=1, help="Specify the number of different options in the portfolio.")
     horizon = st.number_input("Horizon (e.g., enter 10/252 for a 10-day horizon)", value=0.0849, min_value=0.01, format="%.4f", help="Set the horizon for VaR calculation.")
     portfolio = []
@@ -260,11 +270,30 @@ if menu == "Portfolio Analysis - Black-Scholes":
                 st.pyplot(fig)
             except Exception as e:
                 st.error(f"Error in calculation: {e}")
+     # Personal info card below the sidebar menu
+    st.sidebar.markdown('''
+    <div style="background-color:#23272b; border-radius:12px; padding:1.2em 1.2em 1em 1.2em; margin-top:1.5em; margin-bottom:1.5em; box-shadow:0 2px 8px rgba(0,0,0,0.15); max-width:320px;">
+        <div style="font-size:1.1rem; font-weight:700; color:#90caf9; margin-bottom:0.2em;">Marcos Heredia Pimienta</div>
+        <div style="color:#b0bec5; font-size:0.98rem; margin-bottom:0.4em;">MSc in Quantitative Finance, Universitat Autònoma de Barcelona</div>
+        <div style="color:#e0e0e0; font-size:0.95rem; margin-bottom:0.4em;">Quantitative Risk Analyst</div>
+    </div>
+    ''', unsafe_allow_html=True)
+
+    # Enlace al formulario de Google
+    st.sidebar.markdown('<div style="background-color:#23272b; padding:20px; border-radius:10px; margin-top:20px;">', unsafe_allow_html=True)
+    st.sidebar.header("💬 We value your feedback!", anchor=None)
+    st.sidebar.write("Please let us know how you feel about the app. Your insights help us improve!")
+
+    # Hipervínculo al formulario
+    form_url = "https://docs.google.com/forms/d/e/1FAIpQLSecDfBXdXynYHyouLub1ZT3AsYWa4V1N3O_OnvUKxiA21bnjg/viewform?usp=header"
+    st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
+    st.sidebar.markdown('</div>', unsafe_allow_html=True)
+
 
 elif menu == "Portfolio Analysis - Binomial":
     st.header("📊 Portfolio Analysis - Binomial")
     st.subheader("Analyze your portfolio using the Binomial model")
-    st.write("Configure your portfolio and assess risk metrics with the Binomial model.")
+    st.write("Configure your portfolio and assess risk metrics with the Binomial model")
     num_options = st.number_input("Number of options in portfolio", min_value=1, max_value=10, value=4, step=1, help="Specify the number of different options in the portfolio.")
     N_steps = st.number_input("Number of steps", value=100, min_value=1, step=1, help="Set the discretization steps for the Binomial model.")
     horizon = st.number_input("Horizon (e.g., enter 10/252 for a 10-day horizon)", value=0.0849, min_value=0.01, format="%.4f", help="Set the horizon for VaR calculation.")
@@ -328,6 +357,25 @@ elif menu == "Portfolio Analysis - Binomial":
                 st.pyplot(fig)
             except Exception as e:
                 st.error(f"Error in calculation: {e}")
+     # Personal info card below the sidebar menu
+    st.sidebar.markdown('''
+    <div style="background-color:#23272b; border-radius:12px; padding:1.2em 1.2em 1em 1.2em; margin-top:1.5em; margin-bottom:1.5em; box-shadow:0 2px 8px rgba(0,0,0,0.15); max-width:320px;">
+        <div style="font-size:1.1rem; font-weight:700; color:#90caf9; margin-bottom:0.2em;">Marcos Heredia Pimienta</div>
+        <div style="color:#b0bec5; font-size:0.98rem; margin-bottom:0.4em;">MSc in Quantitative Finance, Universitat Autònoma de Barcelona</div>
+        <div style="color:#e0e0e0; font-size:0.95rem; margin-bottom:0.4em;">Quantitative Risk Analyst</div>
+    </div>
+    ''', unsafe_allow_html=True)
+
+    # Enlace al formulario de Google
+    st.sidebar.markdown('<div style="background-color:#23272b; padding:20px; border-radius:10px; margin-top:20px;">', unsafe_allow_html=True)
+    st.sidebar.header("💬 We value your feedback!", anchor=None)
+    st.sidebar.write("Please let us know how you feel about the app. Your insights help us improve!")
+
+    # Hipervínculo al formulario
+    form_url = "https://docs.google.com/forms/d/e/1FAIpQLSecDfBXdXynYHyouLub1ZT3AsYWa4V1N3O_OnvUKxiA21bnjg/viewform?usp=header"
+    st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
+    st.sidebar.markdown('</div>', unsafe_allow_html=True)
+
 
 elif menu == "Portfolio Analysis - Monte Carlo":
     st.header("📊 Portfolio Analysis - Monte Carlo")
@@ -396,11 +444,30 @@ elif menu == "Portfolio Analysis - Monte Carlo":
                 st.pyplot(fig)
             except Exception as e:
                 st.error(f"Error in calculation: {e}")
+     # Personal info card below the sidebar menu
+    st.sidebar.markdown('''
+    <div style="background-color:#23272b; border-radius:12px; padding:1.2em 1.2em 1em 1.2em; margin-top:1.5em; margin-bottom:1.5em; box-shadow:0 2px 8px rgba(0,0,0,0.15); max-width:320px;">
+        <div style="font-size:1.1rem; font-weight:700; color:#90caf9; margin-bottom:0.2em;">Marcos Heredia Pimienta</div>
+        <div style="color:#b0bec5; font-size:0.98rem; margin-bottom:0.4em;">MSc in Quantitative Finance, Universitat Autònoma de Barcelona</div>
+        <div style="color:#e0e0e0; font-size:0.95rem; margin-bottom:0.4em;">Quantitative Risk Analyst</div>
+    </div>
+    ''', unsafe_allow_html=True)
+
+    # Enlace al formulario de Google
+    st.sidebar.markdown('<div style="background-color:#23272b; padding:20px; border-radius:10px; margin-top:20px;">', unsafe_allow_html=True)
+    st.sidebar.header("💬 We value your feedback!", anchor=None)
+    st.sidebar.write("Please let us know how you feel about the app. Your insights help us improve!")
+
+    # Hipervínculo al formulario
+    form_url = "https://docs.google.com/forms/d/e/1FAIpQLSecDfBXdXynYHyouLub1ZT3AsYWa4V1N3O_OnvUKxiA21bnjg/viewform?usp=header"
+    st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
+    st.sidebar.markdown('</div>', unsafe_allow_html=True)
+
 
 if menu == "Hedging Strategy":
     st.header("🛡️ Hedging Strategy")
-    st.subheader("Optimize and protect your portfolio by choosing the right hedging.")
-    st.write("Select your model and hedging strategy to manage portfolio risk effectively.")
+    st.subheader("Optimize and protect your portfolio by choosing the right hedging")
+    st.write("Select your model and hedging strategy to manage portfolio risk effectively")
     model = st.selectbox("Select Model:", ["Black-Scholes", "Binomial", "Monte Carlo"], index=0)
     hedge_strategy = st.selectbox("Select Hedging Strategy:", ["Delta Hedge", "Delta+Gamma Hedge", "Vega Hedge"], index=0)
     coverage_percentage = st.number_input("Hedging (%):", value=70, min_value=0, max_value=100, step=1, help="Specify the percentage of the portfolio to be hedged.")
@@ -961,11 +1028,30 @@ if menu == "Hedging Strategy":
                         st.pyplot(fig)
             except Exception as e:
                 st.error(f"Error in calculation: {e}")
+     # Personal info card below the sidebar menu
+    st.sidebar.markdown('''
+    <div style="background-color:#23272b; border-radius:12px; padding:1.2em 1.2em 1em 1.2em; margin-top:1.5em; margin-bottom:1.5em; box-shadow:0 2px 8px rgba(0,0,0,0.15); max-width:320px;">
+        <div style="font-size:1.1rem; font-weight:700; color:#90caf9; margin-bottom:0.2em;">Marcos Heredia Pimienta</div>
+        <div style="color:#b0bec5; font-size:0.98rem; margin-bottom:0.4em;">MSc in Quantitative Finance, Universitat Autònoma de Barcelona</div>
+        <div style="color:#e0e0e0; font-size:0.95rem; margin-bottom:0.4em;">Quantitative Risk Analyst</div>
+    </div>
+    ''', unsafe_allow_html=True)
+
+    # Enlace al formulario de Google
+    st.sidebar.markdown('<div style="background-color:#23272b; padding:20px; border-radius:10px; margin-top:20px;">', unsafe_allow_html=True)
+    st.sidebar.header("💬 We value your feedback!", anchor=None)
+    st.sidebar.write("Please let us know how you feel about the app. Your insights help us improve!")
+
+    # Hipervínculo al formulario
+    form_url = "https://docs.google.com/forms/d/e/1FAIpQLSecDfBXdXynYHyouLub1ZT3AsYWa4V1N3O_OnvUKxiA21bnjg/viewform?usp=header"
+    st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
+    st.sidebar.markdown('</div>', unsafe_allow_html=True)
+
 
 if menu == "Sensitivity Analysis":
     st.header("🔬 Sensitivity Analysis")
-    st.subheader("Understand your portfolio by analyzing sensitivities.")
-    st.write("Select your model and analyze how different factors affect your portfolio's performance.")
+    st.subheader("Stress-test your portfolio against market shocks")
+    st.write("Select your model and analyze how different factors affect your portfolio's performance")
     # Select model for hedging strategy
     model = st.selectbox("Select Model:", ["Black-Scholes", "Binomial", "Monte Carlo"], index=0)
     # Select percentage of coverage for hedging
@@ -1052,5 +1138,24 @@ if menu == "Sensitivity Analysis":
                 st.error(f"Error in calculation: {e}")
             except Exception as e:
                 st.error(f"Error in sensitivity analysis calculation: {e}")
+     # Personal info card below the sidebar menu
+    st.sidebar.markdown('''
+    <div style="background-color:#23272b; border-radius:12px; padding:1.2em 1.2em 1em 1.2em; margin-top:1.5em; margin-bottom:1.5em; box-shadow:0 2px 8px rgba(0,0,0,0.15); max-width:320px;">
+        <div style="font-size:1.1rem; font-weight:700; color:#90caf9; margin-bottom:0.2em;">Marcos Heredia Pimienta</div>
+        <div style="color:#b0bec5; font-size:0.98rem; margin-bottom:0.4em;">MSc in Quantitative Finance, Universitat Autònoma de Barcelona</div>
+        <div style="color:#e0e0e0; font-size:0.95rem; margin-bottom:0.4em;">Quantitative Risk Analyst</div>
+    </div>
+    ''', unsafe_allow_html=True)
+
+    # Enlace al formulario de Google
+    st.sidebar.markdown('<div style="background-color:#23272b; padding:20px; border-radius:10px; margin-top:20px;">', unsafe_allow_html=True)
+    st.sidebar.header("💬 We value your feedback!", anchor=None)
+    st.sidebar.write("Please let us know how you feel about the app. Your insights help us improve!")
+
+    # Hipervínculo al formulario
+    form_url = "https://docs.google.com/forms/d/e/1FAIpQLSecDfBXdXynYHyouLub1ZT3AsYWa4V1N3O_OnvUKxiA21bnjg/viewform?usp=header"
+    st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
+    st.sidebar.markdown('</div>', unsafe_allow_html=True)
+
 
 st.markdown('<div class="footer-conference">Developed by Marcos Heredia Pimienta, Quantitative Risk Analyst</div>', unsafe_allow_html=True)

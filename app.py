@@ -85,7 +85,7 @@ menu = st.sidebar.selectbox(
     index=0
 )
 
-# Personal info card below the sidebar menu
+# Información personal
 st.sidebar.markdown('''
 <div style="background-color:#23272b; border-radius:12px; padding:1.2em 1.2em 1em 1.2em; margin-top:1.5em; margin-bottom:1.5em; box-shadow:0 2px 8px rgba(0,0,0,0.15); max-width:320px;">
     <div style="font-size:1.1rem; font-weight:700; color:#90caf9; margin-bottom:0.2em;">Marcos Heredia Pimienta</div>
@@ -93,6 +93,17 @@ st.sidebar.markdown('''
     <div style="color:#e0e0e0; font-size:0.95rem; margin-bottom:0.4em;">Quantitative Risk Analyst</div>
 </div>
 ''', unsafe_allow_html=True)
+
+# Enlace al formulario de Google
+st.sidebar.markdown('<div style="background-color:#23272b; padding:20px; border-radius:10px; margin-top:20px;">', unsafe_allow_html=True)
+st.sidebar.header("💬 We value your feedback!", anchor=None)
+st.sidebar.write("Please let us know how you feel about the app. Your insights help us improve!")
+
+# Hipervínculo al formulario
+form_url = "https://docs.google.com/forms/d/e/1FAIpQLSecDfBXdXynYHyouLub1ZT3AsYWa4V1N3O_OnvUKxiA21bnjg/viewform?usp=header"
+st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
+
+st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
 if menu == "Introduction":
     st.markdown('<div class="title-conference">Option Pricing & Portfolio Risk App</div>', unsafe_allow_html=True)
@@ -116,22 +127,7 @@ if menu == "Introduction":
     
     **Get Started Now!**
     """)
-    # Add feedback form below the personal information card with enhanced styling
-    st.sidebar.markdown('<div style="background-color:#23272b; padding:20px; border-radius:10px; margin-top:20px;">', unsafe_allow_html=True)
-    st.sidebar.header("💬 We value your feedback!", anchor=None)
-    st.sidebar.write("Please let us know how you feel about the app. Your insights help us improve!")
-    # Rating input with customizable slider
-    rating = st.sidebar.slider("🌟 Rate your experience", min_value=1, max_value=5, value=3, step=1)
-    # Text input for comments with placeholder
-    comments = st.sidebar.text_area("📝 Additional comments", placeholder="Share your thoughts...")
-    # Submit button
-    if st.sidebar.button("Submit Feedback"):
-        # Save the feedback to a CSV file
-        with open('feedback.csv', 'a') as f:
-            f.write(f"{rating},{comments}\n")
-        st.sidebar.success("🎉 Thank you for your feedback! We appreciate your input.")
-    st.sidebar.markdown('</div>', unsafe_allow_html=True)
-
+ 
 if menu == "Single Option Analysis":
     st.header("🔍 Single Option Analysis")
     st.write("Select your model and option type to begin analyzing single options.")

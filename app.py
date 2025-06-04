@@ -129,26 +129,27 @@ if menu == "Introduction":
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
 if menu == "Single Option Analysis":
-    st.header("Single Option Analysis")
+    st.header("🔍 Single Option Analysis")
+    st.write("Select your model and option type to begin analyzing single options.")
     cols = st.columns(3)
     with cols[0]:
-        model = st.selectbox("Model", ["Black-Scholes", "Binomial", "Monte Carlo"], key="model_single", help="Pricing model for this option.")
-        option_style = st.selectbox("Option style", ["European", "American"], key="option_style_single", help="Exercise style of the option.")
-        option_type = st.selectbox("Option type", ["call", "put"], key="option_type_single", help="Call or put option.")
+        model = st.selectbox("Model", ["Black-Scholes", "Binomial", "Monte Carlo"], key="model_single", help="Choose the pricing model for this option.")
+        option_style = st.selectbox("Option style", ["European", "American"], key="option_style_single", help="Select the exercise style of the option.")
+        option_type = st.selectbox("Option type", ["call", "put"], key="option_type_single", help="Choose call or put option.")
     with cols[1]:
-        S = st.number_input("Spot price (S)", value=st.session_state.get("S_single", 100.0), key="S_single", help="Current price of the underlying asset.")
-        K = st.number_input("Strike price (K)", value=st.session_state.get("K_single", 100.0), key="K_single", help="Strike price of the option.")
-        T = st.number_input("Time to maturity (years)", value=st.session_state.get("T_single", 1.0), key="T_single", min_value=0.01, help="Time to maturity in years.")
+        S = st.number_input("Spot price (S)", value=st.session_state.get("S_single", 100.0), key="S_single", help="Enter the current price of the underlying asset.")
+        K = st.number_input("Strike price (K)", value=st.session_state.get("K_single", 100.0), key="K_single", help="Enter the strike price of the option.")
+        T = st.number_input("Time to maturity (years)", value=st.session_state.get("T_single", 1.0), key="T_single", min_value=0.01, help="Specify the time to maturity in years.")
     with cols[2]:
-        r = st.number_input("Risk-free rate (r, decimal)", value=st.session_state.get("r_single", 0.05), key="r_single", min_value=0.0, max_value=1.0, step=0.01, help="Annual risk-free interest rate (as decimal, e.g. 0.03 for 3%).")
-        market_price = st.number_input("Option market price", value=st.session_state.get("market_price_single", 10.0), key="market_price_single", min_value=0.0, help="Observed market price of the option.")
+        r = st.number_input("Risk-free rate (r, decimal)", value=st.session_state.get("r_single", 0.05), key="r_single", min_value=0.0, max_value=1.0, step=0.01, help="Input the annual risk-free interest rate.")
+        market_price = st.number_input("Option market price", value=st.session_state.get("market_price_single", 10.0), key="market_price_single", min_value=0.0, help="Provide the observed market price of the option.")
         if model == "Binomial":
-            N_steps = st.number_input("Number of steps (Binomial)", value=st.session_state.get("N_single", 100), min_value=1, step=1, key="N_single", help="Discretization steps for Binomial model.")
+            N_steps = st.number_input("Number of steps (Binomial)", value=st.session_state.get("N_single", 100), min_value=1, step=1, key="N_single", help="Set the discretization steps for the Binomial model.")
         if model == "Monte Carlo":
-            n_sim = st.number_input("Number of Monte Carlo simulations", value=st.session_state.get("n_sim_single", 10000), min_value=1000, step=1000, key="n_sim_single", help="Number of scenarios for risk simulation.")
+            n_sim = st.number_input("Number of Monte Carlo simulations", value=st.session_state.get("n_sim_single", 10000), min_value=1000, step=1000, key="n_sim_single", help="Define the number of scenarios for risk simulation.")
             N_steps = 1  # Default to 1 for European options
             if option_style == "American":
-                N_steps = st.number_input("Number of steps (Monte Carlo)", value=st.session_state.get("N_steps_single", 100), min_value=1, step=1, key="N_steps_single", help="Discretization steps for Monte Carlo model.")
+                N_steps = st.number_input("Number of steps (Monte Carlo)", value=st.session_state.get("N_steps_single", 100), min_value=1, step=1, key="N_steps_single", help="Set the discretization steps for the Monte Carlo model.")
     # Basic validation
     if T <= 0:
         st.error("Maturity must be positive.")
@@ -181,21 +182,23 @@ if menu == "Single Option Analysis":
                 # Highlighted results
                 col1, col2 = st.columns(2)
                 if price is not None:
-                    col1.metric("Model Price", f"{price:.4f}")
+                    col1.metric("Model Price", f"{price:.2f}")
                 if iv is not None:
-                    col2.metric("Implied Volatility", f"{iv:.4f}")
+                    col2.metric("Implied Volatility", f"{iv:.2f}")
                 st.markdown("---")
                 if greeks is not None:
                     st.write("Greeks:")
                     st.json(greeks)
             except Exception as e:
                 st.error(f"Error in calculation: {e}")
+
 # Implement logic for each portfolio model
 if menu == "Portfolio Analysis - Black-Scholes":
-    st.write("Black-Scholes portfolio model selected.")
-    # Add Black-Scholes portfolio logic here
-    num_options = st.number_input("Number of options in portfolio", min_value=1, max_value=10, value=4, step=1, help="Number of different options in the portfolio.")
-    horizon = st.number_input("Horizon (e.g., enter 10/252 for a 10-day horizon)", value=0.0849, min_value=0.01, format="%.4f", help="Horizon for VaR calculation.")
+    st.header("📊 Portfolio Analysis - Black-Scholes")
+    st.subheader("Evaluate your portfolio using the Black-Scholes model")
+    st.write("Configure your portfolio and analyze risk metrics with precision.")
+    num_options = st.number_input("Number of options in portfolio", min_value=1, max_value=10, value=4, step=1, help="Specify the number of different options in the portfolio.")
+    horizon = st.number_input("Horizon (e.g., enter 10/252 for a 10-day horizon)", value=0.0849, min_value=0.01, format="%.4f", help="Set the horizon for VaR calculation.")
     portfolio = []
     default_values = [
         {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5915, 'T': 0.0849, 'r': 0.0421, 'qty': -10, 'market_price': 111.93},
@@ -205,14 +208,14 @@ if menu == "Portfolio Analysis - Black-Scholes":
     ]
     for i in range(num_options):
         st.subheader(f"Option {i+1}")
-        option_type = st.selectbox(f"Option type for Option {i+1}", ["call", "put"], index=["call", "put"].index(default_values[i]['type']), key=f"option_type_{i}", help="Call or put option.")
-        option_style = st.selectbox(f"Option style for Option {i+1}", ["european", "american"], index=["european", "american"].index(default_values[i]['style']), key=f"option_style_{i}", help="Exercise style of the option.")
-        S = st.number_input(f"Spot price (S) for Option {i+1}", value=default_values[i]['S'], help="Current price of the underlying asset.", key=f"S_{i}")
-        K = st.number_input(f"Strike price (K) for Option {i+1}", value=default_values[i]['K'], help="Strike price of the option.", key=f"K_{i}")
-        T = st.number_input(f"Time to maturity (years) for Option {i+1}", value=default_values[i]['T'], min_value=0.01, format="%.4f", help="Time to maturity in years.", key=f"T_{i}")
-        r = st.number_input(f"Risk-free rate (r, decimal) for Option {i+1}", value=default_values[i]['r'], min_value=0.0, max_value=1.0, step=0.0001, format="%.4f", help="Annual risk-free interest rate.", key=f"r_{i}")
-        qty = st.number_input(f"Quantity for Option {i+1}", value=default_values[i]['qty'], step=1, help="Quantity of options in the portfolio.", key=f"qty_{i}")
-        market_price = st.number_input(f"Market price for Option {i+1}", value=default_values[i]['market_price'], help="Observed market price of the option.", key=f"market_price_{i}")
+        option_type = st.selectbox(f"Option type for Option {i+1}", ["call", "put"], index=["call", "put"].index(default_values[i]['type']), key=f"option_type_{i}", help="Select call or put option.")
+        option_style = st.selectbox(f"Option style for Option {i+1}", ["european", "american"], index=["european", "american"].index(default_values[i]['style']), key=f"option_style_{i}", help="Choose the exercise style of the option.")
+        S = st.number_input(f"Spot price (S) for Option {i+1}", value=default_values[i]['S'], help="Enter the current price of the underlying asset.", key=f"S_{i}")
+        K = st.number_input(f"Strike price (K) for Option {i+1}", value=default_values[i]['K'], help="Enter the strike price of the option.", key=f"K_{i}")
+        T = st.number_input(f"Time to maturity (years) for Option {i+1}", value=default_values[i]['T'], min_value=0.01, format="%.4f", help="Specify the time to maturity in years.", key=f"T_{i}")
+        r = st.number_input(f"Risk-free rate (r, decimal) for Option {i+1}", value=default_values[i]['r'], min_value=0.0, max_value=1.0, step=0.0001, format="%.4f", help="Input the annual risk-free interest rate.", key=f"r_{i}")
+        qty = st.number_input(f"Quantity for Option {i+1}", value=default_values[i]['qty'], step=1, help="Specify the quantity of options in the portfolio.", key=f"qty_{i}")
+        market_price = st.number_input(f"Market price for Option {i+1}", value=default_values[i]['market_price'], help="Provide the observed market price of the option.", key=f"market_price_{i}")
         portfolio.append({'type': option_type, 'style': option_style, 'S': S, 'K': K, 'T': T, 'r': r, 'qty': qty, 'market_price': market_price})
     if st.button("Calculate Portfolio", key="bs_portfolio_btn"):
         with st.spinner("Calculating portfolio..."):
@@ -256,11 +259,12 @@ if menu == "Portfolio Analysis - Black-Scholes":
                 st.error(f"Error in calculation: {e}")
 
 elif menu == "Portfolio Analysis - Binomial":
-    st.write("Binomial portfolio model selected.")
-    # Add Binomial portfolio logic here
-    num_options = st.number_input("Number of options in portfolio", min_value=1, max_value=10, value=4, step=1, help="Number of different options in the portfolio.")
-    N_steps = st.number_input("Number of steps", value=100, min_value=1, step=1, help="Discretization steps for Binomial model.")
-    horizon = st.number_input("Horizon (e.g., enter 10/252 for a 10-day horizon)", value=0.0849, min_value=0.01, format="%.4f", help="Horizon for VaR calculation.")
+    st.header("📊 Portfolio Analysis - Binomial")
+    st.subheader("Analyze your portfolio using the Binomial model")
+    st.write("Configure your portfolio and assess risk metrics with the Binomial model.")
+    num_options = st.number_input("Number of options in portfolio", min_value=1, max_value=10, value=4, step=1, help="Specify the number of different options in the portfolio.")
+    N_steps = st.number_input("Number of steps", value=100, min_value=1, step=1, help="Set the discretization steps for the Binomial model.")
+    horizon = st.number_input("Horizon (e.g., enter 10/252 for a 10-day horizon)", value=0.0849, min_value=0.01, format="%.4f", help="Set the horizon for VaR calculation.")
     portfolio = []
     default_values = [
         {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5915, 'T': 0.0849, 'r': 0.0421, 'qty': -10, 'market_price': 111.93},
@@ -270,14 +274,14 @@ elif menu == "Portfolio Analysis - Binomial":
     ]
     for i in range(num_options):
         st.subheader(f"Option {i+1}")
-        option_style = st.selectbox(f"Option style for Option {i+1}", ["european", "american"], index=["european", "american"].index(default_values[i]['style']), key=f"option_style_{i}", help="Exercise style of the option.")
-        option_type = st.selectbox(f"Option type for Option {i+1}", ["call", "put"], index=["call", "put"].index(default_values[i]['type']), key=f"option_type_{i}", help="Call or put option.")
-        S = st.number_input(f"Spot price (S) for Option {i+1}", value=default_values[i]['S'], help="Current price of the underlying asset.", key=f"S_{i}")
-        K = st.number_input(f"Strike price (K) for Option {i+1}", value=default_values[i]['K'], help="Strike price of the option.", key=f"K_{i}")
-        T = st.number_input(f"Time to maturity (years) for Option {i+1}", value=default_values[i]['T'], min_value=0.01, format="%.4f", help="Time to maturity in years.", key=f"T_{i}")
-        r = st.number_input(f"Risk-free rate (r, decimal) for Option {i+1}", value=default_values[i]['r'], min_value=0.0, max_value=1.0, step=0.0001, format="%.4f", help="Annual risk-free interest rate.", key=f"r_{i}")
-        qty = st.number_input(f"Quantity for Option {i+1}", value=default_values[i]['qty'], step=1, help="Quantity of options in the portfolio.", key=f"qty_{i}")
-        market_price = st.number_input(f"Market price for Option {i+1}", value=default_values[i]['market_price'], help="Observed market price of the option.", key=f"market_price_{i}")
+        option_style = st.selectbox(f"Option style for Option {i+1}", ["european", "american"], index=["european", "american"].index(default_values[i]['style']), key=f"option_style_{i}", help="Choose the exercise style of the option.")
+        option_type = st.selectbox(f"Option type for Option {i+1}", ["call", "put"], index=["call", "put"].index(default_values[i]['type']), key=f"option_type_{i}", help="Select call or put option.")
+        S = st.number_input(f"Spot price (S) for Option {i+1}", value=default_values[i]['S'], help="Enter the current price of the underlying asset.", key=f"S_{i}")
+        K = st.number_input(f"Strike price (K) for Option {i+1}", value=default_values[i]['K'], help="Enter the strike price of the option.", key=f"K_{i}")
+        T = st.number_input(f"Time to maturity (years) for Option {i+1}", value=default_values[i]['T'], min_value=0.01, format="%.4f", help="Specify the time to maturity in years.", key=f"T_{i}")
+        r = st.number_input(f"Risk-free rate (r, decimal) for Option {i+1}", value=default_values[i]['r'], min_value=0.0, max_value=1.0, step=0.0001, format="%.4f", help="Input the annual risk-free interest rate.", key=f"r_{i}")
+        qty = st.number_input(f"Quantity for Option {i+1}", value=default_values[i]['qty'], step=1, help="Specify the quantity of options in the portfolio.", key=f"qty_{i}")
+        market_price = st.number_input(f"Market price for Option {i+1}", value=default_values[i]['market_price'], help="Provide the observed market price of the option.", key=f"market_price_{i}")
         portfolio.append({'type': option_type, 'style': option_style, 'S': S, 'K': K, 'T': T, 'r': r, 'qty': qty, 'market_price': market_price})
     if st.button("Calculate Portfolio", key="binomial_portfolio_btn"):
         with st.spinner("Calculating portfolio..."):
@@ -323,14 +327,15 @@ elif menu == "Portfolio Analysis - Binomial":
                 st.error(f"Error in calculation: {e}")
 
 elif menu == "Portfolio Analysis - Monte Carlo":
-    st.write("Monte Carlo portfolio model selected.")
-    # Add Monte Carlo portfolio logic here
-    num_options = st.number_input("Number of options in portfolio", min_value=1, max_value=10, value=4, step=1, help="Number of different options in the portfolio.")
-    n_sim_main = st.number_input("Number of simulations for P&L and VaR/ES", value=50000, min_value=1000, step=1000, help="Number of scenarios for P&L and VaR/ES simulation.")
-    n_sim_greeks = st.number_input("Number of simulations for Greeks", value=100000, min_value=1000, step=1000, help="Number of scenarios for Greeks calculation.")
+    st.header("📊 Portfolio Analysis - Monte Carlo")
+    st.subheader("Explore your portfolio using the Monte Carlo model")
+    st.write("Configure your portfolio and evaluate risk metrics with the Monte Carlo simulation.")
+    num_options = st.number_input("Number of options in portfolio", min_value=1, max_value=10, value=4, step=1, help="Specify the number of different options in the portfolio.")
+    n_sim_main = st.number_input("Number of simulations for P&L and VaR/ES", value=50000, min_value=1000, step=1000, help="Define the number of scenarios for P&L and VaR/ES simulation.")
+    n_sim_greeks = st.number_input("Number of simulations for Greeks", value=100000, min_value=1000, step=1000, help="Specify the number of scenarios for Greeks calculation.")
     st.write("Note: The following input uses the Longstaff-Schwartz method.")
-    N_steps = st.number_input("Number of steps (Monte Carlo)", value=st.session_state.get("N_steps_single", 100), min_value=1, step=1, key="N_steps_single", help="Discretization steps for Monte Carlo model.")
-    horizon = st.number_input("Horizon (e.g., enter 10/252 for a 10-day horizon)", value=0.0849, min_value=0.01, format="%.4f", help="Horizon for VaR calculation.")
+    N_steps = st.number_input("Number of steps ", value=st.session_state.get("N_steps_single", 100), min_value=1, step=1, key="N_steps_single", help="Set the discretization steps for the Monte Carlo model.")
+    horizon = st.number_input("Horizon (e.g., enter 10/252 for a 10-day horizon)", value=0.0849, min_value=0.01, format="%.4f", help="Set the horizon for VaR calculation.")
     portfolio = []
     default_values = [
         {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5915, 'T': 0.0849, 'r': 0.0421, 'qty': -10, 'market_price': 111.93},
@@ -340,14 +345,14 @@ elif menu == "Portfolio Analysis - Monte Carlo":
     ]
     for i in range(num_options):
         st.subheader(f"Option {i+1}")
-        option_style = st.selectbox(f"Option style for Option {i+1}", ["european", "american"], index=["european", "american"].index(default_values[i]['style']), key=f"option_style_{i}", help="Exercise style of the option.")
-        option_type = st.selectbox(f"Option type for Option {i+1}", ["call", "put"], index=["call", "put"].index(default_values[i]['type']), key=f"option_type_{i}", help="Call or put option.")
-        S = st.number_input(f"Spot price (S) for Option {i+1}", value=default_values[i]['S'], help="Current price of the underlying asset.", key=f"S_{i}")
-        K = st.number_input(f"Strike price (K) for Option {i+1}", value=default_values[i]['K'], help="Strike price of the option.", key=f"K_{i}")
-        T = st.number_input(f"Time to maturity (years) for Option {i+1}", value=default_values[i]['T'], min_value=0.01, format="%.4f", help="Time to maturity in years.", key=f"T_{i}")
-        r = st.number_input(f"Risk-free rate (r, decimal) for Option {i+1}", value=default_values[i]['r'], min_value=0.0, max_value=1.0, step=0.0001, format="%.4f", help="Annual risk-free interest rate.", key=f"r_{i}")
-        qty = st.number_input(f"Quantity for Option {i+1}", value=default_values[i]['qty'], step=1, help="Quantity of options in the portfolio.", key=f"qty_{i}")
-        market_price = st.number_input(f"Market price for Option {i+1}", value=default_values[i]['market_price'], help="Observed market price of the option.", key=f"market_price_{i}")
+        option_style = st.selectbox(f"Option style for Option {i+1}", ["european", "american"], index=["european", "american"].index(default_values[i]['style']), key=f"option_style_{i}", help="Choose the exercise style of the option.")
+        option_type = st.selectbox(f"Option type for Option {i+1}", ["call", "put"], index=["call", "put"].index(default_values[i]['type']), key=f"option_type_{i}", help="Select call or put option.")
+        S = st.number_input(f"Spot price (S) for Option {i+1}", value=default_values[i]['S'], help="Enter the current price of the underlying asset.", key=f"S_{i}")
+        K = st.number_input(f"Strike price (K) for Option {i+1}", value=default_values[i]['K'], help="Enter the strike price of the option.", key=f"K_{i}")
+        T = st.number_input(f"Time to maturity (years) for Option {i+1}", value=default_values[i]['T'], min_value=0.01, format="%.4f", help="Specify the time to maturity in years.", key=f"T_{i}")
+        r = st.number_input(f"Risk-free rate (r, decimal) for Option {i+1}", value=default_values[i]['r'], min_value=0.0, max_value=1.0, step=0.0001, format="%.4f", help="Input the annual risk-free interest rate.", key=f"r_{i}")
+        qty = st.number_input(f"Quantity for Option {i+1}", value=default_values[i]['qty'], step=1, help="Specify the quantity of options in the portfolio.", key=f"qty_{i}")
+        market_price = st.number_input(f"Market price for Option {i+1}", value=default_values[i]['market_price'], help="Provide the observed market price of the option.", key=f"market_price_{i}")
         portfolio.append({'type': option_type, 'style': option_style, 'S': S, 'K': K, 'T': T, 'r': r, 'qty': qty, 'market_price': market_price})
     if st.button("Calculate Portfolio", key="mc_portfolio_btn"):
         with st.spinner("Calculating portfolio..."):
@@ -381,7 +386,7 @@ elif menu == "Portfolio Analysis - Monte Carlo":
                 ax.hist(pnl_mc, bins=50, color='skyblue', edgecolor='k', alpha=0.5, density=True, label='Original')
                 ax.axvline(-var_mc, color='red', linestyle='--', label=f'VaR (99%) {-var_mc:.2f}')
                 ax.axvline(-es_mc, color='orange', linestyle=':', label=f'ES (99%) {-es_mc:.2f}')
-                ax.set_title('Simulated P&L Distribution of the Portfolio (MONTE CARLO)')
+                ax.set_title('Simulated P&L Distribution of the Portfolio (Monte Carlo)')
                 ax.set_xlabel('P&L')
                 ax.set_ylabel('Density')
                 ax.legend()
@@ -390,16 +395,14 @@ elif menu == "Portfolio Analysis - Monte Carlo":
                 st.error(f"Error in calculation: {e}")
 
 if menu == "Hedging Strategy":
-    st.write("Hedging Strategy selected.")
-    # Select model for hedging strategy
+    st.header("🛡️ Hedging Strategy")
+    st.subheader("Optimize and protect your portfolio by choosing the right hedging.")
+    st.write("Select your model and hedging strategy to manage portfolio risk effectively.")
     model = st.selectbox("Select Model:", ["Black-Scholes", "Binomial", "Monte Carlo"], index=0)
-    # Select hedging strategy
     hedge_strategy = st.selectbox("Select Hedging Strategy:", ["Delta Hedge", "Delta+Gamma Hedge", "Vega Hedge"], index=0)
-    # Select percentage of coverage for hedging
-    coverage_percentage = st.number_input("Hedging (%):", value=70, min_value=0, max_value=100, step=1, help="Percentage of the portfolio to be hedged.")
-    # Select VaR horizon after selecting hedge
-    horizon = st.number_input("Horizon (e.g., enter 10/252 for a 10-day horizon)", value=0.0849, min_value=0.01, format="%.4f", help="Horizon for VaR calculation.")
-    num_options = st.number_input("Number of options in portfolio", min_value=1, max_value=10, value=4, step=1, help="Number of different options in the portfolio.")
+    coverage_percentage = st.number_input("Hedging (%):", value=70, min_value=0, max_value=100, step=1, help="Specify the percentage of the portfolio to be hedged.")
+    horizon = st.number_input("Horizon (e.g., enter 10/252 for a 10-day horizon)", value=0.0849, min_value=0.01, format="%.4f", help="Set the horizon for VaR calculation.")
+    num_options = st.number_input("Number of options in portfolio", min_value=1, max_value=10, value=4, step=1, help="Specify the number of different options in the portfolio.")
     portfolio = []
     default_values = [
         {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5915, 'T': 0.0849, 'r': 0.0421, 'qty': -10, 'market_price': 111.93},
@@ -407,47 +410,38 @@ if menu == "Hedging Strategy":
         {'type': 'call', 'style': 'european', 'S': 5912.17, 'K': 5920, 'T': 0.0849, 'r': 0.0421, 'qty': 10, 'market_price': 103.66},
         {'type': 'put', 'style': 'european', 'S': 5912.17, 'K': 5900, 'T': 0.0849, 'r': 0.0421, 'qty': 10, 'market_price': 102.92}
     ]
-    
-    # Add conditional logic for model-specific settings
     if model == "Monte Carlo":
-        n_sim_main = st.number_input("Number of simulations for P&L and VaR/ES", value=50000, min_value=1000, step=1000, help="Number of scenarios for P&L and VaR/ES simulation.")
-        n_sim_greeks = st.number_input("Number of simulations for Greeks", value=100000, min_value=1000, step=1000, help="Number of scenarios for Greeks calculation.")
+        n_sim_main = st.number_input("Number of simulations for P&L and VaR/ES", value=50000, min_value=1000, step=1000, help="Define the number of scenarios for P&L and VaR/ES simulation.")
+        n_sim_greeks = st.number_input("Number of simulations for Greeks", value=100000, min_value=1000, step=1000, help="Specify the number of scenarios for Greeks calculation.")
         st.write("Note: The following input uses the Longstaff-Schwartz method.")
-        N_steps = st.number_input("Number of steps (For short maturities, use fewer steps; for long maturities, use more steps)", value=100, min_value=1, step=1, help="Discretization steps for Monte Carlo model.")
+        N_steps = st.number_input("Number of steps (For short maturities, use fewer steps; for long maturities, use more steps)", value=100, min_value=1, step=1, help="Set the discretization steps for the Monte Carlo model.")
     elif model == "Black-Scholes":
-        n_sim_main = st.number_input("Number of simulations for P&L and VaR/ES", value=50000, min_value=1000, step=1000, help="Number of scenarios for P&L and VaR/ES simulation.")
-        # Add Black-Scholes specific inputs here
+        n_sim_main = st.number_input("Number of simulations for P&L and VaR/ES", value=50000, min_value=1000, step=1000, help="Define the number of scenarios for P&L and VaR/ES simulation.")
     elif model == "Binomial":
-        n_sim_main = st.number_input("Number of simulations for P&L and VaR/ES", value=50000, min_value=1000, step=1000, help="Number of scenarios for P&L and VaR/ES simulation.")
-        N_steps_binomial = st.number_input("Number of steps for Binomial tree", value=100, min_value=1, step=1, help="Discretization steps for Binomial model.")
-    
-    # Ensure portfolio options are customizable
+        n_sim_main = st.number_input("Number of simulations for P&L and VaR/ES", value=50000, min_value=1000, step=1000, help="Define the number of scenarios for P&L and VaR/ES simulation.")
+        N_steps_binomial = st.number_input("Number of steps for Binomial tree", value=100, min_value=1, step=1, help="Set the discretization steps for the Binomial model.")
     for i in range(num_options):
         st.subheader(f"Option {i+1}")
-        option_type = st.selectbox(f"Option type for Option {i+1}", ["call", "put"], index=["call", "put"].index(default_values[i]['type']), key=f"option_type_{i}", help="Call or put option.")
-        option_style = st.selectbox(f"Option style for Option {i+1}", ["european", "american"], index=["european", "american"].index(default_values[i]['style']), key=f"option_style_{i}", help="Exercise style of the option.")
-        S = st.number_input(f"Spot price (S) for Option {i+1}", value=default_values[i]['S'], help="Current price of the underlying asset.", key=f"S_{i}")
-        K = st.number_input(f"Strike price (K) for Option {i+1}", value=default_values[i]['K'], help="Strike price of the option.", key=f"K_{i}")
-        T = st.number_input(f"Time to maturity (years) for Option {i+1}", value=default_values[i]['T'], min_value=0.01, format="%.4f", help="Time to maturity in years.", key=f"T_{i}")
-        r = st.number_input(f"Risk-free rate (r, decimal) for Option {i+1}", value=default_values[i]['r'], min_value=0.0, max_value=1.0, step=0.0001, format="%.4f", help="Annual risk-free interest rate.", key=f"r_{i}")
-        qty = st.number_input(f"Quantity for Option {i+1}", value=default_values[i]['qty'], step=1, help="Quantity of options in the portfolio.", key=f"qty_{i}")
-        market_price = st.number_input(f"Market price for Option {i+1}", value=default_values[i]['market_price'], help="Observed market price of the option.", key=f"market_price_{i}")
+        option_type = st.selectbox(f"Option type for Option {i+1}", ["call", "put"], index=["call", "put"].index(default_values[i]['type']), key=f"option_type_{i}", help="Select call or put option.")
+        option_style = st.selectbox(f"Option style for Option {i+1}", ["european", "american"], index=["european", "american"].index(default_values[i]['style']), key=f"option_style_{i}", help="Choose the exercise style of the option.")
+        S = st.number_input(f"Spot price (S) for Option {i+1}", value=default_values[i]['S'], help="Enter the current price of the underlying asset.", key=f"S_{i}")
+        K = st.number_input(f"Strike price (K) for Option {i+1}", value=default_values[i]['K'], help="Enter the strike price of the option.", key=f"K_{i}")
+        T = st.number_input(f"Time to maturity (years) for Option {i+1}", value=default_values[i]['T'], min_value=0.01, format="%.4f", help="Specify the time to maturity in years.", key=f"T_{i}")
+        r = st.number_input(f"Risk-free rate (r, decimal) for Option {i+1}", value=default_values[i]['r'], min_value=0.0, max_value=1.0, step=0.0001, format="%.4f", help="Input the annual risk-free interest rate.", key=f"r_{i}")
+        qty = st.number_input(f"Quantity for Option {i+1}", value=default_values[i]['qty'], step=1, help="Specify the quantity of options in the portfolio.", key=f"qty_{i}")
+        market_price = st.number_input(f"Market price for Option {i+1}", value=default_values[i]['market_price'], help="Provide the observed market price of the option.", key=f"market_price_{i}")
         portfolio.append({'type': option_type, 'style': option_style, 'S': S, 'K': K, 'T': T, 'r': r, 'qty': qty, 'market_price': market_price})
     if st.button("Calculate Hedging Strategy", key="hedging_strategy_btn"):
         with st.spinner("Calculating hedging strategy..."):
             try:
                 if model == "Black-Scholes":
-                    # Calculate value_bs before using it in the hedging strategy
                     value_bs = bsa.portfolio_value(portfolio)
-                    # Simulate P&L distribution using bs_portfolio_analysis
                     sim_bs = bsa.simulate_portfolio(portfolio, n_sims=10000, horizon=horizon)
                     pnl_bs = sim_bs['pnl']
                     shocks_bs = sim_bs['shocks']
-                    # Calculate var_bs before using it in the hedging strategy
                     var_bs, es_bs = bsa.var_es(pnl_bs, alpha=0.01)
                     if hedge_strategy == "Delta Hedge":
-                        # Implement Delta hedging logic
-                        delta_hedge_fraction_bs = coverage_percentage / 100.0  # Use selected coverage percentage
+                        delta_hedge_fraction_bs = coverage_percentage / 100.0
                         subyacentes = {}
                         for opt in portfolio:
                             key = opt.get('ticker', opt['S'])
@@ -481,7 +475,6 @@ if menu == "Hedging Strategy":
                         st.write(f"ES after delta hedge (BS, 99%): {es_bs_hedged:.2f}")
                         st.write(f"VaR reduction: {var_bs - var_bs_hedged:.2f}")
                         st.write(f"ES reduction: {es_bs - es_bs_hedged:.2f}")
-                        # Plot comparison of original and hedged P&L distribution
                         fig, ax = plt.subplots(figsize=(14, 8))
                         ax.hist(pnl_bs, bins=50, color='lightblue', edgecolor='k', alpha=0.5, density=True, label='Original')
                         ax.hist(pnl_bs_hedged, bins=50, color='orange', edgecolor='k', alpha=0.5, density=True, label='Delta Hedge')
@@ -495,7 +488,6 @@ if menu == "Hedging Strategy":
                         ax.legend()
                         st.pyplot(fig)
                     elif hedge_strategy == "Delta+Gamma Hedge":
-                        # Implement Gamma + Delta hedging logic
                         greeks_total = bsa.portfolio_greeks(portfolio)
                         gamma_cartera = greeks_total['gamma']
                         delta_cartera = greeks_total['delta']
@@ -511,7 +503,7 @@ if menu == "Hedging Strategy":
                         }
                         greeks_hedge = bsa.option_greeks(hedge_opt)
                         gamma_hedge = greeks_hedge['gamma']
-                        gamma_hedge_fraction = coverage_percentage / 100.0  # Use selected coverage percentage
+                        gamma_hedge_fraction = coverage_percentage / 100.0
                         qty_gamma_hedge = -gamma_cartera * gamma_hedge_fraction / gamma_hedge if gamma_hedge != 0 else 0
                         hedge_opt['qty'] = qty_gamma_hedge
                         portfolio_gamma_hedged = portfolio + [hedge_opt]
@@ -549,7 +541,6 @@ if menu == "Hedging Strategy":
                         st.write(f"ES after gamma+delta hedge (BS, 99%): {es_gamma_delta_hedged:.2f}")
                         st.write(f"VaR reduction vs original: {var_bs - var_gamma_delta_hedged:.2f}")
                         st.write(f"ES reduction vs original: {es_bs - es_gamma_delta_hedged:.2f}")
-                        # Plot comparison of original and Delta+Gamma hedged P&L distribution
                         fig, ax = plt.subplots(figsize=(14, 8))
                         ax.hist(pnl_bs, bins=50, color='lightblue', edgecolor='k', alpha=0.5, density=True, label='Original')
                         ax.hist(pnl_gamma_delta_hedged, bins=50, color='green', edgecolor='k', alpha=0.5, density=True, label='Gamma+Delta Hedge')
@@ -563,7 +554,6 @@ if menu == "Hedging Strategy":
                         ax.legend()
                         st.pyplot(fig)
                     elif hedge_strategy == "Vega Hedge":
-                        # Implement Vega hedging logic
                         vega_total = bsa.portfolio_greeks(portfolio)['vega']
                         hedge_opt_vega = {
                             'type': 'call',
@@ -577,7 +567,7 @@ if menu == "Hedging Strategy":
                         }
                         greeks_hedge_vega = bsa.option_greeks(hedge_opt_vega)
                         vega_hedge = greeks_hedge_vega['vega']
-                        vega_hedge_fraction = coverage_percentage / 100.0  # Use selected coverage percentage
+                        vega_hedge_fraction = coverage_percentage / 100.0
                         qty_vega_hedge = -vega_total * vega_hedge_fraction / vega_hedge if vega_hedge != 0 else 0
                         hedge_opt_vega['qty'] = qty_vega_hedge
                         portfolio_vega_hedged = portfolio + [hedge_opt_vega]
@@ -606,7 +596,6 @@ if menu == "Hedging Strategy":
                         st.write(f"ES after vega hedge (BS, 99%): {es_vega_hedged:.2f}")
                         st.write(f"VaR reduction vs original: {var_bs - var_vega_hedged:.2f}")
                         st.write(f"ES reduction vs original: {es_bs - es_vega_hedged:.2f}")
-                        # Plot comparison of original and Vega hedged P&L distribution
                         fig, ax = plt.subplots(figsize=(14, 8))
                         ax.hist(pnl_bs, bins=50, color='lightblue', edgecolor='k', alpha=0.5, density=True, label='Original')
                         ax.hist(pnl_vega_hedged, bins=50, color='purple', edgecolor='k', alpha=0.5, density=True, label='Vega Hedge')
@@ -620,16 +609,13 @@ if menu == "Hedging Strategy":
                         ax.legend()
                         st.pyplot(fig)
                 elif model == "Binomial":
-                    # Implement Binomial hedging logic here
                     value_binomial = bpa.portfolio_value(portfolio, N=N_steps_binomial)
                     sim_binomial = bpa.simulate_portfolio(portfolio, n_sims=10000, N=N_steps_binomial, horizon=horizon)
                     pnl_binomial = sim_binomial['pnl']
                     shocks_binomial = sim_binomial['shocks']
                     var_binomial, es_binomial = bpa.var_es(pnl_binomial, alpha=0.01)
-                    
                     if hedge_strategy == "Delta Hedge":
-                        # Implement Delta hedging logic
-                        delta_hedge_fraction_binomial = coverage_percentage / 100.0  # Use selected coverage percentage
+                        delta_hedge_fraction_binomial = coverage_percentage / 100.0
                         subyacentes = {}
                         for opt in portfolio:
                             key = opt.get('ticker', opt['S'])
@@ -663,7 +649,6 @@ if menu == "Hedging Strategy":
                         st.write(f"ES after delta hedge (Binomial, 99%): {es_binomial_hedged:.2f}")
                         st.write(f"VaR reduction: {var_binomial - var_binomial_hedged:.2f}")
                         st.write(f"ES reduction: {es_binomial - es_binomial_hedged:.2f}")
-                        # Plot comparison of original and hedged P&L distribution
                         fig, ax = plt.subplots(figsize=(14, 8))
                         ax.hist(pnl_binomial, bins=50, color='lightblue', edgecolor='k', alpha=0.5, density=True, label='Original')
                         ax.hist(pnl_binomial_hedged, bins=50, color='orange', edgecolor='k', alpha=0.5, density=True, label='Delta Hedge')
@@ -677,7 +662,6 @@ if menu == "Hedging Strategy":
                         ax.legend()
                         st.pyplot(fig)
                     elif hedge_strategy == "Delta+Gamma Hedge":
-                        # Implement Gamma + Delta hedging logic
                         greeks_total = bpa.portfolio_greeks(portfolio, N=N_steps_binomial)
                         gamma_cartera = greeks_total['gamma']
                         delta_cartera = greeks_total['delta']
@@ -693,7 +677,7 @@ if menu == "Hedging Strategy":
                         }
                         greeks_hedge = bpa.option_greeks(hedge_opt, N=N_steps_binomial)
                         gamma_hedge = greeks_hedge['gamma']
-                        gamma_hedge_fraction = coverage_percentage / 100.0  # Use selected coverage percentage
+                        gamma_hedge_fraction = coverage_percentage / 100.0
                         qty_gamma_hedge = -gamma_cartera * gamma_hedge_fraction / gamma_hedge if gamma_hedge != 0 else 0
                         hedge_opt['qty'] = qty_gamma_hedge
                         portfolio_gamma_hedged = portfolio + [hedge_opt]
@@ -731,7 +715,6 @@ if menu == "Hedging Strategy":
                         st.write(f"ES after gamma+delta hedge (Binomial, 99%): {es_gamma_delta_hedged:.2f}")
                         st.write(f"VaR reduction vs original: {var_binomial - var_gamma_delta_hedged:.2f}")
                         st.write(f"ES reduction vs original: {es_binomial - es_gamma_delta_hedged:.2f}")
-                        # Plot comparison of original and Delta+Gamma hedged P&L distribution
                         fig, ax = plt.subplots(figsize=(14, 8))
                         ax.hist(pnl_binomial, bins=50, color='lightblue', edgecolor='k', alpha=0.5, density=True, label='Original')
                         ax.hist(pnl_gamma_delta_hedged, bins=50, color='green', edgecolor='k', alpha=0.5, density=True, label='Gamma+Delta Hedge')
@@ -745,7 +728,6 @@ if menu == "Hedging Strategy":
                         ax.legend()
                         st.pyplot(fig)
                     elif hedge_strategy == "Vega Hedge":
-                        # Implement Vega hedging logic
                         vega_total = bpa.portfolio_greeks(portfolio, N=N_steps_binomial)['vega']
                         hedge_opt_vega = {
                             'type': 'call',
@@ -759,7 +741,7 @@ if menu == "Hedging Strategy":
                         }
                         greeks_hedge_vega = bpa.option_greeks(hedge_opt_vega, N=N_steps_binomial)
                         vega_hedge = greeks_hedge_vega['vega']
-                        vega_hedge_fraction = coverage_percentage / 100.0  # Use selected coverage percentage
+                        vega_hedge_fraction = coverage_percentage / 100.0
                         qty_vega_hedge = -vega_total * vega_hedge_fraction / vega_hedge if vega_hedge != 0 else 0
                         hedge_opt_vega['qty'] = qty_vega_hedge
                         portfolio_vega_hedged = portfolio + [hedge_opt_vega]
@@ -788,7 +770,6 @@ if menu == "Hedging Strategy":
                         st.write(f"ES after vega hedge (Binomial, 99%): {es_vega_hedged:.2f}")
                         st.write(f"VaR reduction vs original: {var_binomial - var_vega_hedged:.2f}")
                         st.write(f"ES reduction vs original: {es_binomial - es_vega_hedged:.2f}")
-                        # Plot comparison of original and Vega hedged P&L distribution
                         fig, ax = plt.subplots(figsize=(14, 8))
                         ax.hist(pnl_binomial, bins=50, color='lightblue', edgecolor='k', alpha=0.5, density=True, label='Original')
                         ax.hist(pnl_vega_hedged, bins=50, color='purple', edgecolor='k', alpha=0.5, density=True, label='Vega Hedge')
@@ -802,16 +783,13 @@ if menu == "Hedging Strategy":
                         ax.legend()
                         st.pyplot(fig)
                 elif model == "Monte Carlo":
-                    # Implement Monte Carlo hedging logic here
                     value_mc = sum(mca.price_option_mc(opt, n_sim=n_sim_greeks, n_steps=N_steps) * opt['qty'] for opt in portfolio)
                     sim_mc = mca.simulate_portfolio_mc_pricing(portfolio, n_sims=n_sim_main, n_steps=N_steps, horizon=horizon)
                     pnl_mc = sim_mc['pnl']
                     shocks_mc = sim_mc['shocks']
                     var_mc, es_mc = mca.var_es(pnl_mc, alpha=0.01)
-                    
                     if hedge_strategy == "Delta Hedge":
-                        # Implement Delta hedging logic
-                        delta_hedge_fraction_mc = coverage_percentage / 100.0  # Use selected coverage percentage
+                        delta_hedge_fraction_mc = coverage_percentage / 100.0
                         subyacentes = {}
                         for opt in portfolio:
                             key = opt.get('ticker', opt['S'])
@@ -845,7 +823,6 @@ if menu == "Hedging Strategy":
                         st.write(f"ES after delta hedge (MC, 99%): {es_mc_hedged:.2f}")
                         st.write(f"VaR reduction: {var_mc - var_mc_hedged:.2f}")
                         st.write(f"ES reduction: {es_mc - es_mc_hedged:.2f}")
-                        # Plot comparison of original and hedged P&L distribution
                         fig, ax = plt.subplots(figsize=(14, 8))
                         ax.hist(pnl_mc, bins=50, color='lightblue', edgecolor='k', alpha=0.5, density=True, label='Original')
                         ax.hist(pnl_mc_hedged, bins=50, color='orange', edgecolor='k', alpha=0.5, density=True, label='Delta Hedge')
@@ -859,7 +836,6 @@ if menu == "Hedging Strategy":
                         ax.legend()
                         st.pyplot(fig)
                     elif hedge_strategy == "Delta+Gamma Hedge":
-                        # Implement Gamma + Delta hedging logic
                         greeks_total = mca.portfolio_greeks_mc(portfolio, n_sim=n_sim_greeks, n_steps=N_steps)
                         gamma_cartera = greeks_total['gamma']
                         delta_cartera = greeks_total['delta']
@@ -875,7 +851,7 @@ if menu == "Hedging Strategy":
                         }
                         greeks_hedge = mca.option_greeks_mc(hedge_opt, n_sim=n_sim_greeks, n_steps=N_steps)
                         gamma_hedge = greeks_hedge['gamma']
-                        gamma_hedge_fraction = coverage_percentage / 100.0  # Use selected coverage percentage
+                        gamma_hedge_fraction = coverage_percentage / 100.0
                         qty_gamma_hedge = -gamma_cartera * gamma_hedge_fraction / gamma_hedge if gamma_hedge != 0 else 0
                         hedge_opt['qty'] = qty_gamma_hedge
                         portfolio_gamma_hedged = portfolio + [hedge_opt]
@@ -913,7 +889,6 @@ if menu == "Hedging Strategy":
                         st.write(f"ES after gamma+delta hedge (MC, 99%): {es_gamma_delta_hedged:.2f}")
                         st.write(f"VaR reduction vs original: {var_mc - var_gamma_delta_hedged:.2f}")
                         st.write(f"ES reduction vs original: {es_mc - es_gamma_delta_hedged:.2f}")
-                        # Plot comparison of original and Delta+Gamma hedged P&L distribution
                         fig, ax = plt.subplots(figsize=(14, 8))
                         ax.hist(pnl_mc, bins=50, color='lightblue', edgecolor='k', alpha=0.5, density=True, label='Original')
                         ax.hist(pnl_gamma_delta_hedged, bins=50, color='green', edgecolor='k', alpha=0.5, density=True, label='Gamma+Delta Hedge')
@@ -927,7 +902,6 @@ if menu == "Hedging Strategy":
                         ax.legend()
                         st.pyplot(fig)
                     elif hedge_strategy == "Vega Hedge":
-                        # Implement Vega hedging logic
                         vega_total = mca.portfolio_greeks_mc(portfolio, n_sim=n_sim_greeks, n_steps=N_steps)['vega']
                         hedge_opt_vega = {
                             'type': 'call',
@@ -941,7 +915,7 @@ if menu == "Hedging Strategy":
                         }
                         greeks_hedge_vega = mca.option_greeks_mc(hedge_opt_vega, n_sim=n_sim_greeks, n_steps=N_steps)
                         vega_hedge = greeks_hedge_vega['vega']
-                        vega_hedge_fraction = coverage_percentage / 100.0  # Use selected coverage percentage
+                        vega_hedge_fraction = coverage_percentage / 100.0
                         qty_vega_hedge = -vega_total * vega_hedge_fraction / vega_hedge if vega_hedge != 0 else 0
                         hedge_opt_vega['qty'] = qty_vega_hedge
                         portfolio_vega_hedged = portfolio + [hedge_opt_vega]
@@ -970,7 +944,6 @@ if menu == "Hedging Strategy":
                         st.write(f"ES after vega hedge (MC, 99%): {es_vega_hedged:.2f}")
                         st.write(f"VaR reduction vs original: {var_mc - var_vega_hedged:.2f}")
                         st.write(f"ES reduction vs original: {es_mc - es_vega_hedged:.2f}")
-                        # Plot comparison of original and Vega hedged P&L distribution
                         fig, ax = plt.subplots(figsize=(14, 8))
                         ax.hist(pnl_mc, bins=50, color='lightblue', edgecolor='k', alpha=0.5, density=True, label='Original')
                         ax.hist(pnl_vega_hedged, bins=50, color='purple', edgecolor='k', alpha=0.5, density=True, label='Vega Hedge')
@@ -987,7 +960,10 @@ if menu == "Hedging Strategy":
                 st.error(f"Error in calculation: {e}")
 
 if menu == "Sensitivity Analysis":
-   # Select model for hedging strategy
+    st.header("🔬 Sensitivity Analysis")
+    st.subheader("Understand your portfolio by analyzing sensitivities.")
+    st.write("Select your model and analyze how different factors affect your portfolio's performance.")
+    # Select model for hedging strategy
     model = st.selectbox("Select Model:", ["Black-Scholes", "Binomial", "Monte Carlo"], index=0)
     # Select percentage of coverage for hedging
     coverage_percentage = st.number_input("Hedging (%):", value=70, min_value=0, max_value=100, step=1, help="Percentage of the portfolio to be hedged.")
@@ -1075,4 +1051,3 @@ if menu == "Sensitivity Analysis":
                 st.error(f"Error in sensitivity analysis calculation: {e}")
 
 st.markdown('<div class="footer-conference">Developed by Marcos Heredia Pimienta, Quantitative Risk Analyst</div>', unsafe_allow_html=True)
-

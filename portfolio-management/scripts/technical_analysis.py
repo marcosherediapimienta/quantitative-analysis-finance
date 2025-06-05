@@ -112,6 +112,38 @@ def plot_price_and_macd_with_histogram(df, ticker):
     plt.tight_layout()
     plt.savefig(f'/home/marcos/Escritorio/mhp/quantitative-analysis-finance/portfolio-management/visualizations/{ticker}_price_macd_combined_plot.png')  # Save the combined plot
 
+def calcular_bollinger_bands(df, period=20, std_dev=2):
+    """Calcula las Bandas de Bollinger"""
+    print("\nCalculando Bandas de Bollinger...")
+    df['sma'] = df['close'].rolling(window=period).mean()
+    df['std_dev'] = df['close'].rolling(window=period).std()
+    df['upper_band'] = df['sma'] + (df['std_dev'] * std_dev)
+    df['lower_band'] = df['sma'] - (df['std_dev'] * std_dev)
+    print(df[['date', 'close', 'upper_band', 'lower_band']].tail())  # Print the last few rows to verify
+
+# Function to plot Bollinger Bands with buy/sell signals
+def plot_bollinger_bands(df, ticker):
+    plt.figure(figsize=(14, 7))
+    plt.plot(df['date'], df['close'], label='Close Price', color='blue')
+    plt.plot(df['date'], df['upper_band'], label='Upper Band', color='red', linestyle='--')
+    plt.plot(df['date'], df['lower_band'], label='Lower Band', color='green', linestyle='--')
+    plt.fill_between(df['date'], df['lower_band'], df['upper_band'], color='gray', alpha=0.1)
+
+    # Plot buy signals
+    buy_signals = df[df['close'] < df['lower_band']]
+    plt.scatter(buy_signals['date'], buy_signals['close'], marker='^', color='green', label='Buy Signal', s=100, zorder=5)
+
+    # Plot sell signals
+    sell_signals = df[df['close'] > df['upper_band']]
+    plt.scatter(sell_signals['date'], sell_signals['close'], marker='v', color='red', label='Sell Signal', s=100, zorder=5)
+
+    plt.title(f'{ticker} - Bollinger Bands')
+    plt.xlabel('Date')
+    plt.ylabel('Price')
+    plt.legend(loc='best')
+    plt.grid(True)
+    plt.savefig(f'/home/marcos/Escritorio/mhp/quantitative-analysis-finance/portfolio-management/visualizations/{ticker}_bollinger_bands_plot.png')  # Save the Bollinger Bands plot
+
 # Example usage
 ticker = "AAPL"
 datos = descargar_datos(ticker)
@@ -121,3 +153,5 @@ calcular_rsi(datos)
 plot_price_and_rsi_separately(datos, ticker)
 calcular_macd(datos)
 plot_price_and_macd_with_histogram(datos, ticker)
+calcular_bollinger_bands(datos)
+plot_bollinger_bands(datos, ticker)

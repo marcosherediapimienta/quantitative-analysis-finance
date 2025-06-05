@@ -22,10 +22,15 @@ def descargar_datos(ticker, start="2024-02-04", end="2025-02-04"):
     return datos
 
 def calcular_sma(df, period=20):
-    """Calcula la media móvil simple (SMA) usando finta"""
+    """Calcula la media móvil simple (SMA) y las señales de compra/venta usando finta"""
     print("\nCalculando SMA...")
     df['sma_20'] = TA.SMA(df, period)
-    print(df[['date', 'close', 'sma_20']].tail())  # Print the last few rows to verify
+    # Calculate buy and sell signals
+    df['signal'] = 0
+    df.loc[df['close'] > df['sma_20'], 'signal'] = 1  # Buy signal
+    df.loc[df['close'] < df['sma_20'], 'signal'] = -1  # Sell signal
+    df['position'] = df['signal'].diff()
+    print(df[['date', 'close', 'sma_20', 'position']].tail())  # Print the last few rows to verify
 
 # Function to plot and save the SMA
 def plot_sma(df, ticker):
@@ -37,7 +42,16 @@ def plot_sma(df, ticker):
     plt.ylabel('Price')
     plt.legend(loc='best')
     plt.grid(True)
-    plt.savefig(f'/home/marcos/Escritorio/mhp/quantitative-analysis-finance/portfolio-management/visualizations/{ticker}_sma_plot.png')  # Save the plot as a PNG file using an absolute path
+
+    # Plot buy signals
+    buy_signals = df[df['position'] == 2]
+    plt.scatter(buy_signals['date'], buy_signals['close'], marker='^', color='green', label='Buy Signal', s=100, zorder=5)
+
+    # Plot sell signals
+    sell_signals = df[df['position'] == -2]
+    plt.scatter(sell_signals['date'], sell_signals['close'], marker='v', color='red', label='Sell Signal', s=100, zorder=5)
+
+    plt.savefig(f'/home/marcos/Escritorio/mhp/quantitative-analysis-finance/portfolio-management/visualizations/{ticker}_sma_plot.png')  
 
 # Example usage
 ticker = "AAPL"

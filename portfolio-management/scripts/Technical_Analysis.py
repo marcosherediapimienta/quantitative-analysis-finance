@@ -37,10 +37,8 @@ def plot_sma(df, ticker):
     plt.ylabel('Price')
     plt.legend(loc='best')
     plt.grid(True)
-    plt.savefig(f'{ticker}_sma_plot.png')  # Save the plot as a PNG file
-    # plt.show()  # Comment out the interactive show function
+    plt.savefig(f'/home/marcos/Escritorio/mhp/quantitative-analysis-finance/portfolio-management/visualizations/{ticker}_sma_plot.png')  # Save the plot as a PNG file using an absolute path
 
-#
 # Example usage
 ticker = "AAPL"
 datos = descargar_datos(ticker)

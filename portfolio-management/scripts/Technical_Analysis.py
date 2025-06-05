@@ -1,90 +1,49 @@
 import yfinance as yf
 import pandas as pd
-import datetime
-import pandas_ta as ta
+from finta import TA
 import matplotlib.pyplot as plt
+import matplotlib
 
-class TechnicalAnalysis:
-    def __init__(self, ticker, start="2024-02-04", end="2025-02-04"):
-        self.ticker = ticker
-        self.data = yf.download(ticker,start=start, end=end)
-        self.add_indicators()
 
-    def add_indicators(self):
-        """Adds technical indicators to the dataframe, including volume."""
-        self.data["Momentum"] = ta.mom(self.data["Close"], length=10)
-        macd = ta.macd(self.data["Close"])
-        self.data["MACD"] = macd["MACD_12_26_9"]
-        self.data["MACD_Signal"] = macd["MACDs_12_26_9"]
-        self.data["RSI"] = ta.rsi(self.data["Close"], length=14)
-        
-        # Stochastic Oscillator
-        stoch = ta.stoch(self.data["High"], self.data["Low"], self.data["Close"])
-        self.data["Stochastic_K"] = stoch["STOCHk_14_3_3"]
-        self.data["Stochastic_D"] = stoch["STOCHd_14_3_3"]
+def descargar_datos(ticker, start="2024-02-04", end="2025-02-04"):
+    """Descarga datos históricos de Yahoo Finance"""
+    print(f"Descargando datos para {ticker} desde {start} hasta {end}...")
+    datos = yf.download(ticker, start=start, end=end)
+    datos = datos.reset_index()  # Reset index to ensure 'Date' is a column
+    
+    # Flatten MultiIndex if present
+    if isinstance(datos.columns, pd.MultiIndex):
+        datos.columns = [' '.join(col).strip() for col in datos.columns]
+    
+    # Remove ticker suffix from column names
+    datos.columns = [col.split(' ')[0].lower() for col in datos.columns]
+    
+    print("Datos descargados correctamente.")
+    print(datos.head())  # Print the first few rows to verify
+    return datos
 
-        # ADX & DMI
-        adx = ta.adx(self.data["High"], self.data["Low"], self.data["Close"])
-        self.data["ADX"] = adx["ADX_14"]
-        self.data["DMI_Plus"] = adx["DMP_14"]
-        self.data["DMI_Minus"] = adx["DMN_14"]
+def calcular_sma(df, period=20):
+    """Calcula la media móvil simple (SMA) usando finta"""
+    print("\nCalculando SMA...")
+    df['sma_20'] = TA.SMA(df, period)
+    print(df[['date', 'close', 'sma_20']].tail())  # Print the last few rows to verify
 
-        # Bollinger Bands
-        bbands = ta.bbands(self.data["Close"], length=20)
-        self.data["Bollinger_Upper"] = bbands["BBU_20_2.0"]
-        self.data["Bollinger_Lower"] = bbands["BBL_20_2.0"]
+# Function to plot and save the SMA
+def plot_sma(df, ticker):
+    plt.figure(figsize=(14, 7))
+    plt.plot(df['date'], df['close'], label='Close Price', color='blue')
+    plt.plot(df['date'], df['sma_20'], label='SMA 20', color='red', linestyle='--')
+    plt.title(f'{ticker} - Close Price and SMA 20')
+    plt.xlabel('Date')
+    plt.ylabel('Price')
+    plt.legend(loc='best')
+    plt.grid(True)
+    plt.savefig(f'{ticker}_sma_plot.png')  # Save the plot as a PNG file
+    # plt.show()  # Comment out the interactive show function
 
-    def plot_indicators(self):
-        """Plots the technical indicators with correctly scaled volume in the MACD plot."""
-        fig, axes = plt.subplots(6, 1, figsize=(12, 14), sharex=True)
-
-        # Close Price (Serie temporal)
-        axes[0].plot(self.data.index, self.data["Close"], label="Close Price", color="black")
-        axes[0].set_title(f"{self.ticker} - Close Price")
-        axes[0].legend()
-
-        # Price and Bollinger Bands
-        axes[1].plot(self.data.index, self.data["Close"], label="Close Price", color="black")
-        axes[1].plot(self.data.index, self.data["Bollinger_Upper"], label="Bollinger Upper", linestyle="dashed", color="blue")
-        axes[1].plot(self.data.index, self.data["Bollinger_Lower"], label="Bollinger Lower", linestyle="dashed", color="red")
-        axes[1].set_title(f"{self.ticker} - Close Price & Bollinger Bands")
-        axes[1].legend()
-
-        # MACD with correctly scaled Volume
-        ax_macd = axes[2]
-        ax_vol = ax_macd.twinx()  
-        ax_vol.fill_between(self.data.index, self.data["Volume"], color="gray", alpha=0.3, label="Volume")
-        ax_macd.plot(self.data.index, self.data["MACD"], label="MACD", color="green", linewidth=1.5)
-        ax_macd.plot(self.data.index, self.data["MACD_Signal"], label="MACD Signal", color="red", linewidth=1.5)
-
-        ax_macd.set_title("MACD & Signal Line with Volume")
-        ax_macd.legend(loc="upper left")
-        ax_vol.legend(loc="upper right")
-
-        ax_macd.set_ylabel("MACD")
-        ax_vol.set_ylabel("Volume")
-
-        # RSI
-        axes[3].plot(self.data.index, self.data["RSI"], label="RSI", color="purple")
-        axes[3].axhline(70, linestyle="dashed", color="red")
-        axes[3].axhline(30, linestyle="dashed", color="green")
-        axes[3].set_title("Relative Strength Index (RSI)")
-        axes[3].legend()
-
-        # ADX & DMI
-        axes[4].plot(self.data.index, self.data["ADX"], label="ADX", color="black")
-        axes[4].plot(self.data.index, self.data["DMI_Plus"], label="+DI", color="green")
-        axes[4].plot(self.data.index, self.data["DMI_Minus"], label="-DI", color="red")
-        axes[4].set_title("ADX & DMI")
-        axes[4].legend()
-
-        # Stochastic Oscillator
-        axes[5].plot(self.data.index, self.data["Stochastic_K"], label="Stochastic %K", color="blue")
-        axes[5].plot(self.data.index, self.data["Stochastic_D"], label="Stochastic %D", color="orange")
-        axes[5].axhline(80, linestyle="dashed", color="red")  # Overbought
-        axes[5].axhline(20, linestyle="dashed", color="green")  # Oversold
-        axes[5].set_title("Stochastic Oscillator")
-        axes[5].legend()
-
-        plt.tight_layout()
-        plt.show()
+#
+# Example usage
+ticker = "AAPL"
+datos = descargar_datos(ticker)
+calcular_sma(datos)
+plot_sma(datos, ticker)

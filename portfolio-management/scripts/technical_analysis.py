@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import mplfinance as mpf
 
 
-def descargar_datos(ticker, start="2024-03-06", end="2025-04-06"):
+def descargar_datos(ticker, start="2025-01-01", end="2025-03-01"):
     """Descarga datos históricos de Yahoo Finance"""
     print(f"Descargando datos para {ticker} desde {start} hasta {end}...")
     datos = yf.download(ticker, start=start, end=end)

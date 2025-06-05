@@ -2,7 +2,6 @@ import yfinance as yf
 import pandas as pd
 from finta import TA
 import matplotlib.pyplot as plt
-import matplotlib
 
 
 def descargar_datos(ticker, start="2024-02-04", end="2025-02-04"):

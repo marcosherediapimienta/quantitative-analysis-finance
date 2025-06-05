@@ -53,8 +53,71 @@ def plot_sma(df, ticker):
 
     plt.savefig(f'/home/marcos/Escritorio/mhp/quantitative-analysis-finance/portfolio-management/visualizations/{ticker}_sma_plot.png')  
 
+def calcular_rsi(df, period=14):
+    """Calcula el Índice de Fuerza Relativa (RSI)"""
+    print("\nCalculando RSI...")
+    df['rsi'] = TA.RSI(df, period)
+    print(df[['date', 'close', 'rsi']].tail())  # Print the last few rows to verify
+
+def plot_price_and_rsi_separately(df, ticker):
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
+
+    # Plot close price
+    ax1.set_title(f'{ticker} - Close Price')
+    ax1.plot(df['date'], df['close'], label='Close Price', color='blue')
+    ax1.set_ylabel('Close Price')
+    ax1.grid(True)
+
+    # Plot RSI
+    ax2.set_title(f'{ticker} - RSI')
+    ax2.plot(df['date'], df['rsi'], label='RSI', color='purple')
+    ax2.axhline(70, color='red', linestyle='--')  # Overbought line
+    ax2.axhline(30, color='green', linestyle='--')  # Oversold line
+    ax2.set_ylabel('RSI')
+    ax2.set_xlabel('Date')
+    ax2.grid(True)
+
+    # Plot RSI with shaded area
+    ax2.fill_between(df['date'], 30, 70, color='purple', alpha=0.1)  # Shade the RSI area between 30 and 70
+
+    plt.tight_layout()
+    plt.savefig(f'/home/marcos/Escritorio/mhp/quantitative-analysis-finance/portfolio-management/visualizations/{ticker}_price_rsi_separate_plot.png')  # Save the separate plots
+
+def calcular_macd(df):
+    """Calcula el MACD y la señal"""
+    print("\nCalculando MACD...")
+    df['macd'] = TA.MACD(df)['MACD']
+    df['signal_line'] = TA.MACD(df)['SIGNAL']
+    print(df[['date', 'macd', 'signal_line']].tail())  # Print the last few rows to verify
+
+def plot_price_and_macd_with_histogram(df, ticker):
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
+
+    # Plot close price
+    ax1.set_title(f'{ticker} - Close Price')
+    ax1.plot(df['date'], df['close'], label='Close Price', color='blue')
+    ax1.set_ylabel('Close Price')
+    ax1.grid(True)
+
+    # Plot MACD and Histogram
+    ax2.set_title(f'{ticker} - MACD')
+    ax2.plot(df['date'], df['macd'], label='MACD', color='blue')
+    ax2.plot(df['date'], df['signal_line'], label='Signal Line', color='red')
+    ax2.bar(df['date'], df['macd'] - df['signal_line'], label='MACD Histogram', color='gray', alpha=0.3)
+    ax2.set_ylabel('MACD')
+    ax2.set_xlabel('Date')
+    ax2.grid(True)
+    ax2.legend(loc='best')
+
+    plt.tight_layout()
+    plt.savefig(f'/home/marcos/Escritorio/mhp/quantitative-analysis-finance/portfolio-management/visualizations/{ticker}_price_macd_combined_plot.png')  # Save the combined plot
+
 # Example usage
 ticker = "AAPL"
 datos = descargar_datos(ticker)
 calcular_sma(datos)
 plot_sma(datos, ticker)
+calcular_rsi(datos)
+plot_price_and_rsi_separately(datos, ticker)
+calcular_macd(datos)
+plot_price_and_macd_with_histogram(datos, ticker)

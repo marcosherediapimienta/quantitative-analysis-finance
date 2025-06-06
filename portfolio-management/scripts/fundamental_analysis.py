@@ -61,6 +61,9 @@ class FinancialAnalyzer:
                 ax.grid(True)
                 figures.append(fig)  
 
+                # Save the figure as a .png file in the visualizations directory
+                plt.savefig(f'/home/marcos/Escritorio/mhp/quantitative-analysis-finance/portfolio-management/visualizations/{title}_{category}_plot.png')
+
         return figures  
 
     def get_balance_sheet(self, plot=False):
@@ -200,3 +203,10 @@ class FinancialAnalyzer:
 
         except Exception as e:
             print(f"Error retrieving financial ratios for {self.ticker}: {str(e)}")
+
+ticker = "NVDA"
+analyzer = FinancialAnalyzer(ticker)
+analyzer.get_balance_sheet(plot=True)
+analyzer.get_income_statement(plot=True)
+analyzer.get_cash_flow(plot=True)
+analyzer.get_financial_ratios()

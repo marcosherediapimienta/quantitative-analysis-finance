@@ -5,10 +5,20 @@ import matplotlib.pyplot as plt
 import mplfinance as mpf
 
 
-def descargar_datos(ticker, start="2025-01-01", end="2025-03-01"):
-    """Descarga datos históricos de Yahoo Finance"""
-    print(f"Descargando datos para {ticker} desde {start} hasta {end}...")
-    datos = yf.download(ticker, start=start, end=end)
+def descargar_datos(ticker='AAPL', interval='daily', start=None, end=None):
+    """Descarga datos históricos de Yahoo Finance según el intervalo especificado."""
+    print(f"Descargando datos para {ticker} con intervalo {interval}...")
+    if start is None:
+        start = pd.Timestamp.today() - pd.Timedelta(days=1)
+    if end is None:
+        end = pd.Timestamp.today()
+    
+    # Map the interval to yfinance's interval format
+    yf_interval = {'daily': '1d', 'weekly': '1wk', 'monthly': '1mo'}.get(interval)
+    if yf_interval is None:
+        raise ValueError("Intervalo no soportado. Usa 'daily', 'weekly' o 'monthly'.")
+
+    datos = yf.download(ticker, start=start, end=end, interval=yf_interval)
     datos = datos.reset_index()  # Reset index to ensure 'Date' is a column
     
     # Flatten MultiIndex if present
@@ -20,6 +30,7 @@ def descargar_datos(ticker, start="2025-01-01", end="2025-03-01"):
     
     print("Datos descargados correctamente.")
     print(datos.head())  # Print the first few rows to verify
+    
     return datos
 
 def calcular_sma(df, period=20):
@@ -319,9 +330,14 @@ def plot_candlestick_and_bollinger(df, ticker):
     plt.tight_layout()
     plt.savefig(f'/home/marcos/Escritorio/mhp/quantitative-analysis-finance/portfolio-management/visualizations/{ticker}_candlestick_bollinger_plot.png')  # Save the combined plot
 
+# Call the function with user-specified parameters
+ticker = 'AAPL'  # You can change this to any ticker you want
+start_date = input("Ingrese la fecha de inicio (YYYY-MM-DD): ")
+end_date = input("Ingrese la fecha de fin (YYYY-MM-DD): ")
+interval = input("Ingrese el intervalo de datos ('daily', 'weekly', 'monthly'): ")
+datos = descargar_datos(ticker, start=start_date, end=end_date, interval=interval)
+
 # Example usage
-ticker = "AAPL"
-datos = descargar_datos(ticker)
 calcular_sma(datos)
 plot_sma(datos, ticker)
 calcular_rsi(datos)
@@ -337,3 +353,5 @@ plot_candlestick_and_momentum(datos, ticker)
 plot_candlestick_and_rsi(datos, ticker)
 plot_candlestick_and_macd(datos, ticker)
 plot_candlestick_and_bollinger(datos, ticker)
+    
+

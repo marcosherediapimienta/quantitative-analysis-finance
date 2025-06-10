@@ -8,6 +8,7 @@ from option_pricing.black_scholes_model import bs_portfolio_analysis as bsa
 from option_pricing.binomial_model import binomial_portfolio_analysis as bpa
 from option_pricing.monte_carlo import mc_portfolio_analysis as mca
 from portfolio_management.scripts.fundamental_analysis import FinancialAnalyzer
+from portfolio_management.scripts.technical_analysis import descargar_datos, calcular_sma, plot_sma, calcular_rsi, plot_price_and_rsi_separately, calcular_macd, plot_price_and_macd_with_histogram, calcular_bollinger_bands, plot_bollinger_bands, plot_combined_analysis, calcular_momentum, plot_price_and_momentum, plot_candlestick_and_momentum, plot_candlestick_and_rsi, plot_candlestick_and_macd, plot_candlestick_and_bollinger
 
 # Set a fixed random seed for reproducibility
 np.random.seed(42)
@@ -77,7 +78,8 @@ menu1 = st.sidebar.selectbox(
         "Portfolio Analysis - Monte Carlo",
         "Hedging Strategy",
         "Sensitivity Analysis",
-        "Fundamental Analysis"
+        "Fundamental Analysis",
+        "Technical Analysis"
     ],
     index=0
 )
@@ -1284,4 +1286,47 @@ if menu1 == "Fundamental Analysis":
     form_url = "https://docs.google.com/forms/d/e/1FAIpQLSecDfBXdXynYHyouLub1ZT3AsYWa4V1N3O_OnvUKxiA21bnjg/viewform?usp=header"
     st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
+    
+if menu1 == "Technical Analysis":
+    st.header("📈 Technical Analysis")
+    st.write("Perform technical analysis on stock data.")
+
+    # User inputs for ticker, date range, and interval
+    ticker = st.text_input("Enter Ticker Symbol:", "AAPL")
+    start_date = st.date_input("Start Date:", pd.to_datetime("2022-01-01"))
+    end_date = st.date_input("End Date:", pd.to_datetime("2023-01-01"))
+    interval = st.selectbox("Select Interval:", ["daily", "weekly", "monthly"], index=0)
+
+    # Fetch and display data
+    if st.button("Analyze"):
+        try:
+            datos = descargar_datos(ticker, interval, start_date, end_date)
+            # Perform and display technical analysis
+            calcular_sma(datos)
+            fig_sma = plot_sma(datos, ticker)
+            st.pyplot(fig_sma)
+
+            calcular_rsi(datos)
+            calcular_macd(datos)
+            calcular_bollinger_bands(datos)
+            calcular_momentum(datos)
+            
+            fig_combined = plot_combined_analysis(datos, ticker)
+            st.pyplot(fig_combined)
+
+            fig_candlestick_momentum = plot_candlestick_and_momentum(datos, ticker)
+            st.pyplot(fig_candlestick_momentum)
+
+            fig_candlestick_rsi = plot_candlestick_and_rsi(datos, ticker)
+            st.pyplot(fig_candlestick_rsi)
+
+            fig_candlestick_macd = plot_candlestick_and_macd(datos, ticker)
+            st.pyplot(fig_candlestick_macd)
+
+            fig_candlestick_bollinger = plot_candlestick_and_bollinger(datos, ticker)
+            st.pyplot(fig_candlestick_bollinger)
+
+        except Exception as e:
+            st.error(f"Error in technical analysis: {str(e)}")
+
 st.markdown('<div class="footer-conference">Developed by Marcos Heredia Pimienta, Quantitative Risk Analyst</div>', unsafe_allow_html=True)

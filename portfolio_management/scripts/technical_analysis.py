@@ -46,24 +46,24 @@ def calcular_sma(df, period=20):
 
 # Function to plot and save the SMA
 def plot_sma(df, ticker):
-    plt.figure(figsize=(14, 7))
-    plt.plot(df['date'], df['close'], label='Close Price', color='blue')
-    plt.plot(df['date'], df['sma_20'], label='SMA 20', color='red', linestyle='--')
-    plt.title(f'{ticker} - Close Price and SMA 20')
-    plt.xlabel('Date')
-    plt.ylabel('Price')
-    plt.legend(loc='best')
-    plt.grid(True)
+    fig, ax = plt.subplots(figsize=(14, 7))
+    ax.plot(df['date'], df['close'], label='Close Price', color='blue')
+    ax.plot(df['date'], df['sma_20'], label='SMA 20', color='red', linestyle='--')
+    ax.set_title(f'{ticker} - Close Price and SMA 20')
+    ax.set_xlabel('Date')
+    ax.set_ylabel('Price')
+    ax.legend(loc='best')
+    ax.grid(True)
 
     # Plot buy signals
     buy_signals = df[df['position'] == 2]
-    plt.scatter(buy_signals['date'], buy_signals['close'], marker='^', color='green', label='Buy Signal', s=100, zorder=5)
+    ax.scatter(buy_signals['date'], buy_signals['close'], marker='^', color='green', label='Buy Signal', s=100, zorder=5)
 
     # Plot sell signals
     sell_signals = df[df['position'] == -2]
-    plt.scatter(sell_signals['date'], sell_signals['close'], marker='v', color='red', label='Sell Signal', s=100, zorder=5)
+    ax.scatter(sell_signals['date'], sell_signals['close'], marker='v', color='red', label='Sell Signal', s=100, zorder=5)
 
-    plt.savefig(f'/home/marcos/Escritorio/mhp/quantitative-analysis-finance/portfolio-management/visualizations/{ticker}_sma_plot.png')  
+    return fig
 
 def calcular_rsi(df, period=14):
     """Calcula el Índice de Fuerza Relativa (RSI)"""
@@ -93,7 +93,7 @@ def plot_price_and_rsi_separately(df, ticker):
     ax2.fill_between(df['date'], 30, 70, color='purple', alpha=0.1)  # Shade the RSI area between 30 and 70
 
     plt.tight_layout()
-    plt.savefig(f'/home/marcos/Escritorio/mhp/quantitative-analysis-finance/portfolio-management/visualizations/{ticker}_price_rsi_separate_plot.png')  # Save the separate plots
+    return fig
 
 def calcular_macd(df):
     """Calcula el MACD y la señal"""
@@ -122,7 +122,7 @@ def plot_price_and_macd_with_histogram(df, ticker):
     ax2.legend(loc='best')
 
     plt.tight_layout()
-    plt.savefig(f'/home/marcos/Escritorio/mhp/quantitative-analysis-finance/portfolio-management/visualizations/{ticker}_price_macd_combined_plot.png')  # Save the combined plot
+    return fig
 
 def calcular_bollinger_bands(df, period=20, std_dev=2):
     """Calcula las Bandas de Bollinger"""
@@ -135,26 +135,26 @@ def calcular_bollinger_bands(df, period=20, std_dev=2):
 
 # Function to plot Bollinger Bands with buy/sell signals
 def plot_bollinger_bands(df, ticker):
-    plt.figure(figsize=(14, 7))
-    plt.plot(df['date'], df['close'], label='Close Price', color='blue')
-    plt.plot(df['date'], df['upper_band'], label='Upper Band', color='red', linestyle='--')
-    plt.plot(df['date'], df['lower_band'], label='Lower Band', color='green', linestyle='--')
-    plt.fill_between(df['date'], df['lower_band'], df['upper_band'], color='gray', alpha=0.1)
+    fig, ax = plt.subplots(figsize=(14, 7))
+    ax.plot(df['date'], df['close'], label='Close Price', color='blue')
+    ax.plot(df['date'], df['upper_band'], label='Upper Band', color='red', linestyle='--')
+    ax.plot(df['date'], df['lower_band'], label='Lower Band', color='green', linestyle='--')
+    ax.fill_between(df['date'], df['lower_band'], df['upper_band'], color='gray', alpha=0.1)
 
     # Plot buy signals
     buy_signals = df[df['close'] < df['lower_band']]
-    plt.scatter(buy_signals['date'], buy_signals['close'], marker='^', color='green', label='Buy Signal', s=100, zorder=5)
+    ax.scatter(buy_signals['date'], buy_signals['close'], marker='^', color='green', label='Buy Signal', s=100, zorder=5)
 
     # Plot sell signals
     sell_signals = df[df['close'] > df['upper_band']]
-    plt.scatter(sell_signals['date'], sell_signals['close'], marker='v', color='red', label='Sell Signal', s=100, zorder=5)
+    ax.scatter(sell_signals['date'], sell_signals['close'], marker='v', color='red', label='Sell Signal', s=100, zorder=5)
 
-    plt.title(f'{ticker} - Bollinger Bands')
-    plt.xlabel('Date')
-    plt.ylabel('Price')
-    plt.legend(loc='best')
-    plt.grid(True)
-    plt.savefig(f'/home/marcos/Escritorio/mhp/quantitative-analysis-finance/portfolio-management/visualizations/{ticker}_bollinger_bands_plot.png')  # Save the Bollinger Bands plot
+    ax.set_title(f'{ticker} - Bollinger Bands')
+    ax.set_xlabel('Date')
+    ax.set_ylabel('Price')
+    ax.legend(loc='best')
+    ax.grid(True)
+    return fig
 
 # Function to plot combined RSI and MACD
 def plot_combined_analysis(df, ticker):
@@ -193,7 +193,7 @@ def plot_combined_analysis(df, ticker):
     ax3.legend(loc='best')
 
     plt.tight_layout()
-    plt.savefig(f'/home/marcos/Escritorio/mhp/quantitative-analysis-finance/portfolio-management/visualizations/{ticker}_combined_analysis_plot.png')  # Save the combined plot
+    return fig
 
 def calcular_momentum(df, period=10):
     """Calcula el indicador de Momentum"""
@@ -228,7 +228,7 @@ def plot_price_and_momentum(df, ticker):
     ax2.scatter(sell_signals['date'], sell_signals['momentum'], marker='v', color='red', label='Sell Signal', s=100, zorder=5)
 
     plt.tight_layout()
-    plt.savefig(f'/home/marcos/Escritorio/mhp/quantitative-analysis-finance/portfolio-management/visualizations/{ticker}_price_momentum_plot.png')  # Save the combined plot
+    return fig
 
 # Function to plot candlestick chart with Momentum
 def plot_candlestick_and_momentum(df, ticker):
@@ -258,7 +258,7 @@ def plot_candlestick_and_momentum(df, ticker):
     ax2.scatter(sell_signals['date'], sell_signals['momentum'], marker='v', color='red', label='Sell Signal', s=100, zorder=5)
 
     plt.tight_layout()
-    plt.savefig(f'/home/marcos/Escritorio/mhp/quantitative-analysis-finance/portfolio-management/visualizations/{ticker}_candlestick_momentum_plot.png')  # Save the combined plot
+    return fig
 
 def plot_candlestick_and_rsi(df, ticker):
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
@@ -281,7 +281,7 @@ def plot_candlestick_and_rsi(df, ticker):
     ax2.legend(loc='best')
 
     plt.tight_layout()
-    plt.savefig(f'/home/marcos/Escritorio/mhp/quantitative-analysis-finance/portfolio-management/visualizations/{ticker}_candlestick_rsi_plot.png')  # Save the combined plot
+    return fig
 
 def plot_candlestick_and_macd(df, ticker):
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
@@ -303,7 +303,7 @@ def plot_candlestick_and_macd(df, ticker):
     ax2.legend(loc='best')
 
     plt.tight_layout()
-    plt.savefig(f'/home/marcos/Escritorio/mhp/quantitative-analysis-finance/portfolio-management/visualizations/{ticker}_candlestick_macd_plot.png')  # Save the combined plot
+    return fig
 
 def plot_candlestick_and_bollinger(df, ticker):
     fig, ax1 = plt.subplots(figsize=(14, 7))
@@ -328,30 +328,30 @@ def plot_candlestick_and_bollinger(df, ticker):
     ax1.scatter(sell_signals['date'], sell_signals['close'], marker='v', color='red', label='Sell Signal', s=100, zorder=5)
 
     plt.tight_layout()
-    plt.savefig(f'/home/marcos/Escritorio/mhp/quantitative-analysis-finance/portfolio-management/visualizations/{ticker}_candlestick_bollinger_plot.png')  # Save the combined plot
+    return fig
 
-# Call the function with user-specified parameters
-ticker = 'META'  # You can change this to any ticker you want
-start_date = input("Ingrese la fecha de inicio (YYYY-MM-DD): ")
-end_date = input("Ingrese la fecha de fin (YYYY-MM-DD): ")
-interval = input("Ingrese el intervalo de datos ('daily', 'weekly', 'monthly'): ")
-datos = descargar_datos(ticker, start=start_date, end=end_date, interval=interval)
+if __name__ == "__main__":
+    ticker = 'META'  # Default ticker
+    start_date = '2022-01-01'  # Default start date
+    end_date = '2023-01-01'  # Default end date
+    interval = 'daily'  # Default interval
+    datos = descargar_datos(ticker, start=start_date, end=end_date, interval=interval)
 
-# Example usage
-calcular_sma(datos)
-plot_sma(datos, ticker)
-calcular_rsi(datos)
-plot_price_and_rsi_separately(datos, ticker)
-calcular_macd(datos)
-plot_price_and_macd_with_histogram(datos, ticker)
-calcular_bollinger_bands(datos)
-plot_bollinger_bands(datos, ticker)
-plot_combined_analysis(datos, ticker)
-calcular_momentum(datos)
-plot_price_and_momentum(datos, ticker)
-plot_candlestick_and_momentum(datos, ticker)
-plot_candlestick_and_rsi(datos, ticker)
-plot_candlestick_and_macd(datos, ticker)
-plot_candlestick_and_bollinger(datos, ticker)
+    # Example usage
+    calcular_sma(datos)
+    plot_sma(datos, ticker)
+    calcular_rsi(datos)
+    plot_price_and_rsi_separately(datos, ticker)
+    calcular_macd(datos)
+    plot_price_and_macd_with_histogram(datos, ticker)
+    calcular_bollinger_bands(datos)
+    plot_bollinger_bands(datos, ticker)
+    plot_combined_analysis(datos, ticker)
+    calcular_momentum(datos)
+    plot_price_and_momentum(datos, ticker)
+    plot_candlestick_and_momentum(datos, ticker)
+    plot_candlestick_and_rsi(datos, ticker)
+    plot_candlestick_and_macd(datos, ticker)
+    plot_candlestick_and_bollinger(datos, ticker)
     
 

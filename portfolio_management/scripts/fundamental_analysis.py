@@ -66,7 +66,7 @@ class FinancialAnalyzer:
                 figures.append(fig)  
 
                 # Save the figure as a .png file
-                plt.savefig(f'/home/marcos/Escritorio/mhp/quantitative-analysis-finance/portfolio-management/visualizations/{title}_{category}_plot.png')
+                plt.savefig(f'quantitative-analysis-finance/portfolio_management/visualizations/{title}_{category}_plot.png')
 
         return figures  
 
@@ -253,7 +253,7 @@ class FinancialAnalyzer:
                 div_info.plot(title=f"{self.ticker} Dividend History")
                 plt.ylabel('Dividend Amount ($)')
                 plt.grid(True)
-                plt.savefig('/home/marcos/Escritorio/mhp/quantitative-analysis-finance/portfolio-management/visualizations/dividend_history.png')
+                plt.savefig('quantitative-analysis-finance/portfolio_management/visualizations/dividend_history.png')
             else:
                 print("\n  No dividend history available")
                 
@@ -315,7 +315,7 @@ class FinancialAnalyzer:
                     comparison.loc[metric].plot(kind='bar', title=metric)
                     plt.ylabel(metric)
                     plt.grid(True)
-                    plt.savefig(f'/home/marcos/Escritorio/mhp/quantitative-analysis-finance/portfolio-management/visualizations/peer_comparison_{metric}.png')
+                    plt.savefig(f'quantitative-analysis-finance/portfolio_management/visualizations/peer_comparison_{metric}.png')
                 else:
                     print(f"  Cannot plot {metric} - no numeric data available")
                     

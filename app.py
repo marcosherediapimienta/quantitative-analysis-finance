@@ -66,7 +66,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Update menu to include hedging strategy selection
+# Update menu to include Fundamental Analysis in the first selectbox
 menu1 = st.sidebar.selectbox(
     "Select section:",
     [
@@ -77,15 +77,7 @@ menu1 = st.sidebar.selectbox(
         "Portfolio Analysis - Monte Carlo",
         "Hedging Strategy",
         "Sensitivity Analysis",
-    ],
-    index=0
-)
-
-# Update menu to include hedging strategy selection
-menu2 = st.sidebar.selectbox(
-    "Select section:",
-    [
-        "Fundamental Analysis",
+        "Fundamental Analysis"
     ],
     index=0
 )
@@ -1089,7 +1081,7 @@ if menu1 == "Sensitivity Analysis":
         # Add Black-Scholes specific inputs here
     elif model == "Binomial":
         st.write("Binomial model selected.")
-        N_steps_binomial = st.number_input("Number of steps for Binomial tree", value=100, min_value=1, step=1, help="Discretization steps for Binomial model.", key="N_steps_binomial_sensitivity")
+        N_steps_binomial = st.number_input("Number of steps for Binomial tree", value=100, min_value=1, step=1, help="Set the discretization steps for the Binomial model.", key="N_steps_binomial_sensitivity")
     
     # Ensure portfolio options are customizable
     for i in range(num_options):
@@ -1166,7 +1158,7 @@ if menu1 == "Sensitivity Analysis":
     st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
-if menu2 == "Fundamental Analysis":
+if menu1 == "Fundamental Analysis":
     st.header("📊 Fundamental Analysis")
     st.write("Analyze the fundamental financial metrics of a company.")
     
@@ -1199,7 +1191,7 @@ if menu2 == "Fundamental Analysis":
         figures = analyzer.get_balance_sheet(plot=True)
         for fig in figures:
             st.pyplot(fig)
-        # Filtrar y mostrar solo las secciones específicas sin la columna de 2020
+        # Filtrar y mostrar solo las secciones específicas
         balance_sheet_data = analyzer.company.balance_sheet.loc[
             [
                 'Total Debt', 'Long Term Debt',
@@ -1217,14 +1209,14 @@ if menu2 == "Fundamental Analysis":
         figures = analyzer.get_income_statement(plot=True)
         for fig in figures:
             st.pyplot(fig)
-        # Filtrar y mostrar solo las secciones específicas sin la columna de 2020
+        # Filtrar y mostrar solo las secciones específicas
         income_statement_data = analyzer.company.financials.loc[
             [
                 'Total Revenue', 'Cost Of Revenue',
                 'Gross Profit', 'Operating Income',
                 'EBITDA', 'Net Interest Income', 'Net Income'
             ],
-            analyzer.company.financials.columns[analyzer.company.financials.columns.year != 2020]
+            analyzer.company.financials.columns[income_statement_data.columns.year != 2020]
         ]
         income_statement_data = income_statement_data.applymap(format_number)
         st.dataframe(income_statement_data)
@@ -1233,14 +1225,14 @@ if menu2 == "Fundamental Analysis":
         figures = analyzer.get_cash_flow(plot=True)
         for fig in figures:
             st.pyplot(fig)
-        # Filtrar y mostrar solo las secciones específicas sin la columna de 2020
+        # Filtrar y mostrar solo las secciones específicas
         cash_flow_data = analyzer.company.cash_flow.loc[
             [
                 'Operating Cash Flow', 'Investing Cash Flow',
                 'Financing Cash Flow', 'Capital Expenditure',
                 'Free Cash Flow'
             ],
-            analyzer.company.cash_flow.columns[analyzer.company.cash_flow.columns.year != 2020]
+            analyzer.company.cash_flow.columns[cash_flow_data.columns.year != 2020]
         ]
         cash_flow_data = cash_flow_data.applymap(format_number)
         st.dataframe(cash_flow_data)

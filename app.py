@@ -66,7 +66,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Update menu to include hedging strategy selection
-menu = st.sidebar.selectbox(
+menu1 = st.sidebar.selectbox(
     "Select section:",
     [
         "Introduction",
@@ -80,7 +80,17 @@ menu = st.sidebar.selectbox(
     index=0
 )
 
-if menu == "Introduction":
+# Update menu to include hedging strategy selection
+menu2 = st.sidebar.selectbox(
+    "Select section:",
+    [
+        "Fundamental Analysis",
+    ],
+    index=0
+)
+
+
+if menu1 == "Introduction":
     st.markdown('<div class="title-conference">Option Pricing & Portfolio Risk App</div>', unsafe_allow_html=True)
     st.markdown('<div class="subtitle-conference">A cutting-edge tool for pricing options, analyzing portfolio risk, and comparing financial models.</div>', unsafe_allow_html=True)
     st.markdown("""
@@ -122,7 +132,7 @@ if menu == "Introduction":
     st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
-if menu == "Single Option Analysis":
+if menu1 == "Single Option Analysis":
     st.header("🔍 Single Option Analysis")
     st.write("Select your model and option type to begin analyzing single options")
     cols = st.columns(3)
@@ -204,7 +214,7 @@ if menu == "Single Option Analysis":
     st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
-if menu == "Portfolio Analysis - Black-Scholes":
+if menu1 == "Portfolio Analysis - Black-Scholes":
     st.header("📊 Portfolio Analysis - Black-Scholes")
     st.subheader("Analyze your portfolio using the Black-Scholes model")
     st.write("Configure your portfolio and analyze risk metrics with precision")
@@ -287,7 +297,7 @@ if menu == "Portfolio Analysis - Black-Scholes":
     st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
-elif menu == "Portfolio Analysis - Binomial":
+elif menu1 == "Portfolio Analysis - Binomial":
     st.header("📊 Portfolio Analysis - Binomial")
     st.subheader("Analyze your portfolio using the Binomial model")
     st.write("Configure your portfolio and assess risk metrics with the Binomial model")
@@ -373,7 +383,7 @@ elif menu == "Portfolio Analysis - Binomial":
     st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
-elif menu == "Portfolio Analysis - Monte Carlo":
+elif menu1 == "Portfolio Analysis - Monte Carlo":
     st.header("📊 Portfolio Analysis - Monte Carlo")
     st.subheader("Analyze your portfolio using the Monte Carlo model")
     st.write("Configure your portfolio and evaluate risk metrics with the Monte Carlo simulation.")
@@ -459,7 +469,7 @@ elif menu == "Portfolio Analysis - Monte Carlo":
     st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
-if menu == "Hedging Strategy":
+if menu1 == "Hedging Strategy":
     st.header("🛡️ Hedging Strategy")
     st.subheader("Optimize and protect your portfolio by choosing the right hedging")
     st.write("Select your model and hedging strategy to manage portfolio risk effectively")
@@ -1042,7 +1052,7 @@ if menu == "Hedging Strategy":
     st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
-if menu == "Sensitivity Analysis":
+if menu1 == "Sensitivity Analysis":
     st.header("🔬 Sensitivity Analysis")
     st.subheader("Stress-test your portfolio against market shocks")
     st.write("Select your model and analyze how different factors affect your portfolio's performance")
@@ -1150,5 +1160,7 @@ if menu == "Sensitivity Analysis":
     form_url = "https://docs.google.com/forms/d/e/1FAIpQLSecDfBXdXynYHyouLub1ZT3AsYWa4V1N3O_OnvUKxiA21bnjg/viewform?usp=header"
     st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
+
+
 
 st.markdown('<div class="footer-conference">Developed by Marcos Heredia Pimienta, Quantitative Risk Analyst</div>', unsafe_allow_html=True)

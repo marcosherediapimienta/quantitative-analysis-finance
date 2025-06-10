@@ -1190,10 +1190,8 @@ if menu1 == "Fundamental Analysis":
     # Perform selected analyses
     if "Balance Sheet" in analysis_options:
         st.subheader("Balance Sheet")
-        figures = analyzer.get_balance_sheet(plot=True)
-        # Debugging: Check figures before plotting
-        st.write("Figures for Balance Sheet:", figures)
-        for fig in figures:
+        figures_balance_sheet = analyzer.get_balance_sheet(plot=True)
+        for fig in figures_balance_sheet:
             st.pyplot(fig)
         # Display balance sheet data
         balance_sheet_data = analyzer.company.balance_sheet.loc[
@@ -1208,12 +1206,11 @@ if menu1 == "Fundamental Analysis":
         ]
         balance_sheet_data = balance_sheet_data.applymap(format_number)
         st.dataframe(balance_sheet_data)
+
     if "Income Statement" in analysis_options:
         st.subheader("Income Statement")
-        figures = analyzer.get_income_statement(plot=True)
-        # Debugging: Check figures before plotting
-        st.write("Figures for Income Statement:", figures)
-        for fig in figures:
+        figures_income_statement = analyzer.get_income_statement(plot=True)
+        for fig in figures_income_statement:
             st.pyplot(fig)
         # Define income_statement_data before using it
         income_statement_data = analyzer.company.financials.loc[
@@ -1226,12 +1223,11 @@ if menu1 == "Fundamental Analysis":
         ]
         income_statement_data = income_statement_data.applymap(format_number)
         st.dataframe(income_statement_data)
+
     if "Cash Flow" in analysis_options:
         st.subheader("Cash Flow")
-        figures = analyzer.get_cash_flow(plot=True)
-        # Debugging: Check figures before plotting
-        st.write("Figures for Cash Flow:", figures)
-        for fig in figures:
+        figures_cash_flow = analyzer.get_cash_flow(plot=True)
+        for fig in figures_cash_flow:
             st.pyplot(fig)
         # Define cash_flow_data before using it
         cash_flow_data = analyzer.company.cash_flow.loc[
@@ -1244,30 +1240,37 @@ if menu1 == "Fundamental Analysis":
         ]
         cash_flow_data = cash_flow_data.applymap(format_number)
         st.dataframe(cash_flow_data)
+
     if "Financial Ratios" in analysis_options:
         st.subheader("Financial Ratios")
         ratios = analyzer.get_financial_ratios()
         st.write(ratios)
+
     if "Dividend Analysis" in analysis_options:
         st.subheader("Dividend Analysis")
         dividend_analysis = analyzer.get_dividend_analysis()
         st.write(dividend_analysis)
+
     if "Growth Metrics" in analysis_options:
         st.subheader("Growth Metrics")
         growth_metrics = analyzer.get_growth_metrics()
         st.write(growth_metrics)
+
     if "Trend Analysis" in analysis_options:
         st.subheader("Trend Analysis")
         trend_analysis = analyzer.get_trend_analysis()
         st.write(trend_analysis)
+
     if "Risk Metrics" in analysis_options:
         st.subheader("Risk Metrics")
         risk_metrics = analyzer.get_risk_metrics()
         st.write(risk_metrics)
+
     if "Additional Metrics" in analysis_options:
         st.subheader("Additional Metrics")
         additional_metrics = analyzer.get_additional_metrics()
         st.write(additional_metrics)
+
     if "Peer Comparison" in analysis_options:
         st.subheader("Peer Comparison")
         peers = st.text_input("Enter peer tickers separated by commas:", "GOOGL, AMZN, AAPL").split(",")

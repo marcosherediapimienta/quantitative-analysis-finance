@@ -7,6 +7,7 @@ import pandas as pd
 from option_pricing.black_scholes_model import bs_portfolio_analysis as bsa
 from option_pricing.binomial_model import binomial_portfolio_analysis as bpa
 from option_pricing.monte_carlo import mc_portfolio_analysis as mca
+from fundamental_analysis.financial_analyzer import FinancialAnalyzer
 
 # Set a fixed random seed for reproducibility
 np.random.seed(42)
@@ -1161,6 +1162,64 @@ if menu1 == "Sensitivity Analysis":
     st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
-
+if menu2 == "Fundamental Analysis":
+    st.header("📊 Fundamental Analysis")
+    st.write("Analyze the fundamental financial metrics of a company.")
+    
+    # Input for ticker symbol
+    ticker = st.text_input("Enter the ticker symbol:", "META")
+    
+    # Create an instance of FinancialAnalyzer
+    analyzer = FinancialAnalyzer(ticker)
+    
+    # Display options for analysis
+    analysis_options = st.multiselect(
+        "Select analyses to perform:",
+        [
+            "Balance Sheet",
+            "Income Statement",
+            "Cash Flow",
+            "Financial Ratios",
+            "Dividend Analysis",
+            "Growth Metrics",
+            "Trend Analysis",
+            "Risk Metrics",
+            "Additional Metrics",
+            "Peer Comparison"
+        ]
+    )
+    
+    # Perform selected analyses
+    if "Balance Sheet" in analysis_options:
+        st.subheader("Balance Sheet")
+        analyzer.get_balance_sheet(plot=True)
+    if "Income Statement" in analysis_options:
+        st.subheader("Income Statement")
+        analyzer.get_income_statement(plot=True)
+    if "Cash Flow" in analysis_options:
+        st.subheader("Cash Flow")
+        analyzer.get_cash_flow(plot=True)
+    if "Financial Ratios" in analysis_options:
+        st.subheader("Financial Ratios")
+        analyzer.get_financial_ratios()
+    if "Dividend Analysis" in analysis_options:
+        st.subheader("Dividend Analysis")
+        analyzer.get_dividend_analysis()
+    if "Growth Metrics" in analysis_options:
+        st.subheader("Growth Metrics")
+        analyzer.get_growth_metrics()
+    if "Trend Analysis" in analysis_options:
+        st.subheader("Trend Analysis")
+        analyzer.get_trend_analysis()
+    if "Risk Metrics" in analysis_options:
+        st.subheader("Risk Metrics")
+        analyzer.get_risk_metrics()
+    if "Additional Metrics" in analysis_options:
+        st.subheader("Additional Metrics")
+        analyzer.get_additional_metrics()
+    if "Peer Comparison" in analysis_options:
+        st.subheader("Peer Comparison")
+        peers = st.text_input("Enter peer tickers separated by commas:", "GOOGL, AMZN, AAPL").split(",")
+        analyzer.compare_with_peers(peers)
 
 st.markdown('<div class="footer-conference">Developed by Marcos Heredia Pimienta, Quantitative Risk Analyst</div>', unsafe_allow_html=True)

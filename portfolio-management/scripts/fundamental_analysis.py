@@ -19,13 +19,14 @@ class FinancialAnalyzer:
             return "N/A"
         
     def _print_values(self, metric, values):
-        """Print values for a given metric."""
+        """Print values for a given metric, excluding the year 2020."""
         if isinstance(values, pd.Series):
             print(f"  {metric}:")
             for date, value in values.items():
-                formatted_date = date.strftime('%Y-%m-%d')
-                formatted_value = self._format_currency(value)  
-                print(f"    {formatted_date}: {formatted_value}")
+                if date.year != 2020:  # Exclude the year 2020
+                    formatted_date = date.strftime('%Y-%m-%d')
+                    formatted_value = self._format_currency(value)  
+                    print(f"    {formatted_date}: {formatted_value}")
         else:
             formatted_value = self._format_currency(values)  
             print(f"  {metric}: {formatted_value}")
@@ -175,7 +176,7 @@ class FinancialAnalyzer:
             return []
 
     def get_financial_ratios(self):
-        """Retrieve and print financial ratios for the given ticker."""
+        """Retrieve and print financial ratios for the given ticker, handling NaNs."""
         try:
             info = self.company.info
             if not info:
@@ -183,25 +184,23 @@ class FinancialAnalyzer:
             
             ratios = {
                 "Valuation Ratios": {
-                    "P/E Ratio": info.get('trailingPE', 'N/A'),
-                    "P/B Ratio": info.get('priceToBook', 'N/A'),
-                    "P/S Ratio": info.get('priceToSalesTrailing12Months', 'N/A'),
-                    "Forward P/E": info.get('forwardPE', 'N/A'),
-                    "PEG Ratio": info.get('pegRatio', 'N/A')
+                    "P/E Ratio": info.get('trailingPE'),
+                    "P/B Ratio": info.get('priceToBook'),
+                    "P/S Ratio": info.get('priceToSalesTrailing12Months'),
+                    "Forward P/E": info.get('forwardPE')
                 },
                 "Profitability Ratios": {
-                    "ROE": info.get('returnOnEquity', 'N/A'),
-                    "ROA": info.get('returnOnAssets', 'N/A'),
-                    "Operating Margin": info.get('operatingMargins', 'N/A'),
-                    "Gross Margin": info.get('grossMargins', 'N/A')
+                    "ROE": info.get('returnOnEquity'),
+                    "ROA": info.get('returnOnAssets'),
+                    "Operating Margin": info.get('operatingMargins'),
+                    "Gross Margin": info.get('grossMargins')
                 },
                 "Liquidity Ratios": {
-                    "Current Ratio": info.get('currentRatio', 'N/A'),
-                    "Quick Ratio": info.get('quickRatio', 'N/A')
+                    "Current Ratio": info.get('currentRatio'),
+                    "Quick Ratio": info.get('quickRatio')
                 },
                 "Debt Ratios": {
-                    "Debt-to-Equity Ratio": info.get('debtToEquity', 'N/A'),
-                    "Interest Coverage": info.get('interestCoverage', 'N/A')
+                    "Debt-to-Equity Ratio": info.get('debtToEquity')
                 }
             }
 
@@ -210,10 +209,13 @@ class FinancialAnalyzer:
             for category, ratio_dict in ratios.items():
                 print(f"\n{category}:")
                 for ratio, value in ratio_dict.items():
-                    if isinstance(value, float):
-                        print(f"  {ratio}: {value:.2f}" if ratio != "Interest Coverage" else f"  {ratio}: {value:.1f}")
+                    if value is not None:
+                        if isinstance(value, float):
+                            print(f"  {ratio}: {value:.2f}" if ratio != "Interest Coverage" else f"  {ratio}: {value:.1f}")
+                        else:
+                            print(f"  {ratio}: {value}")
                     else:
-                        print(f"  {ratio}: {value}")
+                        print(f"  {ratio}: N/A (data not available)")
 
         except Exception as e:
             print(f"Error retrieving financial ratios for {self.ticker}: {str(e)}")
@@ -227,14 +229,17 @@ class FinancialAnalyzer:
             print(f"\n{'='*50}")
             print(f"Dividend Analysis for {self.ticker}:")
             
-            # Basic data
+            # Debugging: Print raw dividend yield data
             current_yield = info.get('dividendYield', 'N/A')
+
+            # Correct the calculation of the Current Dividend Yield
+            print(f"\n  Current Dividend Yield: {current_yield if isinstance(current_yield, float) else 'N/A'}%")
+            
+            # Basic data
             payout_ratio = info.get('payoutRatio', 'N/A')
             five_year_growth = info.get('fiveYearAvgDividendYield', 'N/A')
             
-            print(f"\n  Current Dividend Yield: {current_yield*100 if isinstance(current_yield, float) else 'N/A'}%")
-            print(f"  Payout Ratio: {payout_ratio*100 if isinstance(payout_ratio, float) else 'N/A'}%")
-            print(f"  5-Year Average Yield: {five_year_growth*100 if isinstance(five_year_growth, float) else 'N/A'}%")
+            print(f"\n  Payout Ratio: {payout_ratio*100 if isinstance(payout_ratio, float) else 'N/A'}%")
             
             # Dividend history
             if not div_info.empty:
@@ -263,9 +268,6 @@ class FinancialAnalyzer:
             growth_metrics = {
                 "Revenue Growth (YoY)": info.get('revenueGrowth', 'N/A'),
                 "Earnings Growth (YoY)": info.get('earningsGrowth', 'N/A'),
-                "Quarterly Revenue Growth (YoY)": info.get('quarterlyRevenueGrowth', 'N/A'),
-                "Quarterly Earnings Growth (YoY)": info.get('quarterlyEarningsGrowth', 'N/A'),
-                "5-Year Revenue Growth Rate": info.get('fiveYearAvgDividendYield', 'N/A'),
                 "Next 5 Years Growth Estimate": info.get('earningsQuarterlyGrowth', 'N/A')
             }
             
@@ -354,25 +356,27 @@ class FinancialAnalyzer:
                 "Float": self._format_currency(info.get('floatShares')),
                 "Institutional Ownership": f"{info.get('heldPercentInstitutions', 'N/A')*100:.2f}%" if isinstance(info.get('heldPercentInstitutions'), float) else 'N/A',
                 "Insider Ownership": f"{info.get('heldPercentInsiders', 'N/A')*100:.2f}%" if isinstance(info.get('heldPercentInsiders'), float) else 'N/A',
-                "Forward P/E": info.get('forwardPE', 'N/A'),
-                "PEG Ratio": info.get('pegRatio', 'N/A')
+                "Forward P/E": info.get('forwardPE'),
             }
             
             print(f"\n{'='*50}")
             print(f"Additional Metrics for {self.ticker}:")
             for metric, value in additional_metrics.items():
-                print(f"  {metric}: {value}")
-                
+                if value is not None:
+                    print(f"  {metric}: {value}")
+                else:
+                    print(f"  {metric}: N/A (data not available)")
+                    
         except Exception as e:
-            print(f"Error retrieving additional metrics: {str(e)}")
+            print(f"Error retrieving additional metrics for {self.ticker}: {str(e)}")
 
     def calculate_cagr(self, series, years):
-        """Calculate Compound Annual Growth Rate"""
-        if len(series) < 2:
+        """Calculate Compound Annual Growth Rate, ensuring sufficient data."""
+        if len(series.dropna()) < 2:  # Ensure there are at least two non-NaN data points
             return "N/A (insufficient data)"
         try:
-            start = series.iloc[-1]
-            end = series.iloc[0]
+            start = series.dropna().iloc[-1]
+            end = series.dropna().iloc[0]
             return (end/start)**(1/years) - 1
         except:
             return "N/A"
@@ -394,8 +398,8 @@ class FinancialAnalyzer:
             if num_years >= 2:
                 # Revenue growth
                 if 'Total Revenue' in is_.index:
-                    rev_growth = self.calculate_cagr(is_.loc['Total Revenue'], num_years-1)
-                    print(f"\n  Revenue CAGR ({num_years-1} years): {rev_growth*100:.2f}%" if isinstance(rev_growth, float) else f"  Revenue CAGR: {rev_growth}")
+                    rev_growth = self.calculate_cagr(is_.loc['Total Revenue'], num_years)
+                    print(f"\n  Revenue CAGR ({num_years} years): {rev_growth*100:.2f}%" if isinstance(rev_growth, float) else f"  Revenue CAGR: {rev_growth}")
                 
                 # EPS growth
                 if 'Net Income' in is_.index and 'sharesOutstanding' in self.company.info:
@@ -403,17 +407,17 @@ class FinancialAnalyzer:
                     shares = self.company.info['sharesOutstanding']
                     eps = net_income / shares
                     eps_growth = self.calculate_cagr(eps, num_years-1)
-                    print(f"  EPS CAGR ({num_years-1} years): {eps_growth*100:.2f}%" if isinstance(eps_growth, float) else f"  EPS CAGR: {eps_growth}")
+                    print(f"  EPS CAGR ({num_years} years): {eps_growth*100:.2f}%" if isinstance(eps_growth, float) else f"  EPS CAGR: {eps_growth}")
                 
                 # Free cash flow growth
                 if 'Free Cash Flow' in cf.index:
                     fcf_growth = self.calculate_cagr(cf.loc['Free Cash Flow'], num_years-1)
-                    print(f"  FCF CAGR ({num_years-1} years): {fcf_growth*100:.2f}%" if isinstance(fcf_growth, float) else f"  FCF CAGR: {fcf_growth}")
+                    print(f"  FCF CAGR ({num_years} years): {fcf_growth*100:.2f}%" if isinstance(fcf_growth, float) else f"  FCF CAGR: {fcf_growth}")
                 
                 # Equity growth
                 if 'Total Equity Gross Minority Interest' in bs.index:
                     equity_growth = self.calculate_cagr(bs.loc['Total Equity Gross Minority Interest'], num_years-1)
-                    print(f"  Equity CAGR ({num_years-1} years): {equity_growth*100:.2f}%" if isinstance(equity_growth, float) else f"  Equity CAGR: {equity_growth}")
+                    print(f"  Equity CAGR ({num_years} years): {equity_growth*100:.2f}%" if isinstance(equity_growth, float) else f"  Equity CAGR: {equity_growth}")
             else:
                 print("\n  Insufficient data for trend analysis (need at least 2 years of data)")
                 
@@ -422,8 +426,8 @@ class FinancialAnalyzer:
 
 # Example usage
 if __name__ == "__main__":
-    ticker = "NVDA"
-    peers = ["AMD", "INTC", "QCOM"]  
+    ticker = "META"
+    peers = ["GOOGL", "AMZN", "AAPL"]  
     
     analyzer = FinancialAnalyzer(ticker)
     

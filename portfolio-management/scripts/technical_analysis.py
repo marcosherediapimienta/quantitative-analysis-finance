@@ -331,7 +331,7 @@ def plot_candlestick_and_bollinger(df, ticker):
     plt.savefig(f'/home/marcos/Escritorio/mhp/quantitative-analysis-finance/portfolio-management/visualizations/{ticker}_candlestick_bollinger_plot.png')  # Save the combined plot
 
 # Call the function with user-specified parameters
-ticker = 'AAPL'  # You can change this to any ticker you want
+ticker = 'META'  # You can change this to any ticker you want
 start_date = input("Ingrese la fecha de inicio (YYYY-MM-DD): ")
 end_date = input("Ingrese la fecha de fin (YYYY-MM-DD): ")
 interval = input("Ingrese el intervalo de datos ('daily', 'weekly', 'monthly'): ")

@@ -1191,9 +1191,11 @@ if menu1 == "Fundamental Analysis":
     if "Balance Sheet" in analysis_options:
         st.subheader("Balance Sheet")
         figures = analyzer.get_balance_sheet(plot=True)
+        # Debugging: Check figures before plotting
+        st.write("Figures for Balance Sheet:", figures)
         for fig in figures:
             st.pyplot(fig)
-        # Filtrar y mostrar solo las secciones específicas
+        # Display balance sheet data
         balance_sheet_data = analyzer.company.balance_sheet.loc[
             [
                 'Total Debt', 'Long Term Debt',
@@ -1209,32 +1211,36 @@ if menu1 == "Fundamental Analysis":
     if "Income Statement" in analysis_options:
         st.subheader("Income Statement")
         figures = analyzer.get_income_statement(plot=True)
+        # Debugging: Check figures before plotting
+        st.write("Figures for Income Statement:", figures)
         for fig in figures:
             st.pyplot(fig)
-        # Filtrar y mostrar solo las secciones específicas
+        # Define income_statement_data before using it
         income_statement_data = analyzer.company.financials.loc[
             [
                 'Total Revenue', 'Cost Of Revenue',
                 'Gross Profit', 'Operating Income',
                 'EBITDA', 'Net Interest Income', 'Net Income'
             ],
-            analyzer.company.financials.columns[income_statement_data.columns.year != 2020]
+            analyzer.company.financials.columns[analyzer.company.financials.columns.year != 2020]
         ]
         income_statement_data = income_statement_data.applymap(format_number)
         st.dataframe(income_statement_data)
     if "Cash Flow" in analysis_options:
         st.subheader("Cash Flow")
         figures = analyzer.get_cash_flow(plot=True)
+        # Debugging: Check figures before plotting
+        st.write("Figures for Cash Flow:", figures)
         for fig in figures:
             st.pyplot(fig)
-        # Filtrar y mostrar solo las secciones específicas
+        # Define cash_flow_data before using it
         cash_flow_data = analyzer.company.cash_flow.loc[
             [
                 'Operating Cash Flow', 'Investing Cash Flow',
                 'Financing Cash Flow', 'Capital Expenditure',
                 'Free Cash Flow'
             ],
-            analyzer.company.cash_flow.columns[cash_flow_data.columns.year != 2020]
+            analyzer.company.cash_flow.columns[analyzer.company.cash_flow.columns.year != 2020]
         ]
         cash_flow_data = cash_flow_data.applymap(format_number)
         st.dataframe(cash_flow_data)
@@ -1328,5 +1334,23 @@ if menu1 == "Technical Analysis":
 
         except Exception as e:
             st.error(f"Error in technical analysis: {str(e)}")
+# Personal info card below the sidebar menu
+    st.sidebar.markdown('''
+    <div style="background-color:#23272b; border-radius:12px; padding:1.2em 1.2em 1em 1.2em; margin-top:1.5em; margin-bottom:1.5em; box-shadow:0 2px 8px rgba(0,0,0,0.15); max-width:320px;">
+        <div style="font-size:1.1rem; font-weight:700; color:#90caf9; margin-bottom:0.2em;">Marcos Heredia Pimienta</div>
+        <div style="color:#b0bec5; font-size:0.98rem; margin-bottom:0.4em;">MSc in Quantitative Finance, Universitat Autònoma de Barcelona</div>
+        <div style="color:#e0e0e0; font-size:0.95rem; margin-bottom:0.4em;">Quantitative Risk Analyst</div>
+    </div>
+    ''', unsafe_allow_html=True)
+
+    # Enlace al formulario de Google
+    st.sidebar.markdown('<div style="background-color:#23272b; padding:20px; border-radius:10px; margin-top:20px;">', unsafe_allow_html=True)
+    st.sidebar.header("💬 We value your feedback!", anchor=None)
+    st.sidebar.write("Please let us know how you feel about the app. Your insights help us improve!")
+
+    # Hipervínculo al formulario
+    form_url = "https://docs.google.com/forms/d/e/1FAIpQLSecDfBXdXynYHyouLub1ZT3AsYWa4V1N3O_OnvUKxiA21bnjg/viewform?usp=header"
+    st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
+    st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="footer-conference">Developed by Marcos Heredia Pimienta, Quantitative Risk Analyst</div>', unsafe_allow_html=True)

@@ -7,7 +7,7 @@ import pandas as pd
 from option_pricing.black_scholes_model import bs_portfolio_analysis as bsa
 from option_pricing.binomial_model import binomial_portfolio_analysis as bpa
 from option_pricing.monte_carlo import mc_portfolio_analysis as mca
-from fundamental_analysis.financial_analyzer import FinancialAnalyzer
+from portfolio_management.scripts.fundamental_analysis import FinancialAnalyzer
 
 # Set a fixed random seed for reproducibility
 np.random.seed(42)
@@ -90,6 +90,10 @@ menu2 = st.sidebar.selectbox(
     index=0
 )
 
+def format_number(value):
+    if pd.isna(value):
+        return "N/A"
+    return f"{value:,.0f}".replace(',', '.').replace('.', ',', 1)
 
 if menu1 == "Introduction":
     st.markdown('<div class="title-conference">Option Pricing & Portfolio Risk App</div>', unsafe_allow_html=True)
@@ -1192,34 +1196,82 @@ if menu2 == "Fundamental Analysis":
     # Perform selected analyses
     if "Balance Sheet" in analysis_options:
         st.subheader("Balance Sheet")
-        analyzer.get_balance_sheet(plot=True)
+        figures = analyzer.get_balance_sheet(plot=True)
+        for fig in figures:
+            st.pyplot(fig)
+        # Filtrar y mostrar solo las secciones específicas sin la columna de 2020
+        balance_sheet_data = analyzer.company.balance_sheet.loc[
+            [
+                'Total Debt', 'Long Term Debt',
+                'Total Capitalization', 'Total Equity Gross Minority Interest',
+                'Total Assets', 'Net PPE', 'Goodwill',
+                'Total Liabilities Net Minority Interest', 'Current Liabilities',
+                'Working Capital'
+            ],
+            analyzer.company.balance_sheet.columns[analyzer.company.balance_sheet.columns.year != 2020]
+        ]
+        balance_sheet_data = balance_sheet_data.applymap(format_number)
+        st.dataframe(balance_sheet_data)
     if "Income Statement" in analysis_options:
         st.subheader("Income Statement")
-        analyzer.get_income_statement(plot=True)
+        figures = analyzer.get_income_statement(plot=True)
+        for fig in figures:
+            st.pyplot(fig)
+        # Filtrar y mostrar solo las secciones específicas sin la columna de 2020
+        income_statement_data = analyzer.company.financials.loc[
+            [
+                'Total Revenue', 'Cost Of Revenue',
+                'Gross Profit', 'Operating Income',
+                'EBITDA', 'Net Interest Income', 'Net Income'
+            ],
+            analyzer.company.financials.columns[analyzer.company.financials.columns.year != 2020]
+        ]
+        income_statement_data = income_statement_data.applymap(format_number)
+        st.dataframe(income_statement_data)
     if "Cash Flow" in analysis_options:
         st.subheader("Cash Flow")
-        analyzer.get_cash_flow(plot=True)
+        figures = analyzer.get_cash_flow(plot=True)
+        for fig in figures:
+            st.pyplot(fig)
+        # Filtrar y mostrar solo las secciones específicas sin la columna de 2020
+        cash_flow_data = analyzer.company.cash_flow.loc[
+            [
+                'Operating Cash Flow', 'Investing Cash Flow',
+                'Financing Cash Flow', 'Capital Expenditure',
+                'Free Cash Flow'
+            ],
+            analyzer.company.cash_flow.columns[analyzer.company.cash_flow.columns.year != 2020]
+        ]
+        cash_flow_data = cash_flow_data.applymap(format_number)
+        st.dataframe(cash_flow_data)
     if "Financial Ratios" in analysis_options:
         st.subheader("Financial Ratios")
-        analyzer.get_financial_ratios()
+        ratios = analyzer.get_financial_ratios()
+        st.write(ratios)
     if "Dividend Analysis" in analysis_options:
         st.subheader("Dividend Analysis")
-        analyzer.get_dividend_analysis()
+        dividend_analysis = analyzer.get_dividend_analysis()
+        st.write(dividend_analysis)
     if "Growth Metrics" in analysis_options:
         st.subheader("Growth Metrics")
-        analyzer.get_growth_metrics()
+        growth_metrics = analyzer.get_growth_metrics()
+        st.write(growth_metrics)
     if "Trend Analysis" in analysis_options:
         st.subheader("Trend Analysis")
-        analyzer.get_trend_analysis()
+        trend_analysis = analyzer.get_trend_analysis()
+        st.write(trend_analysis)
     if "Risk Metrics" in analysis_options:
         st.subheader("Risk Metrics")
-        analyzer.get_risk_metrics()
+        risk_metrics = analyzer.get_risk_metrics()
+        st.write(risk_metrics)
     if "Additional Metrics" in analysis_options:
         st.subheader("Additional Metrics")
-        analyzer.get_additional_metrics()
+        additional_metrics = analyzer.get_additional_metrics()
+        st.write(additional_metrics)
     if "Peer Comparison" in analysis_options:
         st.subheader("Peer Comparison")
         peers = st.text_input("Enter peer tickers separated by commas:", "GOOGL, AMZN, AAPL").split(",")
-        analyzer.compare_with_peers(peers)
+        peer_comparison = analyzer.compare_with_peers(peers)
+        st.write(peer_comparison)
 
 st.markdown('<div class="footer-conference">Developed by Marcos Heredia Pimienta, Quantitative Risk Analyst</div>', unsafe_allow_html=True)

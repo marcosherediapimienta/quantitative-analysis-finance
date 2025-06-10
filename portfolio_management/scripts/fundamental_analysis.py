@@ -204,21 +204,10 @@ class FinancialAnalyzer:
                 }
             }
 
-            print(f"\n{'='*50}")
-            print(f"Financial Ratios for {self.ticker}:")
-            for category, ratio_dict in ratios.items():
-                print(f"\n{category}:")
-                for ratio, value in ratio_dict.items():
-                    if value is not None:
-                        if isinstance(value, float):
-                            print(f"  {ratio}: {value:.2f}" if ratio != "Interest Coverage" else f"  {ratio}: {value:.1f}")
-                        else:
-                            print(f"  {ratio}: {value}")
-                    else:
-                        print(f"  {ratio}: N/A (data not available)")
+            return ratios
 
         except Exception as e:
-            print(f"Error retrieving financial ratios for {self.ticker}: {str(e)}")
+            return f"Error retrieving financial ratios for {self.ticker}: {str(e)}"
 
     def get_dividend_analysis(self):
         """Analyze dividend payments and yield"""
@@ -226,39 +215,23 @@ class FinancialAnalyzer:
             div_info = self.company.dividends
             info = self.company.info
             
-            print(f"\n{'='*50}")
-            print(f"Dividend Analysis for {self.ticker}:")
-            
-            # Debugging: Print raw dividend yield data
+            analysis = {}
             current_yield = info.get('dividendYield', 'N/A')
-
-            # Correct the calculation of the Current Dividend Yield
-            print(f"\n  Current Dividend Yield: {current_yield if isinstance(current_yield, float) else 'N/A'}%")
+            analysis['Current Dividend Yield'] = f"{current_yield if isinstance(current_yield, float) else 'N/A'}%"
             
-            # Basic data
             payout_ratio = info.get('payoutRatio', 'N/A')
-            five_year_growth = info.get('fiveYearAvgDividendYield', 'N/A')
+            analysis['Payout Ratio'] = f"{payout_ratio*100 if isinstance(payout_ratio, float) else 'N/A'}%"
             
-            print(f"\n  Payout Ratio: {payout_ratio*100 if isinstance(payout_ratio, float) else 'N/A'}%")
-            
-            # Dividend history
             if not div_info.empty:
-                print("\n  Dividend History:")
-                div_history = div_info.tail(5)  # Last 5 dividends
-                for date, amount in div_history.items():
-                    print(f"    {date.strftime('%Y-%m-%d')}: ${amount:.4f}")
-                
-                # Dividend plot
-                plt.figure(figsize=(10, 5))
-                div_info.plot(title=f"{self.ticker} Dividend History")
-                plt.ylabel('Dividend Amount ($)')
-                plt.grid(True)
-                plt.savefig('quantitative-analysis-finance/portfolio_management/visualizations/dividend_history.png')
+                div_history = div_info.tail(5)
+                analysis['Dividend History'] = {date.strftime('%Y-%m-%d'): f"${amount:.4f}" for date, amount in div_history.items()}
             else:
-                print("\n  No dividend history available")
-                
+                analysis['Dividend History'] = "No dividend history available"
+
+            return analysis
+
         except Exception as e:
-            print(f"Error retrieving dividend info: {str(e)}")
+            return f"Error retrieving dividend info: {str(e)}"
 
     def get_growth_metrics(self):
         """Analyze growth metrics"""
@@ -271,23 +244,14 @@ class FinancialAnalyzer:
                 "Next 5 Years Growth Estimate": info.get('earningsQuarterlyGrowth', 'N/A')
             }
             
-            print(f"\n{'='*50}")
-            print(f"Growth Metrics for {self.ticker}:")
-            for metric, value in growth_metrics.items():
-                if isinstance(value, float):
-                    print(f"  {metric}: {value*100:.2f}%")
-                else:
-                    print(f"  {metric}: {value}")
-                    
+            return growth_metrics
+
         except Exception as e:
-            print(f"Error retrieving growth metrics: {str(e)}")
+            return f"Error retrieving growth metrics: {str(e)}"
 
     def compare_with_peers(self, peers):
         """Compare key metrics with peer companies"""
         try:
-            print(f"\n{'='*50}")
-            print(f"Competitive Analysis for {self.ticker} vs Peers:")
-            
             metrics = ['trailingPE', 'priceToBook', 'returnOnEquity', 
                       'debtToEquity', 'operatingMargins', 'currentRatio',
                       'grossMargins', 'dividendYield']
@@ -301,26 +265,14 @@ class FinancialAnalyzer:
                     peer_info = yf.Ticker(peer).info
                     comparison[peer] = [peer_info.get(m, None) for m in metrics]
                 except Exception as e:
-                    print(f"  Warning: Could not get data for {peer}: {str(e)}")
                     comparison[peer] = [None]*len(metrics)
             
             # Clean data - replace None with 'N/A' for display
             display_comparison = comparison.fillna('N/A')
-            print("\n" + str(display_comparison))
+            return display_comparison
             
-            # Plot only metrics with numeric data
-            for metric in metrics:
-                if pd.api.types.is_numeric_dtype(comparison.loc[metric]):
-                    plt.figure(figsize=(10, 5))
-                    comparison.loc[metric].plot(kind='bar', title=metric)
-                    plt.ylabel(metric)
-                    plt.grid(True)
-                    plt.savefig(f'quantitative-analysis-finance/portfolio_management/visualizations/peer_comparison_{metric}.png')
-                else:
-                    print(f"  Cannot plot {metric} - no numeric data available")
-                    
         except Exception as e:
-            print(f"Error in peer comparison: {str(e)}")
+            return f"Error in peer comparison: {str(e)}"
 
     def get_risk_metrics(self):
         """Analyze risk-related metrics"""
@@ -336,13 +288,10 @@ class FinancialAnalyzer:
                 "Average Volume": self._format_currency(info.get('averageVolume', 'N/A'))
             }
             
-            print(f"\n{'='*50}")
-            print(f"Risk Metrics for {self.ticker}:")
-            for metric, value in risk_metrics.items():
-                print(f"  {metric}: {value}")
-                
+            return risk_metrics
+
         except Exception as e:
-            print(f"Error retrieving risk metrics: {str(e)}")
+            return f"Error retrieving risk metrics: {str(e)}"
 
     def get_additional_metrics(self):
         """Get additional important metrics"""
@@ -359,16 +308,10 @@ class FinancialAnalyzer:
                 "Forward P/E": info.get('forwardPE'),
             }
             
-            print(f"\n{'='*50}")
-            print(f"Additional Metrics for {self.ticker}:")
-            for metric, value in additional_metrics.items():
-                if value is not None:
-                    print(f"  {metric}: {value}")
-                else:
-                    print(f"  {metric}: N/A (data not available)")
-                    
+            return additional_metrics
+
         except Exception as e:
-            print(f"Error retrieving additional metrics for {self.ticker}: {str(e)}")
+            return f"Error retrieving additional metrics for {self.ticker}: {str(e)}"
 
     def calculate_cagr(self, series, years):
         """Calculate Compound Annual Growth Rate, ensuring sufficient data."""
@@ -421,8 +364,15 @@ class FinancialAnalyzer:
             else:
                 print("\n  Insufficient data for trend analysis (need at least 2 years of data)")
                 
+            return {
+                "Revenue Growth (YoY)": rev_growth,
+                "EPS Growth (YoY)": eps_growth,
+                "FCF Growth (YoY)": fcf_growth,
+                "Equity Growth (YoY)": equity_growth
+            }
+
         except Exception as e:
-            print(f"Error in trend analysis: {str(e)}")
+            return f"Error in trend analysis: {str(e)}"
 
 # Example usage
 if __name__ == "__main__":
@@ -437,16 +387,63 @@ if __name__ == "__main__":
     analyzer.get_cash_flow(plot=True)
     
     # Ratios and metrics
-    analyzer.get_financial_ratios()
-    analyzer.get_additional_metrics()
+    financial_ratios = analyzer.get_financial_ratios()
+    print("\nFinancial Ratios:")
+    for category, ratio_dict in financial_ratios.items():
+        print(f"\n{category}:")
+        for ratio, value in ratio_dict.items():
+            if value is not None:
+                if isinstance(value, float):
+                    print(f"  {ratio}: {value:.2f}" if ratio != "Interest Coverage" else f"  {ratio}: {value:.1f}")
+                else:
+                    print(f"  {ratio}: {value}")
+            else:
+                print(f"  {ratio}: N/A (data not available)")
+    
+    additional_metrics = analyzer.get_additional_metrics()
+    print("\nAdditional Metrics:")
+    for metric, value in additional_metrics.items():
+        if value is not None:
+            print(f"  {metric}: {value}")
+        else:
+            print(f"  {metric}: N/A (data not available)")
     
     # Growth and efficiency analysis
-    analyzer.get_growth_metrics()
-    analyzer.get_trend_analysis()
+    growth_metrics = analyzer.get_growth_metrics()
+    print("\nGrowth Metrics:")
+    for metric, value in growth_metrics.items():
+        if isinstance(value, float):
+            print(f"  {metric}: {value*100:.2f}%")
+        else:
+            print(f"  {metric}: {value}")
+    
+    trend_analysis = analyzer.get_trend_analysis()
+    print("\nTrend Analysis:")
+    for metric, value in trend_analysis.items():
+        if isinstance(value, float):
+            print(f"  {metric}: {value*100:.2f}%")
+        else:
+            print(f"  {metric}: {value}")
     
     # Dividend and risk analysis
-    analyzer.get_dividend_analysis()
-    analyzer.get_risk_metrics()
+    dividend_analysis = analyzer.get_dividend_analysis()
+    print("\nDividend Analysis:")
+    for metric, value in dividend_analysis.items():
+        print(f"  {metric}: {value}")
+    
+    risk_metrics = analyzer.get_risk_metrics()
+    print("\nRisk Metrics:")
+    for metric, value in risk_metrics.items():
+        print(f"  {metric}: {value}")
     
     # Peer comparison
-    analyzer.compare_with_peers(peers)
+    peer_comparison = analyzer.compare_with_peers(peers)
+    if isinstance(peer_comparison, str):
+        print(peer_comparison)
+    else:
+        print("\nPeer Comparison:")
+        for metric, value in peer_comparison.items():
+            if isinstance(value, float):
+                print(f"  {metric}: {value*100:.2f}%")
+            else:
+                print(f"  {metric}: {value}")

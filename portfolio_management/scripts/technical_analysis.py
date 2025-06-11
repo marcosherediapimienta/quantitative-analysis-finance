@@ -86,12 +86,6 @@ def calcular_adx(df, period=14):
     df['adx'] = TA.ADX(df, period)
     print(df[['date', 'adx']].tail())
 
-def calcular_obv(df):
-    """Calcula el On-Balance Volume (OBV)."""
-    print("\nCalculando OBV...")
-    df['obv'] = TA.OBV(df)
-    print(df[['date', 'obv']].tail())
-
 def calcular_stochastic_oscillator(df, k_period=14, d_period=3):
     """Calcula el Stochastic Oscillator."""
     print("\nCalculando Stochastic Oscillator...")
@@ -504,7 +498,6 @@ if __name__ == "__main__":
     calcular_bollinger_bands(datos)
     calcular_momentum(datos)
     calcular_adx(datos)
-    calcular_obv(datos)
     calcular_stochastic_oscillator(datos)
 
     # Plot indicators

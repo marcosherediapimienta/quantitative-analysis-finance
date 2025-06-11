@@ -193,13 +193,15 @@ if menu1 == "Single Option Analysis":
                 # Highlighted results
                 col1, col2 = st.columns(2)
                 if price is not None:
-                    col1.metric("Model Price", f"{price:.2f}")
+                    col1.metric("Model Price", f"{price:.4f}")
                 if iv is not None:
-                    col2.metric("Implied Volatility", f"{iv:.2f}")
+                    col2.metric("Implied Volatility", f"{iv:.4f}")
                 st.markdown("---")
                 if greeks is not None:
                     st.write("Greeks:")
-                    st.json(greeks)
+                    # Format Greeks to four decimal places
+                    formatted_greeks = {key: f"{value:.4f}" for key, value in greeks.items()}
+                    st.json(formatted_greeks)
             except Exception as e:
                 st.error(f"Error in calculation: {e}")
      # Personal info card below the sidebar menu
@@ -1190,7 +1192,6 @@ if menu1 == "Technical Analysis":
         calcular_bollinger_bands(df)
         calcular_momentum(df)
         calcular_adx(df)
-        calcular_obv(df)
         calcular_stochastic_oscillator(df)
 
         # Sort DataFrame by date in descending order
@@ -1204,7 +1205,6 @@ if menu1 == "Technical Analysis":
         st.write("Bollinger Bands calculated:", df_sorted[['date', 'close', 'upper_band', 'lower_band']].head(5))
         st.write("Momentum calculated:", df_sorted[['date', 'close', 'momentum']].head(5))
         st.write("ADX calculated:", df_sorted[['date', 'close', 'adx']].head(5))
-        st.write("OBV calculated:", df_sorted[['date', 'close', 'obv']].head(5))
         st.write("Stochastic Oscillator calculated:", df_sorted[['date', 'close', 'stoch_k', 'stoch_d']].head(5))
 
         # Generate and display plots

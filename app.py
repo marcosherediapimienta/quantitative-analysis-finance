@@ -1159,142 +1159,6 @@ if menu1 == "Sensitivity Analysis":
     form_url = "https://docs.google.com/forms/d/e/1FAIpQLSecDfBXdXynYHyouLub1ZT3AsYWa4V1N3O_OnvUKxiA21bnjg/viewform?usp=header"
     st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
-
-if menu1 == "Fundamental Analysis":
-    st.header("📊 Fundamental Analysis")
-    st.write("Analyze the fundamental financial metrics of a company.")
-    
-    # Input for ticker symbol
-    ticker = st.text_input("Enter the ticker symbol:", "META")
-    
-    # Create an instance of FinancialAnalyzer
-    analyzer = FinancialAnalyzer(ticker)
-    
-    # Display options for analysis
-    analysis_options = st.multiselect(
-        "Select analyses to perform:",
-        [
-            "Balance Sheet",
-            "Income Statement",
-            "Cash Flow",
-            "Financial Ratios",
-            "Dividend Analysis",
-            "Growth Metrics",
-            "Trend Analysis",
-            "Risk Metrics",
-            "Additional Metrics",
-            "Peer Comparison"
-        ]
-    )
-    
-    # Perform selected analyses
-    if "Balance Sheet" in analysis_options:
-        st.subheader("Balance Sheet")
-        figures_balance_sheet = analyzer.get_balance_sheet(plot=True)
-        for fig in figures_balance_sheet:
-            st.pyplot(fig)
-        # Display balance sheet data
-        balance_sheet_data = analyzer.company.balance_sheet.loc[
-            [
-                'Total Debt', 'Long Term Debt',
-                'Total Capitalization', 'Total Equity Gross Minority Interest',
-                'Total Assets', 'Net PPE', 'Goodwill',
-                'Total Liabilities Net Minority Interest', 'Current Liabilities',
-                'Working Capital'
-            ],
-            analyzer.company.balance_sheet.columns[analyzer.company.balance_sheet.columns.year != 2020]
-        ]
-        balance_sheet_data = balance_sheet_data.applymap(format_number)
-        st.dataframe(balance_sheet_data)
-
-    if "Income Statement" in analysis_options:
-        st.subheader("Income Statement")
-        figures_income_statement = analyzer.get_income_statement(plot=True)
-        for fig in figures_income_statement:
-            st.pyplot(fig)
-        # Define income_statement_data before using it
-        income_statement_data = analyzer.company.financials.loc[
-            [
-                'Total Revenue', 'Cost Of Revenue',
-                'Gross Profit', 'Operating Income',
-                'EBITDA', 'Net Interest Income', 'Net Income'
-            ],
-            analyzer.company.financials.columns[analyzer.company.financials.columns.year != 2020]
-        ]
-        income_statement_data = income_statement_data.applymap(format_number)
-        st.dataframe(income_statement_data)
-
-    if "Cash Flow" in analysis_options:
-        st.subheader("Cash Flow")
-        figures_cash_flow = analyzer.get_cash_flow(plot=True)
-        for fig in figures_cash_flow:
-            st.pyplot(fig)
-        # Define cash_flow_data before using it
-        cash_flow_data = analyzer.company.cash_flow.loc[
-            [
-                'Operating Cash Flow', 'Investing Cash Flow',
-                'Financing Cash Flow', 'Capital Expenditure',
-                'Free Cash Flow'
-            ],
-            analyzer.company.cash_flow.columns[analyzer.company.cash_flow.columns.year != 2020]
-        ]
-        cash_flow_data = cash_flow_data.applymap(format_number)
-        st.dataframe(cash_flow_data)
-
-    if "Financial Ratios" in analysis_options:
-        st.subheader("Financial Ratios")
-        ratios = analyzer.get_financial_ratios()
-        st.write(ratios)
-
-    if "Dividend Analysis" in analysis_options:
-        st.subheader("Dividend Analysis")
-        dividend_analysis = analyzer.get_dividend_analysis()
-        st.write(dividend_analysis)
-
-    if "Growth Metrics" in analysis_options:
-        st.subheader("Growth Metrics")
-        growth_metrics = analyzer.get_growth_metrics()
-        st.write(growth_metrics)
-
-    if "Trend Analysis" in analysis_options:
-        st.subheader("Trend Analysis")
-        trend_analysis = analyzer.get_trend_analysis()
-        st.write(trend_analysis)
-
-    if "Risk Metrics" in analysis_options:
-        st.subheader("Risk Metrics")
-        risk_metrics = analyzer.get_risk_metrics()
-        st.write(risk_metrics)
-
-    if "Additional Metrics" in analysis_options:
-        st.subheader("Additional Metrics")
-        additional_metrics = analyzer.get_additional_metrics()
-        st.write(additional_metrics)
-
-    if "Peer Comparison" in analysis_options:
-        st.subheader("Peer Comparison")
-        peers = st.text_input("Enter peer tickers separated by commas:", "GOOGL, AMZN, AAPL").split(",")
-        peer_comparison = analyzer.compare_with_peers(peers)
-        st.write(peer_comparison)
-
- # Personal info card below the sidebar menu
-    st.sidebar.markdown('''
-    <div style="background-color:#23272b; border-radius:12px; padding:1.2em 1.2em 1em 1.2em; margin-top:1.5em; margin-bottom:1.5em; box-shadow:0 2px 8px rgba(0,0,0,0.15); max-width:320px;">
-        <div style="font-size:1.1rem; font-weight:700; color:#90caf9; margin-bottom:0.2em;">Marcos Heredia Pimienta</div>
-        <div style="color:#b0bec5; font-size:0.98rem; margin-bottom:0.4em;">MSc in Quantitative Finance, Universitat Autònoma de Barcelona</div>
-        <div style="color:#e0e0e0; font-size:0.95rem; margin-bottom:0.4em;">Quantitative Risk Analyst</div>
-    </div>
-    ''', unsafe_allow_html=True)
-
-    # Enlace al formulario de Google
-    st.sidebar.markdown('<div style="background-color:#23272b; padding:20px; border-radius:10px; margin-top:20px;">', unsafe_allow_html=True)
-    st.sidebar.header("💬 We value your feedback!", anchor=None)
-    st.sidebar.write("Please let us know how you feel about the app. Your insights help us improve!")
-
-    # Hipervínculo al formulario
-    form_url = "https://docs.google.com/forms/d/e/1FAIpQLSecDfBXdXynYHyouLub1ZT3AsYWa4V1N3O_OnvUKxiA21bnjg/viewform?usp=header"
-    st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
-    st.sidebar.markdown('</div>', unsafe_allow_html=True)
     
 if menu1 == "Technical Analysis":
     st.header("📈 Technical Analysis")
@@ -1355,5 +1219,98 @@ if menu1 == "Technical Analysis":
     form_url = "https://docs.google.com/forms/d/e/1FAIpQLSecDfBXdXynYHyouLub1ZT3AsYWa4V1N3O_OnvUKxiA21bnjg/viewform?usp=header"
     st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
+
+if menu1 == "Fundamental Analysis":
+    st.header("📊 Fundamental Analysis")
+    st.subheader("Analyze the financial health of a company")
+    
+    # User input for ticker symbol
+    ticker = st.text_input("Enter Ticker Symbol:", "META")
+    
+    # Initialize FinancialAnalyzer
+    analyzer = FinancialAnalyzer(ticker)
+    
+    # Core financial statements
+    st.subheader("Balance Sheet")
+    st.image(os.path.join('portfolio_management/visualizations', 'Balance Sheet_Total Assets_plot.png'), caption='Total Assets')
+    st.image(os.path.join('portfolio_management/visualizations', 'Balance Sheet_Total Liabilities Net Minority Interest_plot.png'), caption='Total Liabilities Net Minority Interest')
+    st.image(os.path.join('portfolio_management/visualizations', 'Balance Sheet_Total Equity Gross Minority Interest_plot.png'), caption='Total Equity Gross Minority Interest')
+    st.image(os.path.join('portfolio_management/visualizations', 'Balance Sheet_Cash And Cash Equivalents_plot.png'), caption='Cash And Cash Equivalents')
+    st.image(os.path.join('portfolio_management/visualizations', 'Balance Sheet_Net PPE_plot.png'), caption='Net PPE')
+    st.image(os.path.join('portfolio_management/visualizations', 'Balance Sheet_Retained Earnings_plot.png'), caption='Retained Earnings')
+    st.image(os.path.join('portfolio_management/visualizations', 'Balance Sheet_Common Stock Equity_plot.png'), caption='Common Stock Equity')
+    st.image(os.path.join('portfolio_management/visualizations', 'Balance Sheet_Total Debt_plot.png'), caption='Total Debt')
+    st.image(os.path.join('portfolio_management/visualizations', 'Balance Sheet_Working Capital_plot.png'), caption='Working Capital')
+    balance_sheet_df = pd.read_csv(os.path.join(analyzer.VIS_DIR, 'balance_sheet.csv'))
+    # Format numbers in the balance sheet dataframe
+    balance_sheet_df_formatted = balance_sheet_df.applymap(lambda x: f"{x:,.0f}" if pd.notnull(x) and isinstance(x, (int, float)) else x)
+    st.dataframe(balance_sheet_df_formatted)
+    
+    st.subheader("Income Statement")
+    analyzer.get_income_statement(plot=True)
+    st.image(os.path.join('portfolio_management/visualizations', 'Income Statement_Total Revenue_plot.png'), caption='Total Revenue')
+    st.image(os.path.join('portfolio_management/visualizations', 'Income Statement_Net Income_plot.png'), caption='Net Income')
+    st.image(os.path.join('portfolio_management/visualizations', 'Income Statement_Operating Income_plot.png'), caption='Operating Income')
+    st.image(os.path.join('portfolio_management/visualizations', 'Income Statement_Gross Profit_plot.png'), caption='Gross Profit')
+    st.image(os.path.join('portfolio_management/visualizations', 'Income Statement_EBITDA_plot.png'), caption='EBITDA')
+    st.image(os.path.join('portfolio_management/visualizations', 'Income Statement_EBIT_plot.png'), caption='EBIT')
+    st.image(os.path.join('portfolio_management/visualizations', 'Income Statement_Diluted EPS_plot.png'), caption='Diluted EPS')
+    st.image(os.path.join('portfolio_management/visualizations', 'Income Statement_Tax Provision_plot.png'), caption='Tax Provision')
+    income_statement_df = pd.read_csv(os.path.join(analyzer.VIS_DIR, 'income_statement.csv'))
+    # Format numbers in the income statement dataframe
+    income_statement_df_formatted = income_statement_df.applymap(lambda x: f"{x:,.0f}" if pd.notnull(x) and isinstance(x, (int, float)) else x)
+    st.dataframe(income_statement_df_formatted)
+    
+    st.subheader("Cash Flow Statement")
+    analyzer.get_cash_flow(plot=True)
+    st.image(os.path.join('portfolio_management/visualizations', 'Cash Flow Statement_Operating Cash Flow_plot.png'), caption='Operating Cash Flow')
+    st.image(os.path.join('portfolio_management/visualizations', 'Cash Flow Statement_Free Cash Flow_plot.png'), caption='Free Cash Flow')
+    st.image(os.path.join('portfolio_management/visualizations', 'Cash Flow Statement_Investing Cash Flow_plot.png'), caption='Investing Cash Flow')
+    st.image(os.path.join('portfolio_management/visualizations', 'Cash Flow Statement_Financing Cash Flow_plot.png'), caption='Financing Cash Flow')
+    st.image(os.path.join('portfolio_management/visualizations', 'Cash Flow Statement_End Cash Position_plot.png'), caption='End Cash Position')
+    st.image(os.path.join('portfolio_management/visualizations', 'Cash Flow Statement_Changes In Cash_plot.png'), caption='Changes In Cash')
+    st.image(os.path.join('portfolio_management/visualizations', 'Cash Flow Statement_Capital Expenditure_plot.png'), caption='Capital Expenditure')
+    # Add combined cash flow plots
+    st.image(os.path.join('portfolio_management/visualizations', 'Operating_vs_Free_Cash_Flow_plot.png'), caption='Operating vs Free Cash Flow')
+    st.image(os.path.join('portfolio_management/visualizations', 'Investing_vs_Financing_Cash_Flow_plot.png'), caption='Investing vs Financing Cash Flow')
+    st.image(os.path.join('portfolio_management/visualizations', 'End_Cash_Position_vs_Changes_In_Cash_plot.png'), caption='End Cash Position vs Changes In Cash')
+    cash_flow_df = pd.read_csv(os.path.join(analyzer.VIS_DIR, 'cash_flow.csv'))
+    # Format numbers in the cash flow dataframe
+    cash_flow_df_formatted = cash_flow_df.applymap(lambda x: f"{x:,.0f}" if pd.notnull(x) and isinstance(x, (int, float)) else x)
+    st.dataframe(cash_flow_df_formatted)
+    
+    # Additional metrics and analysis
+    st.subheader("Financial Ratios")
+    financial_ratios = analyzer.get_financial_ratios()
+    for category, ratio_dict in financial_ratios.items():
+        st.write(f"**{category}:**")
+        for ratio, value in ratio_dict.items():
+            st.write(f"{ratio}: {value:.2f}" if isinstance(value, float) else f"{ratio}: {value}")
+    
+    st.subheader("Additional Metrics")
+    additional_metrics = analyzer.get_additional_metrics()
+    for metric, value in additional_metrics.items():
+        st.write(f"{metric}: {value}")
+    
+    st.subheader("Growth Metrics")
+    growth_metrics = analyzer.get_growth_metrics()
+    for metric, value in growth_metrics.items():
+        st.write(f"{metric}: {value*100:.2f}%" if isinstance(value, float) else f"{metric}: {value}")
+    
+    st.subheader("Trend Analysis")
+    trend_analysis = analyzer.get_trend_analysis()
+    for metric, value in trend_analysis.items():
+        st.write(f"{metric}: {value*100:.2f}%" if isinstance(value, float) else f"{metric}: {value}")
+    
+    st.subheader("Dividend Analysis")
+    dividend_analysis = analyzer.get_dividend_analysis()
+    for metric, value in dividend_analysis.items():
+        st.write(f"{metric}: {value}")
+    
+    st.subheader("Risk Metrics")
+    risk_metrics = analyzer.get_risk_metrics()
+    for metric, value in risk_metrics.items():
+        st.write(f"{metric}: {value}")
+
 
 st.markdown('<div class="footer-conference">Developed by Marcos Heredia Pimienta, Quantitative Risk Analyst</div>', unsafe_allow_html=True)

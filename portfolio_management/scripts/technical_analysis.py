@@ -3,7 +3,11 @@ import pandas as pd
 from finta import TA
 import matplotlib.pyplot as plt
 import mplfinance as mpf
+import os
 
+# Ensure the visualizations directory exists
+visualizations_dir = 'quantitative-analysis-finance/portfolio_management/visualizations'
+os.makedirs(visualizations_dir, exist_ok=True)
 
 def descargar_datos(ticker='AAPL', interval='daily', start=None, end=None):
     """Descarga datos históricos de Yahoo Finance según el intervalo especificado."""
@@ -33,43 +37,69 @@ def descargar_datos(ticker='AAPL', interval='daily', start=None, end=None):
     
     return datos
 
-def calcular_sma(df, period=20):
-    """Calcula la media móvil simple (SMA) y las señales de compra/venta usando finta"""
-    print("\nCalculando SMA...")
-    df['sma_20'] = TA.SMA(df, period)
-    # Calculate buy and sell signals
-    df['signal'] = 0
-    df.loc[df['close'] > df['sma_20'], 'signal'] = 1  # Buy signal
-    df.loc[df['close'] < df['sma_20'], 'signal'] = -1  # Sell signal
-    df['position'] = df['signal'].diff()
-    print(df[['date', 'close', 'sma_20', 'position']].tail())  # Print the last few rows to verify
+def calcular_sma_multiple(df):
+    """Calcula la SMA para los periodos de 20, 50 y 200 días."""
+    print("\nCalculando SMA para periodos de 20, 50 y 200 días...")
+    df['sma_20'] = TA.SMA(df, 20)
+    df['sma_50'] = TA.SMA(df, 50)
+    df['sma_200'] = TA.SMA(df, 200)
+    print(df[['date', 'close', 'sma_20', 'sma_50', 'sma_200']].tail())  # Print the last few rows to verify
 
-# Function to plot and save the SMA
-def plot_sma(df, ticker):
-    fig, ax = plt.subplots(figsize=(14, 7))
-    ax.plot(df['date'], df['close'], label='Close Price', color='blue')
-    ax.plot(df['date'], df['sma_20'], label='SMA 20', color='red', linestyle='--')
-    ax.set_title(f'{ticker} - Close Price and SMA 20')
-    ax.set_xlabel('Date')
-    ax.set_ylabel('Price')
-    ax.legend(loc='best')
-    ax.grid(True)
-
-    # Plot buy signals
-    buy_signals = df[df['position'] == 2]
-    ax.scatter(buy_signals['date'], buy_signals['close'], marker='^', color='green', label='Buy Signal', s=100, zorder=5)
-
-    # Plot sell signals
-    sell_signals = df[df['position'] == -2]
-    ax.scatter(sell_signals['date'], sell_signals['close'], marker='v', color='red', label='Sell Signal', s=100, zorder=5)
-
-    return fig
+def calcular_ema_multiple(df):
+    """Calcula la EMA para los periodos de 20 y 50 días."""
+    print("\nCalculando EMA para periodos de 20 y 50 días...")
+    df['ema_20'] = TA.EMA(df, 20)
+    df['ema_50'] = TA.EMA(df, 50)
+    print(df[['date', 'close', 'ema_20', 'ema_50']].tail())  # Print the last few rows to verify
 
 def calcular_rsi(df, period=14):
     """Calcula el Índice de Fuerza Relativa (RSI)"""
     print("\nCalculando RSI...")
     df['rsi'] = TA.RSI(df, period)
     print(df[['date', 'close', 'rsi']].tail())  # Print the last few rows to verify
+
+def calcular_macd(df):
+    """Calcula el MACD y la señal"""
+    print("\nCalculando MACD...")
+    df['macd'] = TA.MACD(df)['MACD']
+    df['signal_line'] = TA.MACD(df)['SIGNAL']
+    print(df[['date', 'macd', 'signal_line']].tail())  # Print the last few rows to verify
+
+def calcular_bollinger_bands(df, period=20, std_dev=2):
+    """Calcula las Bandas de Bollinger"""
+    print("\nCalculando Bandas de Bollinger...")
+    df['sma'] = df['close'].rolling(window=period).mean()
+    df['std_dev'] = df['close'].rolling(window=period).std()
+    df['upper_band'] = df['sma'] + (df['std_dev'] * std_dev)
+    df['lower_band'] = df['sma'] - (df['std_dev'] * std_dev)
+    print(df[['date', 'close', 'upper_band', 'lower_band']].tail())  # Print the last few rows to verify
+
+def calcular_momentum(df, period=10):
+    """Calcula el indicador de Momentum"""
+    print("\nCalculando Momentum...")
+    df['momentum'] = df['close'] - df['close'].shift(period)
+    print(df[['date', 'close', 'momentum']].tail())  # Print the last few rows to verify
+
+def calcular_adx(df, period=14):
+    """Calcula el Average Directional Index (ADX)."""
+    print("\nCalculando ADX...")
+    df['adx'] = TA.ADX(df, period)
+    print(df[['date', 'adx']].tail())
+
+def calcular_obv(df):
+    """Calcula el On-Balance Volume (OBV)."""
+    print("\nCalculando OBV...")
+    df['obv'] = TA.OBV(df)
+    print(df[['date', 'obv']].tail())
+
+def calcular_stochastic_oscillator(df, k_period=14, d_period=3):
+    """Calcula el Stochastic Oscillator."""
+    print("\nCalculando Stochastic Oscillator...")
+    df['stoch_k'] = TA.STOCH(df, k_period)
+    df['stoch_d'] = df['stoch_k'].rolling(window=d_period).mean()
+    print(df[['date', 'stoch_k', 'stoch_d']].tail())
+
+# Plotting functions
 
 def plot_price_and_rsi_separately(df, ticker):
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
@@ -95,13 +125,6 @@ def plot_price_and_rsi_separately(df, ticker):
     plt.tight_layout()
     return fig
 
-def calcular_macd(df):
-    """Calcula el MACD y la señal"""
-    print("\nCalculando MACD...")
-    df['macd'] = TA.MACD(df)['MACD']
-    df['signal_line'] = TA.MACD(df)['SIGNAL']
-    print(df[['date', 'macd', 'signal_line']].tail())  # Print the last few rows to verify
-
 def plot_price_and_macd_with_histogram(df, ticker):
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
 
@@ -124,39 +147,7 @@ def plot_price_and_macd_with_histogram(df, ticker):
     plt.tight_layout()
     return fig
 
-def calcular_bollinger_bands(df, period=20, std_dev=2):
-    """Calcula las Bandas de Bollinger"""
-    print("\nCalculando Bandas de Bollinger...")
-    df['sma'] = df['close'].rolling(window=period).mean()
-    df['std_dev'] = df['close'].rolling(window=period).std()
-    df['upper_band'] = df['sma'] + (df['std_dev'] * std_dev)
-    df['lower_band'] = df['sma'] - (df['std_dev'] * std_dev)
-    print(df[['date', 'close', 'upper_band', 'lower_band']].tail())  # Print the last few rows to verify
 
-# Function to plot Bollinger Bands with buy/sell signals
-def plot_bollinger_bands(df, ticker):
-    fig, ax = plt.subplots(figsize=(14, 7))
-    ax.plot(df['date'], df['close'], label='Close Price', color='blue')
-    ax.plot(df['date'], df['upper_band'], label='Upper Band', color='red', linestyle='--')
-    ax.plot(df['date'], df['lower_band'], label='Lower Band', color='green', linestyle='--')
-    ax.fill_between(df['date'], df['lower_band'], df['upper_band'], color='gray', alpha=0.1)
-
-    # Plot buy signals
-    buy_signals = df[df['close'] < df['lower_band']]
-    ax.scatter(buy_signals['date'], buy_signals['close'], marker='^', color='green', label='Buy Signal', s=100, zorder=5)
-
-    # Plot sell signals
-    sell_signals = df[df['close'] > df['upper_band']]
-    ax.scatter(sell_signals['date'], sell_signals['close'], marker='v', color='red', label='Sell Signal', s=100, zorder=5)
-
-    ax.set_title(f'{ticker} - Bollinger Bands')
-    ax.set_xlabel('Date')
-    ax.set_ylabel('Price')
-    ax.legend(loc='best')
-    ax.grid(True)
-    return fig
-
-# Function to plot combined RSI and MACD
 def plot_combined_analysis(df, ticker):
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(14, 15), sharex=True)
 
@@ -195,12 +186,6 @@ def plot_combined_analysis(df, ticker):
     plt.tight_layout()
     return fig
 
-def calcular_momentum(df, period=10):
-    """Calcula el indicador de Momentum"""
-    print("\nCalculando Momentum...")
-    df['momentum'] = df['close'] - df['close'].shift(period)
-    print(df[['date', 'close', 'momentum']].tail())  # Print the last few rows to verify
-
 def plot_price_and_momentum(df, ticker):
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
 
@@ -219,18 +204,10 @@ def plot_price_and_momentum(df, ticker):
     ax2.grid(True)
     ax2.legend(loc='best')
 
-    # Plot buy signals
-    buy_signals = df[(df['momentum'] > 0) & (df['momentum'].shift(1) <= 0)]
-    ax2.scatter(buy_signals['date'], buy_signals['momentum'], marker='^', color='green', label='Buy Signal', s=100, zorder=5)
-
-    # Plot sell signals
-    sell_signals = df[(df['momentum'] < 0) & (df['momentum'].shift(1) >= 0)]
-    ax2.scatter(sell_signals['date'], sell_signals['momentum'], marker='v', color='red', label='Sell Signal', s=100, zorder=5)
-
     plt.tight_layout()
-    return fig
+    fig.savefig(os.path.join(visualizations_dir, f'{ticker}_price_and_momentum.png'))
+    plt.close(fig)
 
-# Function to plot candlestick chart with Momentum
 def plot_candlestick_and_momentum(df, ticker):
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
 
@@ -249,16 +226,9 @@ def plot_candlestick_and_momentum(df, ticker):
     ax2.grid(True)
     ax2.legend(loc='best')
 
-    # Plot buy signals
-    buy_signals = df[(df['momentum'] > 0) & (df['momentum'].shift(1) <= 0)]
-    ax2.scatter(buy_signals['date'], buy_signals['momentum'], marker='^', color='green', label='Buy Signal', s=100, zorder=5)
-
-    # Plot sell signals
-    sell_signals = df[(df['momentum'] < 0) & (df['momentum'].shift(1) >= 0)]
-    ax2.scatter(sell_signals['date'], sell_signals['momentum'], marker='v', color='red', label='Sell Signal', s=100, zorder=5)
-
     plt.tight_layout()
-    return fig
+    fig.savefig(os.path.join(visualizations_dir, f'{ticker}_candlestick_and_momentum.png'))
+    plt.close(fig)
 
 def plot_candlestick_and_rsi(df, ticker):
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
@@ -319,35 +289,218 @@ def plot_candlestick_and_bollinger(df, ticker):
     ax1.plot(df['date'], df['lower_band'], label='Lower Band', color='green', linestyle='--')
     ax1.fill_between(df['date'], df['lower_band'], df['upper_band'], color='gray', alpha=0.1)
 
-    # Plot buy signals
-    buy_signals = df[df['close'] < df['lower_band']]
-    ax1.scatter(buy_signals['date'], buy_signals['close'], marker='^', color='green', label='Buy Signal', s=100, zorder=5)
+    plt.tight_layout()
+    fig.savefig(os.path.join(visualizations_dir, f'{ticker}_candlestick_and_bollinger.png'))
+    plt.close(fig)
 
-    # Plot sell signals
-    sell_signals = df[df['close'] > df['upper_band']]
-    ax1.scatter(sell_signals['date'], sell_signals['close'], marker='v', color='red', label='Sell Signal', s=100, zorder=5)
+def plot_sma_multiple(df, ticker):
+    """Plot SMA for 20, 50, and 200 days with candlestick chart and save as PNG."""
+    fig, ax = plt.subplots(figsize=(14, 7))
+    mpf.plot(df.set_index('date'), type='candle', ax=ax, show_nontrading=True, style='yahoo')
+    ax.plot(df['date'], df['sma_20'], label='SMA 20', color='red', linestyle='--')
+    ax.plot(df['date'], df['sma_50'], label='SMA 50', color='green', linestyle='--')
+    ax.plot(df['date'], df['sma_200'], label='SMA 200', color='orange', linestyle='--')
+    ax.set_title(f'{ticker} - Candlestick Chart and SMAs')
+    ax.set_xlabel('Date')
+    ax.set_ylabel('Price')
+    ax.legend(loc='best')
+    ax.grid(True)
+    fig.savefig(os.path.join(visualizations_dir, f'{ticker}_sma_multiple.png'))
+    plt.close(fig)
+
+def plot_ema_multiple(df, ticker):
+    """Plot EMA for 20 and 50 days with candlestick chart and save as PNG."""
+    fig, ax = plt.subplots(figsize=(14, 7))
+    mpf.plot(df.set_index('date'), type='candle', ax=ax, show_nontrading=True, style='yahoo')
+    ax.plot(df['date'], df['ema_20'], label='EMA 20', color='purple', linestyle='--')
+    ax.plot(df['date'], df['ema_50'], label='EMA 50', color='brown', linestyle='--')
+    ax.set_title(f'{ticker} - Candlestick Chart and EMAs')
+    ax.set_xlabel('Date')
+    ax.set_ylabel('Price')
+    ax.legend(loc='best')
+    ax.grid(True)
+    fig.savefig(os.path.join(visualizations_dir, f'{ticker}_ema_multiple.png'))
+    plt.close(fig)
+
+def plot_adx(df, ticker):
+    """Plot candlestick chart and ADX below, then save as PNG."""
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
+    
+    # Plot candlestick chart
+    mpf.plot(df.set_index('date'), type='candle', ax=ax1, show_nontrading=True, style='yahoo')
+    ax1.set_title(f'{ticker} - Candlestick Chart')
+    ax1.set_ylabel('Price')
+    ax1.grid(True)
+
+    # Plot ADX
+    ax2.plot(df['date'], df['adx'], label='ADX', color='blue')
+    ax2.set_title(f'{ticker} - ADX')
+    ax2.set_xlabel('Date')
+    ax2.set_ylabel('ADX')
+    ax2.legend(loc='best')
+    ax2.grid(True)
 
     plt.tight_layout()
-    return fig
+    fig.savefig(os.path.join(visualizations_dir, f'{ticker}_adx.png'))
+    plt.close(fig)
 
-def calcular_adx(df, period=14):
-    """Calcula el Average Directional Index (ADX)."""
-    print("\nCalculando ADX...")
-    df['adx'] = TA.ADX(df, period)
-    print(df[['date', 'adx']].tail())
+def plot_stochastic_oscillator(df, ticker):
+    """Plot candlestick chart and Stochastic Oscillator below, then save as PNG."""
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
+    
+    # Plot candlestick chart
+    mpf.plot(df.set_index('date'), type='candle', ax=ax1, show_nontrading=True, style='yahoo')
+    ax1.set_title(f'{ticker} - Candlestick Chart')
+    ax1.set_ylabel('Price')
+    ax1.grid(True)
 
-def calcular_obv(df):
-    """Calcula el On-Balance Volume (OBV)."""
-    print("\nCalculando OBV...")
-    df['obv'] = TA.OBV(df)
-    print(df[['date', 'obv']].tail())
+    # Plot Stochastic Oscillator
+    ax2.plot(df['date'], df['stoch_k'], label='%K', color='blue')
+    ax2.plot(df['date'], df['stoch_d'], label='%D', color='red')
+    ax2.axhline(80, color='red', linestyle='--')  # Overbought line
+    ax2.axhline(20, color='green', linestyle='--')  # Oversold line
+    ax2.set_title(f'{ticker} - Stochastic Oscillator')
+    ax2.set_xlabel('Date')
+    ax2.set_ylabel('Stochastic')
+    ax2.legend(loc='best')
+    ax2.grid(True)
 
-def calcular_stochastic_oscillator(df, k_period=14, d_period=3):
-    """Calcula el Stochastic Oscillator."""
-    print("\nCalculando Stochastic Oscillator...")
-    df['stoch_k'] = TA.STOCH(df, k_period)
-    df['stoch_d'] = df['stoch_k'].rolling(window=d_period).mean()
-    print(df[['date', 'stoch_k', 'stoch_d']].tail())
+    plt.tight_layout()
+    fig.savefig(os.path.join(visualizations_dir, f'{ticker}_stochastic_oscillator.png'))
+    plt.close(fig)
+
+def plot_macd_with_adx(df, ticker):
+    """Plot candlestick chart with MACD and ADX below, then save as PNG."""
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(14, 15), sharex=True)
+    
+    # Plot candlestick chart
+    mpf.plot(df.set_index('date'), type='candle', ax=ax1, show_nontrading=True, style='yahoo')
+    ax1.set_title(f'{ticker} - Candlestick Chart')
+    ax1.set_ylabel('Price')
+    ax1.grid(True)
+
+    # Plot MACD
+    ax2.plot(df['date'], df['macd'], label='MACD', color='blue')
+    ax2.plot(df['date'], df['signal_line'], label='Signal Line', color='red')
+    ax2.bar(df['date'], df['macd'] - df['signal_line'], label='MACD Histogram', color='gray', alpha=0.3)
+    ax2.set_title(f'{ticker} - MACD')
+    ax2.set_ylabel('MACD')
+    ax2.grid(True)
+    ax2.legend(loc='best')
+
+    # Plot ADX
+    ax3.plot(df['date'], df['adx'], label='ADX', color='green')
+    ax3.set_title(f'{ticker} - ADX')
+    ax3.set_xlabel('Date')
+    ax3.set_ylabel('ADX')
+    ax3.legend(loc='best')
+    ax3.grid(True)
+
+    plt.tight_layout()
+    fig.savefig(os.path.join(visualizations_dir, f'{ticker}_macd_with_adx.png'))
+    plt.close(fig)
+
+
+def plot_macd_with_stochastic(df, ticker):
+    """Plot candlestick chart with MACD and Stochastic Oscillator below, then save as PNG."""
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(14, 15), sharex=True)
+    
+    # Plot candlestick chart
+    mpf.plot(df.set_index('date'), type='candle', ax=ax1, show_nontrading=True, style='yahoo')
+    ax1.set_title(f'{ticker} - Candlestick Chart')
+    ax1.set_ylabel('Price')
+    ax1.grid(True)
+
+    # Plot MACD
+    ax2.plot(df['date'], df['macd'], label='MACD', color='blue')
+    ax2.plot(df['date'], df['signal_line'], label='Signal Line', color='red')
+    ax2.bar(df['date'], df['macd'] - df['signal_line'], label='MACD Histogram', color='gray', alpha=0.3)
+    ax2.set_title(f'{ticker} - MACD')
+    ax2.set_ylabel('MACD')
+    ax2.grid(True)
+    ax2.legend(loc='best')
+
+    # Plot Stochastic Oscillator
+    ax3.plot(df['date'], df['stoch_k'], label='%K', color='blue')
+    ax3.plot(df['date'], df['stoch_d'], label='%D', color='red')
+    ax3.axhline(80, color='red', linestyle='--')  # Overbought line
+    ax3.axhline(20, color='green', linestyle='--')  # Oversold line
+    ax3.set_title(f'{ticker} - Stochastic Oscillator')
+    ax3.set_xlabel('Date')
+    ax3.set_ylabel('Stochastic')
+    ax3.legend(loc='best')
+    ax3.grid(True)
+
+    plt.tight_layout()
+    fig.savefig(os.path.join(visualizations_dir, f'{ticker}_macd_with_stochastic.png'))
+    plt.close(fig)
+
+
+def plot_rsi_with_adx(df, ticker):
+    """Plot candlestick chart with RSI and ADX below, then save as PNG."""
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(14, 15), sharex=True)
+    
+    # Plot candlestick chart
+    mpf.plot(df.set_index('date'), type='candle', ax=ax1, show_nontrading=True, style='yahoo')
+    ax1.set_title(f'{ticker} - Candlestick Chart')
+    ax1.set_ylabel('Price')
+    ax1.grid(True)
+
+    # Plot RSI
+    ax2.plot(df['date'], df['rsi'], label='RSI', color='purple')
+    ax2.axhline(70, color='red', linestyle='--')  # Overbought line
+    ax2.axhline(30, color='green', linestyle='--')  # Oversold line
+    ax2.fill_between(df['date'], 30, 70, color='purple', alpha=0.1)
+    ax2.set_title(f'{ticker} - RSI')
+    ax2.set_ylabel('RSI')
+    ax2.grid(True)
+
+    # Plot ADX
+    ax3.plot(df['date'], df['adx'], label='ADX', color='green')
+    ax3.set_title(f'{ticker} - ADX')
+    ax3.set_xlabel('Date')
+    ax3.set_ylabel('ADX')
+    ax3.legend(loc='best')
+    ax3.grid(True)
+
+    plt.tight_layout()
+    fig.savefig(os.path.join(visualizations_dir, f'{ticker}_rsi_with_adx.png'))
+    plt.close(fig)
+
+
+def plot_rsi_with_stochastic(df, ticker):
+    """Plot candlestick chart with RSI and Stochastic Oscillator below, then save as PNG."""
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(14, 15), sharex=True)
+    
+    # Plot candlestick chart
+    mpf.plot(df.set_index('date'), type='candle', ax=ax1, show_nontrading=True, style='yahoo')
+    ax1.set_title(f'{ticker} - Candlestick Chart')
+    ax1.set_ylabel('Price')
+    ax1.grid(True)
+
+    # Plot RSI
+    ax2.plot(df['date'], df['rsi'], label='RSI', color='purple')
+    ax2.axhline(70, color='red', linestyle='--')  # Overbought line
+    ax2.axhline(30, color='green', linestyle='--')  # Oversold line
+    ax2.fill_between(df['date'], 30, 70, color='purple', alpha=0.1)
+    ax2.set_title(f'{ticker} - RSI')
+    ax2.set_ylabel('RSI')
+    ax2.grid(True)
+
+    # Plot Stochastic Oscillator
+    ax3.plot(df['date'], df['stoch_k'], label='%K', color='blue')
+    ax3.plot(df['date'], df['stoch_d'], label='%D', color='red')
+    ax3.axhline(80, color='red', linestyle='--')  # Overbought line
+    ax3.axhline(20, color='green', linestyle='--')  # Oversold line
+    ax3.set_title(f'{ticker} - Stochastic Oscillator')
+    ax3.set_xlabel('Date')
+    ax3.set_ylabel('Stochastic')
+    ax3.legend(loc='best')
+    ax3.grid(True)
+
+    plt.tight_layout()
+    fig.savefig(os.path.join(visualizations_dir, f'{ticker}_rsi_with_stochastic.png'))
+    plt.close(fig)
 
 
 if __name__ == "__main__":
@@ -357,26 +510,30 @@ if __name__ == "__main__":
     interval = 'daily'  # Default interval
     datos = descargar_datos(ticker, start=start_date, end=end_date, interval=interval)
 
-    # Example usage
-    calcular_sma(datos)
-    plot_sma(datos, ticker)
+    # Calculate indicators
+    calcular_sma_multiple(datos)
+    calcular_ema_multiple(datos)
     calcular_rsi(datos)
-    plot_price_and_rsi_separately(datos, ticker)
     calcular_macd(datos)
-    plot_price_and_macd_with_histogram(datos, ticker)
     calcular_bollinger_bands(datos)
-    plot_bollinger_bands(datos, ticker)
-    plot_combined_analysis(datos, ticker)
     calcular_momentum(datos)
-    plot_price_and_momentum(datos, ticker)
+    calcular_adx(datos)
+    calcular_obv(datos)
+    calcular_stochastic_oscillator(datos)
+
+    # Plot indicators
+    plot_sma_multiple(datos, ticker)
+    plot_ema_multiple(datos, ticker)
     plot_candlestick_and_momentum(datos, ticker)
     plot_candlestick_and_rsi(datos, ticker)
     plot_candlestick_and_macd(datos, ticker)
     plot_candlestick_and_bollinger(datos, ticker)
+    plot_adx(datos, ticker)
+    plot_stochastic_oscillator(datos, ticker)
 
-    # New indicators
-    calcular_adx(datos)
-    calcular_obv(datos)
-    calcular_stochastic_oscillator(datos)
-    
+    # Plot combined indicators
+    plot_macd_with_adx(datos, ticker)
+    plot_macd_with_stochastic(datos, ticker)
+    plot_rsi_with_adx(datos, ticker)
+    plot_rsi_with_stochastic(datos, ticker)
 

@@ -330,6 +330,26 @@ def plot_candlestick_and_bollinger(df, ticker):
     plt.tight_layout()
     return fig
 
+def calcular_adx(df, period=14):
+    """Calcula el Average Directional Index (ADX)."""
+    print("\nCalculando ADX...")
+    df['adx'] = TA.ADX(df, period)
+    print(df[['date', 'adx']].tail())
+
+def calcular_obv(df):
+    """Calcula el On-Balance Volume (OBV)."""
+    print("\nCalculando OBV...")
+    df['obv'] = TA.OBV(df)
+    print(df[['date', 'obv']].tail())
+
+def calcular_stochastic_oscillator(df, k_period=14, d_period=3):
+    """Calcula el Stochastic Oscillator."""
+    print("\nCalculando Stochastic Oscillator...")
+    df['stoch_k'] = TA.STOCH(df, k_period)
+    df['stoch_d'] = df['stoch_k'].rolling(window=d_period).mean()
+    print(df[['date', 'stoch_k', 'stoch_d']].tail())
+
+
 if __name__ == "__main__":
     ticker = 'META'  # Default ticker
     start_date = '2022-01-01'  # Default start date
@@ -353,5 +373,10 @@ if __name__ == "__main__":
     plot_candlestick_and_rsi(datos, ticker)
     plot_candlestick_and_macd(datos, ticker)
     plot_candlestick_and_bollinger(datos, ticker)
+
+    # New indicators
+    calcular_adx(datos)
+    calcular_obv(datos)
+    calcular_stochastic_oscillator(datos)
     
 

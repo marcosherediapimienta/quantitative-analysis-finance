@@ -101,60 +101,13 @@ def calcular_stochastic_oscillator(df, k_period=14, d_period=3):
 
 # Plotting functions
 
-def plot_price_and_rsi_separately(df, ticker):
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
+def plot_candlestick_and_momentum(df, ticker):
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 15), sharex=True)
 
-    # Plot close price
-    ax1.set_title(f'{ticker} - Close Price')
-    ax1.plot(df['date'], df['close'], label='Close Price', color='blue')
-    ax1.set_ylabel('Close Price')
-    ax1.grid(True)
-
-    # Plot RSI
-    ax2.set_title(f'{ticker} - RSI')
-    ax2.plot(df['date'], df['rsi'], label='RSI', color='purple')
-    ax2.axhline(70, color='red', linestyle='--')  # Overbought line
-    ax2.axhline(30, color='green', linestyle='--')  # Oversold line
-    ax2.set_ylabel('RSI')
-    ax2.set_xlabel('Date')
-    ax2.grid(True)
-
-    # Plot RSI with shaded area
-    ax2.fill_between(df['date'], 30, 70, color='purple', alpha=0.1)  # Shade the RSI area between 30 and 70
-
-    plt.tight_layout()
-    return fig
-
-def plot_price_and_macd_with_histogram(df, ticker):
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
-
-    # Plot close price
-    ax1.set_title(f'{ticker} - Close Price')
-    ax1.plot(df['date'], df['close'], label='Close Price', color='blue')
-    ax1.set_ylabel('Close Price')
-    ax1.grid(True)
-
-    # Plot MACD and Histogram
-    ax2.set_title(f'{ticker} - MACD')
-    ax2.plot(df['date'], df['macd'], label='MACD', color='blue')
-    ax2.plot(df['date'], df['signal_line'], label='Signal Line', color='red')
-    ax2.bar(df['date'], df['macd'] - df['signal_line'], label='MACD Histogram', color='gray', alpha=0.3)
-    ax2.set_ylabel('MACD')
-    ax2.set_xlabel('Date')
-    ax2.grid(True)
-    ax2.legend(loc='best')
-
-    plt.tight_layout()
-    return fig
-
-
-def plot_combined_analysis(df, ticker):
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(14, 15), sharex=True)
-
-    # Plot close price with volume
-    ax1.set_title(f'{ticker} - Close Price and Volume')
-    ax1.plot(df['date'], df['close'], label='Close Price', color='blue')
-    ax1.set_ylabel('Close Price')
+    # Plot candlestick chart with volume
+    mpf.plot(df.set_index('date'), type='candle', ax=ax1, show_nontrading=True, style='yahoo')
+    ax1.set_title(f'{ticker} - Candlestick Chart')
+    ax1.set_ylabel('Price')
     ax1.grid(True)
 
     # Plot volume
@@ -163,59 +116,6 @@ def plot_combined_analysis(df, ticker):
     ax1v.set_ylabel('Volume')
     ax1v.set_ylim(0, df['volume'].max() * 4)
     ax1v.grid(False)
-
-    # Plot RSI
-    ax2.set_title(f'{ticker} - RSI')
-    ax2.plot(df['date'], df['rsi'], label='RSI', color='purple')
-    ax2.axhline(70, color='red', linestyle='--')  # Overbought line
-    ax2.axhline(30, color='green', linestyle='--')  # Oversold line
-    ax2.fill_between(df['date'], 30, 70, color='purple', alpha=0.1)
-    ax2.set_ylabel('RSI')
-    ax2.grid(True)
-
-    # Plot MACD
-    ax3.set_title(f'{ticker} - MACD')
-    ax3.plot(df['date'], df['macd'], label='MACD', color='blue')
-    ax3.plot(df['date'], df['signal_line'], label='Signal Line', color='red')
-    ax3.bar(df['date'], df['macd'] - df['signal_line'], label='MACD Histogram', color='gray', alpha=0.3)
-    ax3.set_ylabel('MACD')
-    ax3.set_xlabel('Date')
-    ax3.grid(True)
-    ax3.legend(loc='best')
-
-    plt.tight_layout()
-    return fig
-
-def plot_price_and_momentum(df, ticker):
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
-
-    # Plot close price
-    ax1.set_title(f'{ticker} - Close Price')
-    ax1.plot(df['date'], df['close'], label='Close Price', color='blue')
-    ax1.set_ylabel('Close Price')
-    ax1.grid(True)
-
-    # Plot Momentum
-    ax2.set_title(f'{ticker} - Momentum')
-    ax2.plot(df['date'], df['momentum'], label='Momentum', color='orange')
-    ax2.axhline(0, color='black', linestyle='--')  # Zero line
-    ax2.set_ylabel('Momentum')
-    ax2.set_xlabel('Date')
-    ax2.grid(True)
-    ax2.legend(loc='best')
-
-    plt.tight_layout()
-    fig.savefig(os.path.join(visualizations_dir, f'{ticker}_price_and_momentum.png'))
-    plt.close(fig)
-
-def plot_candlestick_and_momentum(df, ticker):
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
-
-    # Plot candlestick chart
-    mpf.plot(df.set_index('date'), type='candle', ax=ax1, show_nontrading=True, style='yahoo')
-    ax1.set_title(f'{ticker} - Candlestick Chart')
-    ax1.set_ylabel('Price')
-    ax1.grid(True)
 
     # Plot Momentum
     ax2.set_title(f'{ticker} - Momentum')
@@ -231,22 +131,28 @@ def plot_candlestick_and_momentum(df, ticker):
     plt.close(fig)
 
 def plot_candlestick_and_rsi(df, ticker):
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 15), sharex=True)
 
-    # Plot candlestick chart
+    # Plot candlestick chart with volume
     mpf.plot(df.set_index('date'), type='candle', ax=ax1, show_nontrading=True, style='yahoo')
     ax1.set_title(f'{ticker} - Candlestick Chart')
     ax1.set_ylabel('Price')
     ax1.grid(True)
 
+    # Plot volume
+    ax1v = ax1.twinx()
+    ax1v.bar(df['date'], df['volume'], color='gray', alpha=0.3, label='Volume')
+    ax1v.set_ylabel('Volume')
+    ax1v.set_ylim(0, df['volume'].max() * 4)
+    ax1v.grid(False)
+
     # Plot RSI
-    ax2.set_title(f'{ticker} - RSI')
     ax2.plot(df['date'], df['rsi'], label='RSI', color='purple')
     ax2.axhline(70, color='red', linestyle='--')  # Overbought line
     ax2.axhline(30, color='green', linestyle='--')  # Oversold line
     ax2.fill_between(df['date'], 30, 70, color='purple', alpha=0.1)
+    ax2.set_title(f'{ticker} - RSI')
     ax2.set_ylabel('RSI')
-    ax2.set_xlabel('Date')
     ax2.grid(True)
     ax2.legend(loc='best')
 
@@ -254,35 +160,50 @@ def plot_candlestick_and_rsi(df, ticker):
     return fig
 
 def plot_candlestick_and_macd(df, ticker):
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 15), sharex=True)
 
-    # Plot candlestick chart
+    # Plot candlestick chart with volume
     mpf.plot(df.set_index('date'), type='candle', ax=ax1, show_nontrading=True, style='yahoo')
     ax1.set_title(f'{ticker} - Candlestick Chart')
     ax1.set_ylabel('Price')
     ax1.grid(True)
 
+    # Plot volume
+    ax1v = ax1.twinx()
+    ax1v.bar(df['date'], df['volume'], color='gray', alpha=0.3, label='Volume')
+    ax1v.set_ylabel('Volume')
+    ax1v.set_ylim(0, df['volume'].max() * 4)
+    ax1v.grid(False)
+
     # Plot MACD
-    ax2.set_title(f'{ticker} - MACD')
     ax2.plot(df['date'], df['macd'], label='MACD', color='blue')
     ax2.plot(df['date'], df['signal_line'], label='Signal Line', color='red')
     ax2.bar(df['date'], df['macd'] - df['signal_line'], label='MACD Histogram', color='gray', alpha=0.3)
+    ax2.set_title(f'{ticker} - MACD')
     ax2.set_ylabel('MACD')
     ax2.set_xlabel('Date')
     ax2.grid(True)
     ax2.legend(loc='best')
 
     plt.tight_layout()
+    fig.savefig(os.path.join(visualizations_dir, f'{ticker}_candlestick_and_macd.png'))
     return fig
 
 def plot_candlestick_and_bollinger(df, ticker):
-    fig, ax1 = plt.subplots(figsize=(14, 7))
+    fig, ax1 = plt.subplots(figsize=(14, 10))
 
-    # Plot candlestick chart
+    # Plot candlestick chart with volume
     mpf.plot(df.set_index('date'), type='candle', ax=ax1, show_nontrading=True, style='yahoo')
     ax1.set_title(f'{ticker} - Candlestick Chart with Bollinger Bands')
     ax1.set_ylabel('Price')
     ax1.grid(True)
+
+    # Plot volume
+    ax1v = ax1.twinx()
+    ax1v.bar(df['date'], df['volume'], color='gray', alpha=0.3, label='Volume')
+    ax1v.set_ylabel('Volume')
+    ax1v.set_ylim(0, df['volume'].max() * 4)
+    ax1v.grid(False)
 
     # Plot Bollinger Bands
     ax1.plot(df['date'], df['upper_band'], label='Upper Band', color='red', linestyle='--')
@@ -295,42 +216,65 @@ def plot_candlestick_and_bollinger(df, ticker):
 
 def plot_sma_multiple(df, ticker):
     """Plot SMA for 20, 50, and 200 days with candlestick chart and save as PNG."""
-    fig, ax = plt.subplots(figsize=(14, 7))
-    mpf.plot(df.set_index('date'), type='candle', ax=ax, show_nontrading=True, style='yahoo')
-    ax.plot(df['date'], df['sma_20'], label='SMA 20', color='red', linestyle='--')
-    ax.plot(df['date'], df['sma_50'], label='SMA 50', color='green', linestyle='--')
-    ax.plot(df['date'], df['sma_200'], label='SMA 200', color='orange', linestyle='--')
-    ax.set_title(f'{ticker} - Candlestick Chart and SMAs')
-    ax.set_xlabel('Date')
-    ax.set_ylabel('Price')
-    ax.legend(loc='best')
-    ax.grid(True)
+    fig, ax1 = plt.subplots(figsize=(14, 10))
+    mpf.plot(df.set_index('date'), type='candle', ax=ax1, show_nontrading=True, style='yahoo')
+    ax1.plot(df['date'], df['sma_20'], label='SMA 20', color='red', linestyle='--')
+    ax1.plot(df['date'], df['sma_50'], label='SMA 50', color='green', linestyle='--')
+    ax1.plot(df['date'], df['sma_200'], label='SMA 200', color='orange', linestyle='--')
+    ax1.set_title(f'{ticker} - Candlestick Chart and SMAs')
+    ax1.set_xlabel('Date')
+    ax1.set_ylabel('Price')
+    ax1.legend(loc='best')
+    ax1.grid(True)
+
+    # Plot volume
+    ax1v = ax1.twinx()
+    ax1v.bar(df['date'], df['volume'], color='gray', alpha=0.3, label='Volume')
+    ax1v.set_ylabel('Volume')
+    ax1v.set_ylim(0, df['volume'].max() * 4)
+    ax1v.grid(False)
+
     fig.savefig(os.path.join(visualizations_dir, f'{ticker}_sma_multiple.png'))
     plt.close(fig)
 
 def plot_ema_multiple(df, ticker):
     """Plot EMA for 20 and 50 days with candlestick chart and save as PNG."""
-    fig, ax = plt.subplots(figsize=(14, 7))
-    mpf.plot(df.set_index('date'), type='candle', ax=ax, show_nontrading=True, style='yahoo')
-    ax.plot(df['date'], df['ema_20'], label='EMA 20', color='purple', linestyle='--')
-    ax.plot(df['date'], df['ema_50'], label='EMA 50', color='brown', linestyle='--')
-    ax.set_title(f'{ticker} - Candlestick Chart and EMAs')
-    ax.set_xlabel('Date')
-    ax.set_ylabel('Price')
-    ax.legend(loc='best')
-    ax.grid(True)
+    fig, ax1 = plt.subplots(figsize=(14, 10))
+    mpf.plot(df.set_index('date'), type='candle', ax=ax1, show_nontrading=True, style='yahoo')
+    ax1.plot(df['date'], df['ema_20'], label='EMA 20', color='purple', linestyle='--')
+    ax1.plot(df['date'], df['ema_50'], label='EMA 50', color='brown', linestyle='--')
+    ax1.set_title(f'{ticker} - Candlestick Chart and EMAs')
+    ax1.set_xlabel('Date')
+    ax1.set_ylabel('Price')
+    ax1.legend(loc='best')
+    ax1.grid(True)
+
+    # Plot volume
+    ax1v = ax1.twinx()
+    ax1v.bar(df['date'], df['volume'], color='gray', alpha=0.3, label='Volume')
+    ax1v.set_ylabel('Volume')
+    ax1v.set_ylim(0, df['volume'].max() * 4)
+    ax1v.grid(False)
+
     fig.savefig(os.path.join(visualizations_dir, f'{ticker}_ema_multiple.png'))
     plt.close(fig)
 
 def plot_adx(df, ticker):
     """Plot candlestick chart and ADX below, then save as PNG."""
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 15), sharex=True)
     
-    # Plot candlestick chart
+    # Plot candlestick chart with volume
     mpf.plot(df.set_index('date'), type='candle', ax=ax1, show_nontrading=True, style='yahoo')
     ax1.set_title(f'{ticker} - Candlestick Chart')
     ax1.set_ylabel('Price')
     ax1.grid(True)
+
+    # Plot volume
+    ax1v = ax1.twinx()
+    ax1v.bar(df['date'], df['volume'], color='gray', alpha=0.3, label='Volume')
+    ax1v.set_ylabel('Volume')
+    ax1v.set_ylim(0, df['volume'].max() * 4)
+    ax1v.grid(False)
 
     # Plot ADX
     ax2.plot(df['date'], df['adx'], label='ADX', color='blue')
@@ -346,13 +290,20 @@ def plot_adx(df, ticker):
 
 def plot_stochastic_oscillator(df, ticker):
     """Plot candlestick chart and Stochastic Oscillator below, then save as PNG."""
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 15), sharex=True)
     
-    # Plot candlestick chart
+    # Plot candlestick chart with volume
     mpf.plot(df.set_index('date'), type='candle', ax=ax1, show_nontrading=True, style='yahoo')
     ax1.set_title(f'{ticker} - Candlestick Chart')
     ax1.set_ylabel('Price')
     ax1.grid(True)
+
+    # Plot volume
+    ax1v = ax1.twinx()
+    ax1v.bar(df['date'], df['volume'], color='gray', alpha=0.3, label='Volume')
+    ax1v.set_ylabel('Volume')
+    ax1v.set_ylim(0, df['volume'].max() * 4)
+    ax1v.grid(False)
 
     # Plot Stochastic Oscillator
     ax2.plot(df['date'], df['stoch_k'], label='%K', color='blue')
@@ -371,13 +322,20 @@ def plot_stochastic_oscillator(df, ticker):
 
 def plot_macd_with_adx(df, ticker):
     """Plot candlestick chart with MACD and ADX below, then save as PNG."""
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(14, 15), sharex=True)
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(14, 20), sharex=True)
     
-    # Plot candlestick chart
+    # Plot candlestick chart with volume
     mpf.plot(df.set_index('date'), type='candle', ax=ax1, show_nontrading=True, style='yahoo')
     ax1.set_title(f'{ticker} - Candlestick Chart')
     ax1.set_ylabel('Price')
     ax1.grid(True)
+
+    # Plot volume
+    ax1v = ax1.twinx()
+    ax1v.bar(df['date'], df['volume'], color='gray', alpha=0.3, label='Volume')
+    ax1v.set_ylabel('Volume')
+    ax1v.set_ylim(0, df['volume'].max() * 4)
+    ax1v.grid(False)
 
     # Plot MACD
     ax2.plot(df['date'], df['macd'], label='MACD', color='blue')
@@ -403,13 +361,20 @@ def plot_macd_with_adx(df, ticker):
 
 def plot_macd_with_stochastic(df, ticker):
     """Plot candlestick chart with MACD and Stochastic Oscillator below, then save as PNG."""
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(14, 15), sharex=True)
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(14, 20), sharex=True)
     
-    # Plot candlestick chart
+    # Plot candlestick chart with volume
     mpf.plot(df.set_index('date'), type='candle', ax=ax1, show_nontrading=True, style='yahoo')
     ax1.set_title(f'{ticker} - Candlestick Chart')
     ax1.set_ylabel('Price')
     ax1.grid(True)
+
+    # Plot volume
+    ax1v = ax1.twinx()
+    ax1v.bar(df['date'], df['volume'], color='gray', alpha=0.3, label='Volume')
+    ax1v.set_ylabel('Volume')
+    ax1v.set_ylim(0, df['volume'].max() * 4)
+    ax1v.grid(False)
 
     # Plot MACD
     ax2.plot(df['date'], df['macd'], label='MACD', color='blue')
@@ -438,13 +403,20 @@ def plot_macd_with_stochastic(df, ticker):
 
 def plot_rsi_with_adx(df, ticker):
     """Plot candlestick chart with RSI and ADX below, then save as PNG."""
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(14, 15), sharex=True)
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(14, 20), sharex=True)
     
-    # Plot candlestick chart
+    # Plot candlestick chart with volume
     mpf.plot(df.set_index('date'), type='candle', ax=ax1, show_nontrading=True, style='yahoo')
     ax1.set_title(f'{ticker} - Candlestick Chart')
     ax1.set_ylabel('Price')
     ax1.grid(True)
+
+    # Plot volume
+    ax1v = ax1.twinx()
+    ax1v.bar(df['date'], df['volume'], color='gray', alpha=0.3, label='Volume')
+    ax1v.set_ylabel('Volume')
+    ax1v.set_ylim(0, df['volume'].max() * 4)
+    ax1v.grid(False)
 
     # Plot RSI
     ax2.plot(df['date'], df['rsi'], label='RSI', color='purple')
@@ -470,13 +442,20 @@ def plot_rsi_with_adx(df, ticker):
 
 def plot_rsi_with_stochastic(df, ticker):
     """Plot candlestick chart with RSI and Stochastic Oscillator below, then save as PNG."""
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(14, 15), sharex=True)
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(14, 20), sharex=True)
     
-    # Plot candlestick chart
+    # Plot candlestick chart with volume
     mpf.plot(df.set_index('date'), type='candle', ax=ax1, show_nontrading=True, style='yahoo')
     ax1.set_title(f'{ticker} - Candlestick Chart')
     ax1.set_ylabel('Price')
     ax1.grid(True)
+
+    # Plot volume
+    ax1v = ax1.twinx()
+    ax1v.bar(df['date'], df['volume'], color='gray', alpha=0.3, label='Volume')
+    ax1v.set_ylabel('Volume')
+    ax1v.set_ylim(0, df['volume'].max() * 4)
+    ax1v.grid(False)
 
     # Plot RSI
     ax2.plot(df['date'], df['rsi'], label='RSI', color='purple')
@@ -507,7 +486,7 @@ if __name__ == "__main__":
     ticker = 'META'  # Default ticker
     start_date = '2022-01-01'  # Default start date
     end_date = '2023-01-01'  # Default end date
-    interval = 'daily'  # Default interval
+    interval = 'weekly'  # Default interval
     datos = descargar_datos(ticker, start=start_date, end=end_date, interval=interval)
 
     # Calculate indicators

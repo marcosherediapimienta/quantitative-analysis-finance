@@ -11,7 +11,7 @@ from portfolio_management.scripts.fundamental_analysis import FinancialAnalyzer
 from portfolio_management.scripts.technical_analysis import (
     descargar_datos, calcular_sma_multiple, calcular_ema_multiple, calcular_rsi,
     calcular_macd, calcular_bollinger_bands, calcular_momentum, calcular_adx,
-    calcular_obv, calcular_stochastic_oscillator, plot_candlestick_and_momentum,
+    calcular_stochastic_oscillator, plot_candlestick_and_momentum,
     plot_candlestick_and_rsi, plot_candlestick_and_macd, plot_candlestick_and_bollinger,
     plot_sma_multiple, plot_ema_multiple, plot_adx, plot_stochastic_oscillator,
     plot_macd_with_adx, plot_macd_with_stochastic, plot_rsi_with_adx, plot_rsi_with_stochastic)

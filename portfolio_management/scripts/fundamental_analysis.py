@@ -264,10 +264,10 @@ class FinancialAnalyzer:
                     "Forward P/E": info.get('forwardPE')
                 },
                 "Profitability Ratios": {
-                    "ROE": info.get('returnOnEquity'),
-                    "ROA": info.get('returnOnAssets'),
-                    "Operating Margin": info.get('operatingMargins'),
-                    "Gross Margin": info.get('grossMargins')
+                    "ROE": f"{info.get('returnOnEquity') * 100:.2f}%" if info.get('returnOnEquity') is not None else None,
+                    "ROA": f"{info.get('returnOnAssets') * 100:.2f}%" if info.get('returnOnAssets') is not None else None,
+                    "Operating Margin": f"{info.get('operatingMargins') * 100:.2f}%" if info.get('operatingMargins') is not None else None,
+                    "Gross Margin": f"{info.get('grossMargins') * 100:.2f}%" if info.get('grossMargins') is not None else None
                 },
                 "Liquidity Ratios": {
                     "Current Ratio": info.get('currentRatio'),

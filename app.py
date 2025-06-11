@@ -1301,7 +1301,12 @@ if menu1 == "Fundamental Analysis":
         dividend_analysis = analyzer.get_dividend_analysis()
         st.subheader("Dividend Analysis")
         for metric, value in dividend_analysis.items():
-            st.write(f"- {metric}: {value if value is not None else 'N/A'}")
+            if metric == 'Dividend History' and isinstance(value, dict):
+                st.write(f"**{metric}:**")
+                for date, amount in value.items():
+                    st.write(f"- {date}: {amount}")
+            else:
+                st.write(f"- {metric}: {value}")
         
         risk_metrics = analyzer.get_risk_metrics()
         st.subheader("Risk Metrics")

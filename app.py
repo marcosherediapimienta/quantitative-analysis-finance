@@ -1193,16 +1193,19 @@ if menu1 == "Technical Analysis":
         calcular_obv(df)
         calcular_stochastic_oscillator(df)
 
-        # Display calculated data
-        st.write("SMA calculated:", df[['date', 'close', 'sma_20', 'sma_50', 'sma_200']].tail())
-        st.write("EMA calculated:", df[['date', 'close', 'ema_20', 'ema_50']].tail())
-        st.write("RSI calculated:", df[['date', 'close', 'rsi']].tail())
-        st.write("MACD calculated:", df[['date', 'macd', 'signal_line']].tail())
-        st.write("Bollinger Bands calculated:", df[['date', 'close', 'upper_band', 'lower_band']].tail())
-        st.write("Momentum calculated:", df[['date', 'close', 'momentum']].tail())
-        st.write("ADX calculated:", df[['date', 'adx']].tail())
-        st.write("OBV calculated:", df[['date', 'obv']].tail())
-        st.write("Stochastic Oscillator calculated:", df[['date', 'stoch_k', 'stoch_d']].tail())
+        # Sort DataFrame by date in descending order
+        df_sorted = df.sort_values(by='date', ascending=False)
+
+        # Display the last 5 most recent dates
+        st.write("SMA calculated:", df_sorted[['date', 'close', 'sma_20', 'sma_50', 'sma_200']].head(5))
+        st.write("EMA calculated:", df_sorted[['date', 'close', 'ema_20', 'ema_50']].head(5))
+        st.write("RSI calculated:", df_sorted[['date', 'close', 'rsi']].head(5))
+        st.write("MACD calculated:", df_sorted[['date', 'close', 'macd', 'signal_line']].head(5))
+        st.write("Bollinger Bands calculated:", df_sorted[['date', 'close', 'upper_band', 'lower_band']].head(5))
+        st.write("Momentum calculated:", df_sorted[['date', 'close', 'momentum']].head(5))
+        st.write("ADX calculated:", df_sorted[['date', 'close', 'adx']].head(5))
+        st.write("OBV calculated:", df_sorted[['date', 'close', 'obv']].head(5))
+        st.write("Stochastic Oscillator calculated:", df_sorted[['date', 'close', 'stoch_k', 'stoch_d']].head(5))
 
         # Generate and display plots
         fig1 = plot_candlestick_and_momentum(df, ticker)

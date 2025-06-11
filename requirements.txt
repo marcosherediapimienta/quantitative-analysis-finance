@@ -4,3 +4,7 @@ pandas
 matplotlib
 scipy
 yfinance 
+datetime
+seaborn
+mplfinance
+finta

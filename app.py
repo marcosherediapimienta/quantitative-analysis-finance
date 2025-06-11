@@ -7,6 +7,16 @@ import pandas as pd
 from option_pricing.black_scholes_model import bs_portfolio_analysis as bsa
 from option_pricing.binomial_model import binomial_portfolio_analysis as bpa
 from option_pricing.monte_carlo import mc_portfolio_analysis as mca
+from portfolio_management.scripts.fundamental_analysis import FinancialAnalyzer
+from portfolio_management.scripts.technical_analysis import (
+    descargar_datos, calcular_sma_multiple, calcular_ema_multiple, calcular_rsi,
+    calcular_macd, calcular_bollinger_bands, calcular_momentum, calcular_adx,
+    calcular_stochastic_oscillator, plot_candlestick_and_momentum,
+    plot_candlestick_and_rsi, plot_candlestick_and_macd, plot_candlestick_and_bollinger,
+    plot_sma_multiple, plot_ema_multiple, plot_adx, plot_stochastic_oscillator,
+    plot_macd_with_adx, plot_macd_with_stochastic, plot_rsi_with_adx, plot_rsi_with_stochastic)
+
+import glob
 
 # Set a fixed random seed for reproducibility
 np.random.seed(42)
@@ -65,8 +75,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Update menu to include hedging strategy selection
-menu = st.sidebar.selectbox(
+# Update menu to include Fundamental Analysis in the first selectbox
+menu1 = st.sidebar.selectbox(
     "Select section:",
     [
         "Introduction",
@@ -76,11 +86,18 @@ menu = st.sidebar.selectbox(
         "Portfolio Analysis - Monte Carlo",
         "Hedging Strategy",
         "Sensitivity Analysis",
+        "Fundamental Analysis",
+        "Technical Analysis"
     ],
     index=0
 )
 
-if menu == "Introduction":
+def format_number(value):
+    if pd.isna(value):
+        return "N/A"
+    return f"{value:,.0f}".replace(',', '.').replace('.', ',', 1)
+
+if menu1 == "Introduction":
     st.markdown('<div class="title-conference">Option Pricing & Portfolio Risk App</div>', unsafe_allow_html=True)
     st.markdown('<div class="subtitle-conference">A cutting-edge tool for pricing options, analyzing portfolio risk, and comparing financial models.</div>', unsafe_allow_html=True)
     st.markdown("""
@@ -122,7 +139,7 @@ if menu == "Introduction":
     st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
-if menu == "Single Option Analysis":
+if menu1 == "Single Option Analysis":
     st.header("🔍 Single Option Analysis")
     st.write("Select your model and option type to begin analyzing single options")
     cols = st.columns(3)
@@ -176,13 +193,15 @@ if menu == "Single Option Analysis":
                 # Highlighted results
                 col1, col2 = st.columns(2)
                 if price is not None:
-                    col1.metric("Model Price", f"{price:.2f}")
+                    col1.metric("Model Price", f"{price:.4f}")
                 if iv is not None:
-                    col2.metric("Implied Volatility", f"{iv:.2f}")
+                    col2.metric("Implied Volatility", f"{iv:.4f}")
                 st.markdown("---")
                 if greeks is not None:
                     st.write("Greeks:")
-                    st.json(greeks)
+                    # Format Greeks to four decimal places
+                    formatted_greeks = {key: f"{value:.4f}" for key, value in greeks.items()}
+                    st.json(formatted_greeks)
             except Exception as e:
                 st.error(f"Error in calculation: {e}")
      # Personal info card below the sidebar menu
@@ -204,7 +223,7 @@ if menu == "Single Option Analysis":
     st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
-if menu == "Portfolio Analysis - Black-Scholes":
+if menu1 == "Portfolio Analysis - Black-Scholes":
     st.header("📊 Portfolio Analysis - Black-Scholes")
     st.subheader("Analyze your portfolio using the Black-Scholes model")
     st.write("Configure your portfolio and analyze risk metrics with precision")
@@ -287,7 +306,7 @@ if menu == "Portfolio Analysis - Black-Scholes":
     st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
-elif menu == "Portfolio Analysis - Binomial":
+elif menu1 == "Portfolio Analysis - Binomial":
     st.header("📊 Portfolio Analysis - Binomial")
     st.subheader("Analyze your portfolio using the Binomial model")
     st.write("Configure your portfolio and assess risk metrics with the Binomial model")
@@ -373,7 +392,7 @@ elif menu == "Portfolio Analysis - Binomial":
     st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
-elif menu == "Portfolio Analysis - Monte Carlo":
+elif menu1 == "Portfolio Analysis - Monte Carlo":
     st.header("📊 Portfolio Analysis - Monte Carlo")
     st.subheader("Analyze your portfolio using the Monte Carlo model")
     st.write("Configure your portfolio and evaluate risk metrics with the Monte Carlo simulation.")
@@ -459,7 +478,7 @@ elif menu == "Portfolio Analysis - Monte Carlo":
     st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
-if menu == "Hedging Strategy":
+if menu1 == "Hedging Strategy":
     st.header("🛡️ Hedging Strategy")
     st.subheader("Optimize and protect your portfolio by choosing the right hedging")
     st.write("Select your model and hedging strategy to manage portfolio risk effectively")
@@ -1042,7 +1061,7 @@ if menu == "Hedging Strategy":
     st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
-if menu == "Sensitivity Analysis":
+if menu1 == "Sensitivity Analysis":
     st.header("🔬 Sensitivity Analysis")
     st.subheader("Stress-test your portfolio against market shocks")
     st.write("Select your model and analyze how different factors affect your portfolio's performance")
@@ -1074,7 +1093,7 @@ if menu == "Sensitivity Analysis":
         # Add Black-Scholes specific inputs here
     elif model == "Binomial":
         st.write("Binomial model selected.")
-        N_steps_binomial = st.number_input("Number of steps for Binomial tree", value=100, min_value=1, step=1, help="Discretization steps for Binomial model.", key="N_steps_binomial_sensitivity")
+        N_steps_binomial = st.number_input("Number of steps for Binomial tree", value=100, min_value=1, step=1, help="Set the discretization steps for the Binomial model.", key="N_steps_binomial_sensitivity")
     
     # Ensure portfolio options are customizable
     for i in range(num_options):
@@ -1150,5 +1169,220 @@ if menu == "Sensitivity Analysis":
     form_url = "https://docs.google.com/forms/d/e/1FAIpQLSecDfBXdXynYHyouLub1ZT3AsYWa4V1N3O_OnvUKxiA21bnjg/viewform?usp=header"
     st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
+    
+if menu1 == "Technical Analysis":
+    st.header("📈 Technical Analysis")
+    st.write("Perform technical analysis on stock data.")
+    # User input for ticker and interval
+    ticker = st.text_input("Enter Stock Ticker:", "AAPL")
+    interval = st.selectbox("Select Interval:", ["daily", "weekly", "monthly"])
+    start_date = st.date_input("Select Start Date:", pd.to_datetime("2022-01-01"))
+    end_date = st.date_input("Select End Date:", pd.to_datetime("2023-01-01"))
+
+    # Download data
+    df = descargar_datos(ticker=ticker, interval=interval, start=start_date, end=end_date)
+
+    # Single button to perform all calculations and plots
+    if st.button("Run Full Technical Analysis"):
+        # Perform all calculations
+        calcular_sma_multiple(df)
+        calcular_ema_multiple(df)
+        calcular_rsi(df)
+        calcular_macd(df)
+        calcular_bollinger_bands(df)
+        calcular_momentum(df)
+        calcular_adx(df)
+        calcular_stochastic_oscillator(df)
+
+        # Sort DataFrame by date in descending order
+        df_sorted = df.sort_values(by='date', ascending=False)
+
+        # Display the last 5 most recent dates
+        st.write("SMA calculated:", df_sorted[['date', 'close', 'sma_20', 'sma_50', 'sma_200']].head(5))
+        st.write("EMA calculated:", df_sorted[['date', 'close', 'ema_20', 'ema_50']].head(5))
+        st.write("RSI calculated:", df_sorted[['date', 'close', 'rsi']].head(5))
+        st.write("MACD calculated:", df_sorted[['date', 'close', 'macd', 'signal_line']].head(5))
+        st.write("Bollinger Bands calculated:", df_sorted[['date', 'close', 'upper_band', 'lower_band']].head(5))
+        st.write("Momentum calculated:", df_sorted[['date', 'close', 'momentum']].head(5))
+        st.write("ADX calculated:", df_sorted[['date', 'close', 'adx']].head(5))
+        st.write("Stochastic Oscillator calculated:", df_sorted[['date', 'close', 'stoch_k', 'stoch_d']].head(5))
+
+        # Generate and display plots
+        fig1 = plot_candlestick_and_momentum(df, ticker)
+        st.pyplot(fig1)
+
+        fig2 = plot_candlestick_and_rsi(df, ticker)
+        st.pyplot(fig2)
+
+        fig3 = plot_candlestick_and_macd(df, ticker)
+        st.pyplot(fig3)
+
+        fig4 = plot_candlestick_and_bollinger(df, ticker)
+        st.pyplot(fig4)
+
+        fig5 = plot_sma_multiple(df, ticker)
+        st.pyplot(fig5)
+
+        fig6 = plot_ema_multiple(df, ticker)
+        st.pyplot(fig6)
+
+        fig7 = plot_adx(df, ticker)
+        st.pyplot(fig7)
+
+        fig8 = plot_stochastic_oscillator(df, ticker)
+        st.pyplot(fig8)
+
+        fig9 = plot_macd_with_adx(df, ticker)
+        st.pyplot(fig9)
+
+        fig10 = plot_macd_with_stochastic(df, ticker)
+        st.pyplot(fig10)
+
+        fig11 = plot_rsi_with_adx(df, ticker)
+        st.pyplot(fig11)
+
+        fig12 = plot_rsi_with_stochastic(df, ticker)
+        st.pyplot(fig12)
+
+    # Personal info card below the sidebar menu
+    st.sidebar.markdown('''
+    <div style="background-color:#23272b; border-radius:12px; padding:1.2em 1.2em 1em 1.2em; margin-top:1.5em; margin-bottom:1.5em; box-shadow:0 2px 8px rgba(0,0,0,0.15); max-width:320px;">
+        <div style="font-size:1.1rem; font-weight:700; color:#90caf9; margin-bottom:0.2em;">Marcos Heredia Pimienta</div>
+        <div style="color:#b0bec5; font-size:0.98rem; margin-bottom:0.4em;">MSc in Quantitative Finance, Universitat Autònoma de Barcelona</div>
+        <div style="color:#e0e0e0; font-size:0.95rem; margin-bottom:0.4em;">Quantitative Risk Analyst</div>
+    </div>
+    ''', unsafe_allow_html=True)
+
+    # Enlace al formulario de Google
+    st.sidebar.markdown('<div style="background-color:#23272b; padding:20px; border-radius:10px; margin-top:20px;">', unsafe_allow_html=True)
+    st.sidebar.header("💬 We value your feedback!", anchor=None)
+    st.sidebar.write("Please let us know how you feel about the app. Your insights help us improve!")
+
+    # Hipervínculo al formulario
+    form_url = "https://docs.google.com/forms/d/e/1FAIpQLSecDfBXdXynYHyouLub1ZT3AsYWa4V1N3O_OnvUKxiA21bnjg/viewform?usp=header"
+    st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
+    st.sidebar.markdown('</div>', unsafe_allow_html=True)
+
+if menu1 == "Fundamental Analysis":
+    st.header("📊 Fundamental Analysis")
+    st.subheader("Analyze the financial health of a company")
+    
+    # User input for ticker symbol
+    ticker = st.text_input("Enter Ticker Symbol:", "META")
+    
+    # Button to trigger analysis
+    if st.button("Run Analysis"):
+        # Remove old visualizations
+        files = glob.glob(os.path.join('portfolio_management/visualizations', '*.png'))
+        for f in files:
+            os.remove(f)
+        
+        # Initialize FinancialAnalyzer
+        analyzer = FinancialAnalyzer(ticker)
+        
+        # Core financial statements
+        st.subheader("Balance Sheet")
+        figures = analyzer.get_balance_sheet(plot=True)
+        for fig in figures:
+            st.pyplot(fig)
+        
+        # Display Balance Sheet CSV with formatting
+        balance_sheet_df = pd.read_csv(os.path.join(analyzer.VIS_DIR, 'balance_sheet.csv'))
+        # Remove any column starting with '2020'
+        balance_sheet_df = balance_sheet_df.loc[:, ~balance_sheet_df.columns.str.startswith('2020')]
+        balance_sheet_df_formatted = balance_sheet_df.applymap(lambda x: f"{x:,.2f}" if pd.notnull(x) and isinstance(x, (int, float)) else x)
+        st.dataframe(balance_sheet_df_formatted)
+        
+        st.subheader("Income Statement")
+        figures = analyzer.get_income_statement(plot=True)
+        for fig in figures:
+            st.pyplot(fig)
+        
+        # Display Income Statement CSV with formatting
+        income_statement_df = pd.read_csv(os.path.join(analyzer.VIS_DIR, 'income_statement.csv'))
+        # Remove any column starting with '2020'
+        income_statement_df = income_statement_df.loc[:, ~income_statement_df.columns.str.startswith('2020')]
+        income_statement_df_formatted = income_statement_df.applymap(lambda x: f"{x:,.2f}" if pd.notnull(x) and isinstance(x, (int, float)) else x)
+        st.dataframe(income_statement_df_formatted)
+        
+        st.subheader("Cash Flow Statement")
+        figures = analyzer.get_cash_flow(plot=True)
+        for fig in figures:
+            st.pyplot(fig)
+        
+        # Display Cash Flow Statement CSV with formatting
+        cash_flow_df = pd.read_csv(os.path.join(analyzer.VIS_DIR, 'cash_flow.csv'))
+        # Remove any column starting with '2020'
+        cash_flow_df = cash_flow_df.loc[:, ~cash_flow_df.columns.str.startswith('2020')]
+        cash_flow_df_formatted = cash_flow_df.applymap(lambda x: f"{x:,.2f}" if pd.notnull(x) and isinstance(x, (int, float)) else x)
+        st.dataframe(cash_flow_df_formatted)
+        
+        # Additional metrics and analysis
+        st.subheader("Financial Ratios")
+        financial_ratios = analyzer.get_financial_ratios()
+        for category, ratio_dict in financial_ratios.items():
+            st.write(f"**{category}:**")
+            for ratio, value in ratio_dict.items():
+                if value is not None:
+                    if isinstance(value, str) and '%' in value:
+                        st.write(f"- {ratio}: {value}")
+                    else:
+                        st.write(f"- {ratio}: {value}")
+                else:
+                    st.write(f"- {ratio}: N/A")
+        
+        additional_metrics = analyzer.get_additional_metrics()
+        st.subheader("Additional Metrics")
+        for metric, value in additional_metrics.items():
+            st.write(f"- {metric}: {value if value is not None else 'N/A'}")
+        
+        # Growth Metrics
+        st.subheader("Growth Metrics")
+        growth_metrics = analyzer.get_growth_metrics()
+        for metric, value in growth_metrics.items():
+            st.write(f"- {metric}: {value}")
+
+        # Trend Analysis
+        st.subheader("Trend Analysis")
+        trend_analysis = analyzer.get_trend_analysis()
+        for metric, value in trend_analysis.items():
+            st.write(f"- {metric}: {value}")
+        
+        dividend_analysis = analyzer.get_dividend_analysis()
+        st.subheader("Dividend Analysis")
+        for metric, value in dividend_analysis.items():
+            if metric == 'Dividend History' and isinstance(value, dict):
+                st.write(f"**{metric}:**")
+                for date, amount in value.items():
+                    st.write(f"- {date}: {amount}")
+            else:
+                st.write(f"- {metric}: {value}")
+        
+        risk_metrics = analyzer.get_risk_metrics()
+        st.subheader("Risk Metrics")
+        for metric, value in risk_metrics.items():
+            st.write(f"- {metric}: {value if value is not None else 'N/A'}")
+
+# Personal info card below the sidebar menu
+    st.sidebar.markdown('''
+    <div style="background-color:#23272b; border-radius:12px; padding:1.2em 1.2em 1em 1.2em; margin-top:1.5em; margin-bottom:1.5em; box-shadow:0 2px 8px rgba(0,0,0,0.15); max-width:320px;">
+        <div style="font-size:1.1rem; font-weight:700; color:#90caf9; margin-bottom:0.2em;">Marcos Heredia Pimienta</div>
+        <div style="color:#b0bec5; font-size:0.98rem; margin-bottom:0.4em;">MSc in Quantitative Finance, Universitat Autònoma de Barcelona</div>
+        <div style="color:#e0e0e0; font-size:0.95rem; margin-bottom:0.4em;">Quantitative Risk Analyst</div>
+    </div>
+    ''', unsafe_allow_html=True)
+
+    # Enlace al formulario de Google
+    st.sidebar.markdown('<div style="background-color:#23272b; padding:20px; border-radius:10px; margin-top:20px;">', unsafe_allow_html=True)
+    st.sidebar.header("💬 We value your feedback!", anchor=None)
+    st.sidebar.write("Please let us know how you feel about the app. Your insights help us improve!")
+
+    # Hipervínculo al formulario
+    form_url = "https://docs.google.com/forms/d/e/1FAIpQLSecDfBXdXynYHyouLub1ZT3AsYWa4V1N3O_OnvUKxiA21bnjg/viewform?usp=header"
+    st.sidebar.markdown(f"[Fill out the survey]({form_url})", unsafe_allow_html=True)
+    st.sidebar.markdown('</div>', unsafe_allow_html=True)
+
 
 st.markdown('<div class="footer-conference">Developed by Marcos Heredia Pimienta, Quantitative Risk Analyst</div>', unsafe_allow_html=True)
+
+

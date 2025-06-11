@@ -313,9 +313,9 @@ class FinancialAnalyzer:
             info = self.company.info
             
             growth_metrics = {
-                "Revenue Growth (YoY)": info.get('revenueGrowth', 'N/A'),
-                "Earnings Growth (YoY)": info.get('earningsGrowth', 'N/A'),
-                "Next 5 Years Growth Estimate": info.get('earningsQuarterlyGrowth', 'N/A')
+                "Revenue Growth (YoY)": f"{info.get('revenueGrowth', 'N/A') * 100:.2f}%" if info.get('revenueGrowth') is not None else 'N/A',
+                "Earnings Growth (YoY)": f"{info.get('earningsGrowth', 'N/A') * 100:.2f}%" if info.get('earningsGrowth') is not None else 'N/A',
+                "Next 5 Years Growth Estimate": f"{info.get('earningsQuarterlyGrowth', 'N/A') * 100:.2f}%" if info.get('earningsQuarterlyGrowth') is not None else 'N/A'
             }
             
             return growth_metrics
@@ -415,10 +415,10 @@ class FinancialAnalyzer:
             print(f"{'='*50}")
             
             return {
-                "Revenue Growth (YoY)": rev_growth,
-                "EPS Growth (YoY)": eps_growth,
-                "FCF Growth (YoY)": fcf_growth,
-                "Equity Growth (YoY)": equity_growth
+                "Revenue Growth (YoY)": f"{rev_growth * 100:.2f}%" if rev_growth is not None else 'N/A',
+                "EPS Growth (YoY)": f"{eps_growth * 100:.2f}%" if eps_growth is not None else 'N/A',
+                "FCF Growth (YoY)": f"{fcf_growth * 100:.2f}%" if fcf_growth is not None else 'N/A',
+                "Equity Growth (YoY)": f"{equity_growth * 100:.2f}%" if equity_growth is not None else 'N/A'
             }
 
         except Exception as e:

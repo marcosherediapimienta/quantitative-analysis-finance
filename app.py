@@ -1281,22 +1281,30 @@ if menu1 == "Fundamental Analysis":
         for category, ratio_dict in financial_ratios.items():
             st.write(f"**{category}:**")
             for ratio, value in ratio_dict.items():
-                st.write(f"- {ratio}: {value if value is not None else 'N/A'}")
+                if value is not None:
+                    if isinstance(value, str) and '%' in value:
+                        st.write(f"- {ratio}: {value}")
+                    else:
+                        st.write(f"- {ratio}: {value}")
+                else:
+                    st.write(f"- {ratio}: N/A")
         
         additional_metrics = analyzer.get_additional_metrics()
         st.subheader("Additional Metrics")
         for metric, value in additional_metrics.items():
             st.write(f"- {metric}: {value if value is not None else 'N/A'}")
         
-        growth_metrics = analyzer.get_growth_metrics()
+        # Growth Metrics
         st.subheader("Growth Metrics")
+        growth_metrics = analyzer.get_growth_metrics()
         for metric, value in growth_metrics.items():
-            st.write(f"- {metric}: {value if value is not None else 'N/A'}")
-        
-        trend_analysis = analyzer.get_trend_analysis()
+            st.write(f"- {metric}: {value}")
+
+        # Trend Analysis
         st.subheader("Trend Analysis")
+        trend_analysis = analyzer.get_trend_analysis()
         for metric, value in trend_analysis.items():
-            st.write(f"- {metric}: {value if value is not None else 'N/A'}")
+            st.write(f"- {metric}: {value}")
         
         dividend_analysis = analyzer.get_dividend_analysis()
         st.subheader("Dividend Analysis")

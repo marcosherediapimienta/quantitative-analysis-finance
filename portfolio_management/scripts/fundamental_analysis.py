@@ -426,8 +426,7 @@ class FinancialAnalyzer:
 
 # Example usage
 if __name__ == "__main__":
-    ticker = "NVDA"
-    peers = ["GOOGL", "AMZN", "AAPL"]  
+    ticker = "AAPL"
     
     analyzer = FinancialAnalyzer(ticker)
     

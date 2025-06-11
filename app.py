@@ -1246,7 +1246,8 @@ if menu1 == "Fundamental Analysis":
         
         # Display Balance Sheet CSV with formatting
         balance_sheet_df = pd.read_csv(os.path.join(analyzer.VIS_DIR, 'balance_sheet.csv'))
-        balance_sheet_df.drop(columns=['2020-12-31'], inplace=True, errors='ignore')
+        # Remove any column starting with '2020'
+        balance_sheet_df = balance_sheet_df.loc[:, ~balance_sheet_df.columns.str.startswith('2020')]
         balance_sheet_df_formatted = balance_sheet_df.applymap(lambda x: f"{x:,.2f}" if pd.notnull(x) and isinstance(x, (int, float)) else x)
         st.dataframe(balance_sheet_df_formatted)
         
@@ -1257,7 +1258,8 @@ if menu1 == "Fundamental Analysis":
         
         # Display Income Statement CSV with formatting
         income_statement_df = pd.read_csv(os.path.join(analyzer.VIS_DIR, 'income_statement.csv'))
-        income_statement_df.drop(columns=['2020-12-31'], inplace=True, errors='ignore')
+        # Remove any column starting with '2020'
+        income_statement_df = income_statement_df.loc[:, ~income_statement_df.columns.str.startswith('2020')]
         income_statement_df_formatted = income_statement_df.applymap(lambda x: f"{x:,.2f}" if pd.notnull(x) and isinstance(x, (int, float)) else x)
         st.dataframe(income_statement_df_formatted)
         
@@ -1268,7 +1270,8 @@ if menu1 == "Fundamental Analysis":
         
         # Display Cash Flow Statement CSV with formatting
         cash_flow_df = pd.read_csv(os.path.join(analyzer.VIS_DIR, 'cash_flow.csv'))
-        cash_flow_df.drop(columns=['2020-12-31'], inplace=True, errors='ignore')
+        # Remove any column starting with '2020'
+        cash_flow_df = cash_flow_df.loc[:, ~cash_flow_df.columns.str.startswith('2020')]
         cash_flow_df_formatted = cash_flow_df.applymap(lambda x: f"{x:,.2f}" if pd.notnull(x) and isinstance(x, (int, float)) else x)
         st.dataframe(cash_flow_df_formatted)
         

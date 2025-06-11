@@ -9,6 +9,7 @@ from option_pricing.binomial_model import binomial_portfolio_analysis as bpa
 from option_pricing.monte_carlo import mc_portfolio_analysis as mca
 from portfolio_management.scripts.fundamental_analysis import FinancialAnalyzer
 from portfolio_management.scripts.technical_analysis import descargar_datos, calcular_sma, plot_sma, calcular_rsi, plot_price_and_rsi_separately, calcular_macd, plot_price_and_macd_with_histogram, calcular_bollinger_bands, plot_bollinger_bands, plot_combined_analysis, calcular_momentum, plot_price_and_momentum, plot_candlestick_and_momentum, plot_candlestick_and_rsi, plot_candlestick_and_macd, plot_candlestick_and_bollinger
+import glob
 
 # Set a fixed random seed for reproducibility
 np.random.seed(42)
@@ -1229,122 +1230,80 @@ if menu1 == "Fundamental Analysis":
     
     # Button to trigger analysis
     if st.button("Run Analysis"):
+        # Remove old visualizations
+        files = glob.glob(os.path.join('portfolio_management/visualizations', '*.png'))
+        for f in files:
+            os.remove(f)
+        
         # Initialize FinancialAnalyzer
         analyzer = FinancialAnalyzer(ticker)
         
         # Core financial statements
         st.subheader("Balance Sheet")
-        st.image(os.path.join('portfolio_management/visualizations', 'Balance Sheet_Total Assets_plot.png'), caption='Total Assets')
-        st.image(os.path.join('portfolio_management/visualizations', 'Balance Sheet_Total Liabilities Net Minority Interest_plot.png'), caption='Total Liabilities Net Minority Interest')
-        st.image(os.path.join('portfolio_management/visualizations', 'Balance Sheet_Total Equity Gross Minority Interest_plot.png'), caption='Total Equity Gross Minority Interest')
-        st.image(os.path.join('portfolio_management/visualizations', 'Balance Sheet_Cash And Cash Equivalents_plot.png'), caption='Cash And Cash Equivalents')
-        st.image(os.path.join('portfolio_management/visualizations', 'Balance Sheet_Net PPE_plot.png'), caption='Net PPE')
-        st.image(os.path.join('portfolio_management/visualizations', 'Balance Sheet_Retained Earnings_plot.png'), caption='Retained Earnings')
-        st.image(os.path.join('portfolio_management/visualizations', 'Balance Sheet_Common Stock Equity_plot.png'), caption='Common Stock Equity')
-        st.image(os.path.join('portfolio_management/visualizations', 'Balance Sheet_Total Debt_plot.png'), caption='Total Debt')
-        st.image(os.path.join('portfolio_management/visualizations', 'Balance Sheet_Working Capital_plot.png'), caption='Working Capital')
+        figures = analyzer.get_balance_sheet(plot=True)
+        for fig in figures:
+            st.pyplot(fig)
+        
+        # Display Balance Sheet CSV with formatting
         balance_sheet_df = pd.read_csv(os.path.join(analyzer.VIS_DIR, 'balance_sheet.csv'))
-        # Format numbers in the balance sheet dataframe
-        balance_sheet_df_formatted = balance_sheet_df.applymap(lambda x: f"{x:,.0f}" if pd.notnull(x) and isinstance(x, (int, float)) else x)
+        balance_sheet_df.drop(columns=['2020-12-31'], inplace=True, errors='ignore')
+        balance_sheet_df_formatted = balance_sheet_df.applymap(lambda x: f"{x:,.2f}" if pd.notnull(x) and isinstance(x, (int, float)) else x)
         st.dataframe(balance_sheet_df_formatted)
         
         st.subheader("Income Statement")
-        analyzer.get_income_statement(plot=True)
-        st.image(os.path.join('portfolio_management/visualizations', 'Income Statement_Total Revenue_plot.png'), caption='Total Revenue')
-        st.image(os.path.join('portfolio_management/visualizations', 'Income Statement_Net Income_plot.png'), caption='Net Income')
-        st.image(os.path.join('portfolio_management/visualizations', 'Income Statement_Operating Income_plot.png'), caption='Operating Income')
-        st.image(os.path.join('portfolio_management/visualizations', 'Income Statement_Gross Profit_plot.png'), caption='Gross Profit')
-        st.image(os.path.join('portfolio_management/visualizations', 'Income Statement_EBITDA_plot.png'), caption='EBITDA')
-        st.image(os.path.join('portfolio_management/visualizations', 'Income Statement_EBIT_plot.png'), caption='EBIT')
-        st.image(os.path.join('portfolio_management/visualizations', 'Income Statement_Diluted EPS_plot.png'), caption='Diluted EPS')
-        st.image(os.path.join('portfolio_management/visualizations', 'Income Statement_Tax Provision_plot.png'), caption='Tax Provision')
+        figures = analyzer.get_income_statement(plot=True)
+        for fig in figures:
+            st.pyplot(fig)
+        
+        # Display Income Statement CSV with formatting
         income_statement_df = pd.read_csv(os.path.join(analyzer.VIS_DIR, 'income_statement.csv'))
-        # Format numbers in the income statement dataframe
-        income_statement_df_formatted = income_statement_df.applymap(lambda x: f"{x:,.0f}" if pd.notnull(x) and isinstance(x, (int, float)) else x)
+        income_statement_df.drop(columns=['2020-12-31'], inplace=True, errors='ignore')
+        income_statement_df_formatted = income_statement_df.applymap(lambda x: f"{x:,.2f}" if pd.notnull(x) and isinstance(x, (int, float)) else x)
         st.dataframe(income_statement_df_formatted)
         
         st.subheader("Cash Flow Statement")
-        analyzer.get_cash_flow(plot=True)
-        st.image(os.path.join('portfolio_management/visualizations', 'Cash Flow Statement_Operating Cash Flow_plot.png'), caption='Operating Cash Flow')
-        st.image(os.path.join('portfolio_management/visualizations', 'Cash Flow Statement_Free Cash Flow_plot.png'), caption='Free Cash Flow')
-        st.image(os.path.join('portfolio_management/visualizations', 'Cash Flow Statement_Investing Cash Flow_plot.png'), caption='Investing Cash Flow')
-        st.image(os.path.join('portfolio_management/visualizations', 'Cash Flow Statement_Financing Cash Flow_plot.png'), caption='Financing Cash Flow')
-        st.image(os.path.join('portfolio_management/visualizations', 'Cash Flow Statement_End Cash Position_plot.png'), caption='End Cash Position')
-        st.image(os.path.join('portfolio_management/visualizations', 'Cash Flow Statement_Changes In Cash_plot.png'), caption='Changes In Cash')
-        st.image(os.path.join('portfolio_management/visualizations', 'Cash Flow Statement_Capital Expenditure_plot.png'), caption='Capital Expenditure')
-        # Add combined cash flow plots
-        st.image(os.path.join('portfolio_management/visualizations', 'Operating_vs_Free_Cash_Flow_plot.png'), caption='Operating vs Free Cash Flow')
-        st.image(os.path.join('portfolio_management/visualizations', 'Investing_vs_Financing_Cash_Flow_plot.png'), caption='Investing vs Financing Cash Flow')
-        st.image(os.path.join('portfolio_management/visualizations', 'End_Cash_Position_vs_Changes_In_Cash_plot.png'), caption='End Cash Position vs Changes In Cash')
+        figures = analyzer.get_cash_flow(plot=True)
+        for fig in figures:
+            st.pyplot(fig)
+        
+        # Display Cash Flow Statement CSV with formatting
         cash_flow_df = pd.read_csv(os.path.join(analyzer.VIS_DIR, 'cash_flow.csv'))
-        # Format numbers in the cash flow dataframe
-        cash_flow_df_formatted = cash_flow_df.applymap(lambda x: f"{x:,.0f}" if pd.notnull(x) and isinstance(x, (int, float)) else x)
+        cash_flow_df.drop(columns=['2020-12-31'], inplace=True, errors='ignore')
+        cash_flow_df_formatted = cash_flow_df.applymap(lambda x: f"{x:,.2f}" if pd.notnull(x) and isinstance(x, (int, float)) else x)
         st.dataframe(cash_flow_df_formatted)
-    
-    st.subheader("Financial Ratios")
-    financial_ratios = analyzer.get_financial_ratios()
-    for category, ratio_dict in financial_ratios.items():
-        st.write(f"**{category}:**")
-        for ratio, value in ratio_dict.items():
-            st.write(f"{ratio}: {value:.2f}" if isinstance(value, float) else f"{ratio}: {value}")
-    
-    st.subheader("Additional Metrics")
-    additional_metrics = analyzer.get_additional_metrics()
-    for metric, value in additional_metrics.items():
-        st.write(f"{metric}: {value}")
-    
-    st.subheader("Growth Metrics")
-    growth_metrics = analyzer.get_growth_metrics()
-    for metric, value in growth_metrics.items():
-        st.write(f"{metric}: {value*100:.2f}%" if isinstance(value, float) else f"{metric}: {value}")
-    
-    st.subheader("Trend Analysis")
-    trend_analysis = analyzer.get_trend_analysis()
-    for metric, value in trend_analysis.items():
-        st.write(f"{metric}: {value*100:.2f}%" if isinstance(value, float) else f"{metric}: {value}")
-    
-    st.subheader("Dividend Analysis")
-    dividend_analysis = analyzer.get_dividend_analysis()
-    for metric, value in dividend_analysis.items():
-        st.write(f"{metric}: {value}")
-    
-    st.subheader("Risk Metrics")
-    risk_metrics = analyzer.get_risk_metrics()
-    for metric, value in risk_metrics.items():
-        st.write(f"{metric}: {value}")
-
-    # Additional metrics and analysis
-    st.subheader("Financial Ratios")
-    financial_ratios = analyzer.get_financial_ratios()
-    for category, ratio_dict in financial_ratios.items():
-        st.write(f"**{category}:**")
-        for ratio, value in ratio_dict.items():
-            st.write(f"- {ratio}: {value if value is not None else 'N/A'}")
-    
-    additional_metrics = analyzer.get_additional_metrics()
-    st.subheader("Additional Metrics")
-    for metric, value in additional_metrics.items():
-        st.write(f"- {metric}: {value if value is not None else 'N/A'}")
-    
-    growth_metrics = analyzer.get_growth_metrics()
-    st.subheader("Growth Metrics")
-    for metric, value in growth_metrics.items():
-        st.write(f"- {metric}: {value if value is not None else 'N/A'}")
-    
-    trend_analysis = analyzer.get_trend_analysis()
-    st.subheader("Trend Analysis")
-    for metric, value in trend_analysis.items():
-        st.write(f"- {metric}: {value if value is not None else 'N/A'}")
-    
-    dividend_analysis = analyzer.get_dividend_analysis()
-    st.subheader("Dividend Analysis")
-    for metric, value in dividend_analysis.items():
-        st.write(f"- {metric}: {value if value is not None else 'N/A'}")
-    
-    risk_metrics = analyzer.get_risk_metrics()
-    st.subheader("Risk Metrics")
-    for metric, value in risk_metrics.items():
-        st.write(f"- {metric}: {value if value is not None else 'N/A'}")
+        
+        # Additional metrics and analysis
+        st.subheader("Financial Ratios")
+        financial_ratios = analyzer.get_financial_ratios()
+        for category, ratio_dict in financial_ratios.items():
+            st.write(f"**{category}:**")
+            for ratio, value in ratio_dict.items():
+                st.write(f"- {ratio}: {value if value is not None else 'N/A'}")
+        
+        additional_metrics = analyzer.get_additional_metrics()
+        st.subheader("Additional Metrics")
+        for metric, value in additional_metrics.items():
+            st.write(f"- {metric}: {value if value is not None else 'N/A'}")
+        
+        growth_metrics = analyzer.get_growth_metrics()
+        st.subheader("Growth Metrics")
+        for metric, value in growth_metrics.items():
+            st.write(f"- {metric}: {value if value is not None else 'N/A'}")
+        
+        trend_analysis = analyzer.get_trend_analysis()
+        st.subheader("Trend Analysis")
+        for metric, value in trend_analysis.items():
+            st.write(f"- {metric}: {value if value is not None else 'N/A'}")
+        
+        dividend_analysis = analyzer.get_dividend_analysis()
+        st.subheader("Dividend Analysis")
+        for metric, value in dividend_analysis.items():
+            st.write(f"- {metric}: {value if value is not None else 'N/A'}")
+        
+        risk_metrics = analyzer.get_risk_metrics()
+        st.subheader("Risk Metrics")
+        for metric, value in risk_metrics.items():
+            st.write(f"- {metric}: {value if value is not None else 'N/A'}")
 
 
 st.markdown('<div class="footer-conference">Developed by Marcos Heredia Pimienta, Quantitative Risk Analyst</div>', unsafe_allow_html=True)

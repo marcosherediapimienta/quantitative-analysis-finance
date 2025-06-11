@@ -4,6 +4,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime
 import os
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class FinancialAnalyzer:
     def __init__(self, ticker):
@@ -68,8 +72,10 @@ class FinancialAnalyzer:
                 figures.append(fig)  
 
                 # Save the figure as a .png file
-                plt.savefig(os.path.join(self.VIS_DIR, f'{title}_{metric}_plot.png'))
+                file_path = os.path.join(self.VIS_DIR, f'{title}_{metric}_plot.png')
+                plt.savefig(file_path)
                 plt.close(fig)  # Close the figure after saving
+                logging.info(f'Saved plot: {file_path}')
 
         return figures  
 

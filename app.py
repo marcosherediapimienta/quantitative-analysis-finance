@@ -8,7 +8,14 @@ from option_pricing.black_scholes_model import bs_portfolio_analysis as bsa
 from option_pricing.binomial_model import binomial_portfolio_analysis as bpa
 from option_pricing.monte_carlo import mc_portfolio_analysis as mca
 from portfolio_management.scripts.fundamental_analysis import FinancialAnalyzer
-from portfolio_management.scripts.technical_analysis import descargar_datos, calcular_sma_multiple, plot_sma_multiple, calcular_ema_multiple, plot_ema_multiple, calcular_rsi, calcular_macd, calcular_bollinger_bands, calcular_momentum, calcular_adx, calcular_obv, calcular_stochastic_oscillator, plot_candlestick_and_momentum, plot_candlestick_and_rsi, plot_candlestick_and_macd, plot_candlestick_and_bollinger, plot_adx, plot_stochastic_oscillator, plot_macd_with_adx, plot_macd_with_stochastic, plot_rsi_with_adx, plot_rsi_with_stochastic
+from portfolio_management.scripts.technical_analysis import (
+    descargar_datos, calcular_sma_multiple, calcular_ema_multiple, calcular_rsi,
+    calcular_macd, calcular_bollinger_bands, calcular_momentum, calcular_adx,
+    calcular_obv, calcular_stochastic_oscillator, plot_candlestick_and_momentum,
+    plot_candlestick_and_rsi, plot_candlestick_and_macd, plot_candlestick_and_bollinger,
+    plot_sma_multiple, plot_ema_multiple, plot_adx, plot_stochastic_oscillator,
+    plot_macd_with_adx, plot_macd_with_stochastic, plot_rsi_with_adx, plot_rsi_with_stochastic)
+
 import glob
 
 # Set a fixed random seed for reproducibility
@@ -1164,69 +1171,77 @@ if menu1 == "Sensitivity Analysis":
 if menu1 == "Technical Analysis":
     st.header("📈 Technical Analysis")
     st.write("Perform technical analysis on stock data.")
-    # User inputs for ticker, date range, and interval
-    ticker = st.text_input("Enter Ticker Symbol:", "AAPL")
-    start_date = st.date_input("Start Date:", pd.to_datetime("2022-01-01"))
-    end_date = st.date_input("End Date:", pd.to_datetime("2023-01-01"))
-    interval = st.selectbox("Select Interval:", ["daily", "weekly", "monthly"], index=0)
+    # User input for ticker and interval
+    ticker = st.text_input("Enter Stock Ticker:", "AAPL")
+    interval = st.selectbox("Select Interval:", ["daily", "weekly", "monthly"])
+    start_date = st.date_input("Select Start Date:", pd.to_datetime("2022-01-01"))
+    end_date = st.date_input("Select End Date:", pd.to_datetime("2023-01-01"))
 
-    # Fetch and display data
-    if st.button("Analyze"):
-        try:
-            datos = descargar_datos(ticker, interval, start_date, end_date)
-            # Perform and display technical analysis
-            calcular_sma_multiple(datos)
-            calcular_ema_multiple(datos)
-            calcular_rsi(datos)
-            calcular_macd(datos)
-            calcular_bollinger_bands(datos)
-            calcular_momentum(datos)
-            calcular_adx(datos)
-            calcular_obv(datos)
-            calcular_stochastic_oscillator(datos)
+    # Download data
+    df = descargar_datos(ticker=ticker, interval=interval, start=start_date, end=end_date)
 
-            # Plot indicators
-            fig_sma = plot_sma_multiple(datos, ticker)
-            st.pyplot(fig_sma)
+    # Single button to perform all calculations and plots
+    if st.button("Run Full Technical Analysis"):
+        # Perform all calculations
+        calcular_sma_multiple(df)
+        calcular_ema_multiple(df)
+        calcular_rsi(df)
+        calcular_macd(df)
+        calcular_bollinger_bands(df)
+        calcular_momentum(df)
+        calcular_adx(df)
+        calcular_obv(df)
+        calcular_stochastic_oscillator(df)
 
-            fig_ema = plot_ema_multiple(datos, ticker)
-            st.pyplot(fig_ema)
+        # Display calculated data
+        st.write("SMA calculated:", df[['date', 'close', 'sma_20', 'sma_50', 'sma_200']].tail())
+        st.write("EMA calculated:", df[['date', 'close', 'ema_20', 'ema_50']].tail())
+        st.write("RSI calculated:", df[['date', 'close', 'rsi']].tail())
+        st.write("MACD calculated:", df[['date', 'macd', 'signal_line']].tail())
+        st.write("Bollinger Bands calculated:", df[['date', 'close', 'upper_band', 'lower_band']].tail())
+        st.write("Momentum calculated:", df[['date', 'close', 'momentum']].tail())
+        st.write("ADX calculated:", df[['date', 'adx']].tail())
+        st.write("OBV calculated:", df[['date', 'obv']].tail())
+        st.write("Stochastic Oscillator calculated:", df[['date', 'stoch_k', 'stoch_d']].tail())
 
-            fig_candlestick_momentum = plot_candlestick_and_momentum(datos, ticker)
-            st.pyplot(fig_candlestick_momentum)
+        # Generate and display plots
+        fig1 = plot_candlestick_and_momentum(df, ticker)
+        st.pyplot(fig1)
 
-            fig_candlestick_rsi = plot_candlestick_and_rsi(datos, ticker)
-            st.pyplot(fig_candlestick_rsi)
+        fig2 = plot_candlestick_and_rsi(df, ticker)
+        st.pyplot(fig2)
 
-            fig_candlestick_macd = plot_candlestick_and_macd(datos, ticker)
-            st.pyplot(fig_candlestick_macd)
+        fig3 = plot_candlestick_and_macd(df, ticker)
+        st.pyplot(fig3)
 
-            fig_candlestick_bollinger = plot_candlestick_and_bollinger(datos, ticker)
-            st.pyplot(fig_candlestick_bollinger)
+        fig4 = plot_candlestick_and_bollinger(df, ticker)
+        st.pyplot(fig4)
 
-            fig_adx = plot_adx(datos, ticker)
-            st.pyplot(fig_adx)
+        fig5 = plot_sma_multiple(df, ticker)
+        st.pyplot(fig5)
 
-            fig_stochastic = plot_stochastic_oscillator(datos, ticker)
-            st.pyplot(fig_stochastic)
+        fig6 = plot_ema_multiple(df, ticker)
+        st.pyplot(fig6)
 
-            # Plot combined indicators
-            fig_macd_adx = plot_macd_with_adx(datos, ticker)
-            st.pyplot(fig_macd_adx)
+        fig7 = plot_adx(df, ticker)
+        st.pyplot(fig7)
 
-            fig_macd_stochastic = plot_macd_with_stochastic(datos, ticker)
-            st.pyplot(fig_macd_stochastic)
+        fig8 = plot_stochastic_oscillator(df, ticker)
+        st.pyplot(fig8)
 
-            fig_rsi_adx = plot_rsi_with_adx(datos, ticker)
-            st.pyplot(fig_rsi_adx)
+        fig9 = plot_macd_with_adx(df, ticker)
+        st.pyplot(fig9)
 
-            fig_rsi_stochastic = plot_rsi_with_stochastic(datos, ticker)
-            st.pyplot(fig_rsi_stochastic)
+        fig10 = plot_macd_with_stochastic(df, ticker)
+        st.pyplot(fig10)
 
-        except Exception as e:
-            st.error(f"Error in technical analysis: {str(e)}")
+        fig11 = plot_rsi_with_adx(df, ticker)
+        st.pyplot(fig11)
 
-# Personal info card below the sidebar menu
+        fig12 = plot_rsi_with_stochastic(df, ticker)
+        st.pyplot(fig12)
+
+    # Personal info card below the sidebar menu
     st.sidebar.markdown('''
     <div style="background-color:#23272b; border-radius:12px; padding:1.2em 1.2em 1em 1.2em; margin-top:1.5em; margin-bottom:1.5em; box-shadow:0 2px 8px rgba(0,0,0,0.15); max-width:320px;">
         <div style="font-size:1.1rem; font-weight:700; color:#90caf9; margin-bottom:0.2em;">Marcos Heredia Pimienta</div>

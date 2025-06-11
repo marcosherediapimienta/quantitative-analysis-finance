@@ -6,7 +6,7 @@ import mplfinance as mpf
 import os
 
 # Ensure the visualizations directory exists
-visualizations_dir = os.path.join('quantitative-analysis-finance', 'portfolio_management', 'visualizations')
+visualizations_dir = os.path.join(os.getcwd(), 'quantitative-analysis-finance', 'portfolio_management', 'visualizations')
 os.makedirs(visualizations_dir, exist_ok=True)
 
 def descargar_datos(ticker='AAPL', interval='daily', start=None, end=None):

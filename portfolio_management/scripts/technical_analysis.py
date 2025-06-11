@@ -6,7 +6,7 @@ import mplfinance as mpf
 import os
 
 # Ensure the visualizations directory exists
-visualizations_dir = 'quantitative-analysis-finance/portfolio_management/visualizations'
+visualizations_dir = os.path.join('quantitative-analysis-finance', 'portfolio_management', 'visualizations')
 os.makedirs(visualizations_dir, exist_ok=True)
 
 def descargar_datos(ticker='AAPL', interval='daily', start=None, end=None):
@@ -129,6 +129,7 @@ def plot_candlestick_and_momentum(df, ticker):
     plt.tight_layout()
     fig.savefig(os.path.join(visualizations_dir, f'{ticker}_candlestick_and_momentum.png'))
     plt.close(fig)
+    return fig
 
 def plot_candlestick_and_rsi(df, ticker):
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 15), sharex=True)
@@ -157,6 +158,7 @@ def plot_candlestick_and_rsi(df, ticker):
     ax2.legend(loc='best')
 
     plt.tight_layout()
+    fig.savefig(os.path.join(visualizations_dir, f'{ticker}_candlestick_and_rsi.png'))
     return fig
 
 def plot_candlestick_and_macd(df, ticker):
@@ -213,6 +215,7 @@ def plot_candlestick_and_bollinger(df, ticker):
     plt.tight_layout()
     fig.savefig(os.path.join(visualizations_dir, f'{ticker}_candlestick_and_bollinger.png'))
     plt.close(fig)
+    return fig
 
 def plot_sma_multiple(df, ticker):
     """Plot SMA for 20, 50, and 200 days with candlestick chart and save as PNG."""
@@ -236,6 +239,7 @@ def plot_sma_multiple(df, ticker):
 
     fig.savefig(os.path.join(visualizations_dir, f'{ticker}_sma_multiple.png'))
     plt.close(fig)
+    return fig
 
 def plot_ema_multiple(df, ticker):
     """Plot EMA for 20 and 50 days with candlestick chart and save as PNG."""
@@ -258,6 +262,7 @@ def plot_ema_multiple(df, ticker):
 
     fig.savefig(os.path.join(visualizations_dir, f'{ticker}_ema_multiple.png'))
     plt.close(fig)
+    return fig
 
 def plot_adx(df, ticker):
     """Plot candlestick chart and ADX below, then save as PNG."""
@@ -287,6 +292,7 @@ def plot_adx(df, ticker):
     plt.tight_layout()
     fig.savefig(os.path.join(visualizations_dir, f'{ticker}_adx.png'))
     plt.close(fig)
+    return fig
 
 def plot_stochastic_oscillator(df, ticker):
     """Plot candlestick chart and Stochastic Oscillator below, then save as PNG."""
@@ -319,6 +325,7 @@ def plot_stochastic_oscillator(df, ticker):
     plt.tight_layout()
     fig.savefig(os.path.join(visualizations_dir, f'{ticker}_stochastic_oscillator.png'))
     plt.close(fig)
+    return fig
 
 def plot_macd_with_adx(df, ticker):
     """Plot candlestick chart with MACD and ADX below, then save as PNG."""
@@ -357,7 +364,7 @@ def plot_macd_with_adx(df, ticker):
     plt.tight_layout()
     fig.savefig(os.path.join(visualizations_dir, f'{ticker}_macd_with_adx.png'))
     plt.close(fig)
-
+    return fig
 
 def plot_macd_with_stochastic(df, ticker):
     """Plot candlestick chart with MACD and Stochastic Oscillator below, then save as PNG."""
@@ -399,7 +406,7 @@ def plot_macd_with_stochastic(df, ticker):
     plt.tight_layout()
     fig.savefig(os.path.join(visualizations_dir, f'{ticker}_macd_with_stochastic.png'))
     plt.close(fig)
-
+    return fig
 
 def plot_rsi_with_adx(df, ticker):
     """Plot candlestick chart with RSI and ADX below, then save as PNG."""
@@ -438,7 +445,7 @@ def plot_rsi_with_adx(df, ticker):
     plt.tight_layout()
     fig.savefig(os.path.join(visualizations_dir, f'{ticker}_rsi_with_adx.png'))
     plt.close(fig)
-
+    return fig
 
 def plot_rsi_with_stochastic(df, ticker):
     """Plot candlestick chart with RSI and Stochastic Oscillator below, then save as PNG."""
@@ -480,7 +487,7 @@ def plot_rsi_with_stochastic(df, ticker):
     plt.tight_layout()
     fig.savefig(os.path.join(visualizations_dir, f'{ticker}_rsi_with_stochastic.png'))
     plt.close(fig)
-
+    return fig
 
 if __name__ == "__main__":
     ticker = 'META'  # Default ticker

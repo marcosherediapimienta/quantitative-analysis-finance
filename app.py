@@ -8,7 +8,7 @@ from option_pricing.black_scholes_model import bs_portfolio_analysis as bsa
 from option_pricing.binomial_model import binomial_portfolio_analysis as bpa
 from option_pricing.monte_carlo import mc_portfolio_analysis as mca
 from portfolio_management.scripts.fundamental_analysis import FinancialAnalyzer
-from portfolio_management.scripts.technical_analysis import descargar_datos, calcular_sma, plot_sma, calcular_rsi, plot_price_and_rsi_separately, calcular_macd, plot_price_and_macd_with_histogram, calcular_bollinger_bands, plot_bollinger_bands, plot_combined_analysis, calcular_momentum, plot_price_and_momentum, plot_candlestick_and_momentum, plot_candlestick_and_rsi, plot_candlestick_and_macd, plot_candlestick_and_bollinger
+from portfolio_management.scripts.technical_analysis import descargar_datos, calcular_sma_multiple, plot_sma_multiple, calcular_ema_multiple, plot_ema_multiple, calcular_rsi, calcular_macd, calcular_bollinger_bands, calcular_momentum, calcular_adx, calcular_obv, calcular_stochastic_oscillator, plot_candlestick_and_momentum, plot_candlestick_and_rsi, plot_candlestick_and_macd, plot_candlestick_and_bollinger, plot_adx, plot_stochastic_oscillator, plot_macd_with_adx, plot_macd_with_stochastic, plot_rsi_with_adx, plot_rsi_with_stochastic
 import glob
 
 # Set a fixed random seed for reproducibility
@@ -1164,7 +1164,6 @@ if menu1 == "Sensitivity Analysis":
 if menu1 == "Technical Analysis":
     st.header("📈 Technical Analysis")
     st.write("Perform technical analysis on stock data.")
-
     # User inputs for ticker, date range, and interval
     ticker = st.text_input("Enter Ticker Symbol:", "AAPL")
     start_date = st.date_input("Start Date:", pd.to_datetime("2022-01-01"))
@@ -1176,17 +1175,22 @@ if menu1 == "Technical Analysis":
         try:
             datos = descargar_datos(ticker, interval, start_date, end_date)
             # Perform and display technical analysis
-            calcular_sma(datos)
-            fig_sma = plot_sma(datos, ticker)
-            st.pyplot(fig_sma)
-
+            calcular_sma_multiple(datos)
+            calcular_ema_multiple(datos)
             calcular_rsi(datos)
             calcular_macd(datos)
             calcular_bollinger_bands(datos)
             calcular_momentum(datos)
-            
-            fig_combined = plot_combined_analysis(datos, ticker)
-            st.pyplot(fig_combined)
+            calcular_adx(datos)
+            calcular_obv(datos)
+            calcular_stochastic_oscillator(datos)
+
+            # Plot indicators
+            fig_sma = plot_sma_multiple(datos, ticker)
+            st.pyplot(fig_sma)
+
+            fig_ema = plot_ema_multiple(datos, ticker)
+            st.pyplot(fig_ema)
 
             fig_candlestick_momentum = plot_candlestick_and_momentum(datos, ticker)
             st.pyplot(fig_candlestick_momentum)
@@ -1200,8 +1204,28 @@ if menu1 == "Technical Analysis":
             fig_candlestick_bollinger = plot_candlestick_and_bollinger(datos, ticker)
             st.pyplot(fig_candlestick_bollinger)
 
+            fig_adx = plot_adx(datos, ticker)
+            st.pyplot(fig_adx)
+
+            fig_stochastic = plot_stochastic_oscillator(datos, ticker)
+            st.pyplot(fig_stochastic)
+
+            # Plot combined indicators
+            fig_macd_adx = plot_macd_with_adx(datos, ticker)
+            st.pyplot(fig_macd_adx)
+
+            fig_macd_stochastic = plot_macd_with_stochastic(datos, ticker)
+            st.pyplot(fig_macd_stochastic)
+
+            fig_rsi_adx = plot_rsi_with_adx(datos, ticker)
+            st.pyplot(fig_rsi_adx)
+
+            fig_rsi_stochastic = plot_rsi_with_stochastic(datos, ticker)
+            st.pyplot(fig_rsi_stochastic)
+
         except Exception as e:
             st.error(f"Error in technical analysis: {str(e)}")
+
 # Personal info card below the sidebar menu
     st.sidebar.markdown('''
     <div style="background-color:#23272b; border-radius:12px; padding:1.2em 1.2em 1em 1.2em; margin-top:1.5em; margin-bottom:1.5em; box-shadow:0 2px 8px rgba(0,0,0,0.15); max-width:320px;">
@@ -1342,3 +1366,5 @@ if menu1 == "Fundamental Analysis":
 
 
 st.markdown('<div class="footer-conference">Developed by Marcos Heredia Pimienta, Quantitative Risk Analyst</div>', unsafe_allow_html=True)
+
+

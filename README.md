@@ -1,56 +1,47 @@
 # Quantitative Analysis Finance
 
-A comprehensive Python toolkit for quantitative finance, focused on option pricing, risk analysis, and portfolio management. This project provides robust implementations of the most important models in modern finance, with both script-based and interactive (Streamlit) interfaces.
+A comprehensive Python toolkit for quantitative finance, focusing on option pricing, risk analysis, and portfolio management. This project provides robust implementations of key financial models, with both script-based and interactive (Streamlit) interfaces.
 
 ## Features
 
 ### Option Pricing
 
-- **European Options**:  
-  - Black-Scholes Model  
-  - Binomial Model  
-  - Monte Carlo Simulation  
-  - Finite Difference Method  
-- **American Options**:  
-  - Binomial Model  
-  - Monte Carlo (Longstaff-Schwartz)  
-- **Implied Volatility Calculation** for all models
-- **Greeks Calculation** (Delta, Gamma, Vega, Theta, Rho) for all models
-- **Model Comparison**: Visual and numerical comparison of pricing models
+- **European and American Options**:  
+  - **Black-Scholes Model**: Calculate prices and Greeks for European options.
+  - **Binomial Model**: Suitable for both European and American options, providing flexibility in option pricing.
+  - **Monte Carlo Simulation**: Offers a stochastic approach to option pricing, applicable to both European and American options.
+  - **Finite Difference Method**: A numerical method for pricing options, particularly useful for complex derivatives.
+- **Implied Volatility Calculation**: Determine the market's expectation of future volatility using the Black-Scholes model.
+- **Greeks Calculation**: Compute Delta, Gamma, Vega, Theta, and Rho for all models to assess risk and sensitivity.
+- **Model Comparison**: Visual and numerical comparison of pricing models to evaluate performance and accuracy.
+- **Option Portfolios**: Construct and analyze portfolios of options to optimize risk and return.
+- **Hedging Strategies**: Implement Delta, Delta+Gamma, and Vega hedging to manage portfolio risk.
+- **Sensitivity Analysis**: Automated tools to analyze the impact of changes in key risk factors (Spot, interest rate, Volatility) on option pricing and portfolio value.
 
 ### Portfolio Management
 
-- **Mean-Variance Optimization** (Markowitz)
-- **CAPM (Capital Asset Pricing Model)**
-- **Fundamental and Technical Analysis**
-- **Market Risk Analysis**
-- **Portfolio Value-at-Risk (VaR) and Expected Shortfall (ES)**
-- **Portfolio Greeks Calculation**
+- **Fundamental and Technical Analysis**: Evaluate securities using financial statements and market data.
 
 ### Data
 
-- Integration with Yahoo Finance for real-time data
-- Automated retrieval of risk-free rates and option chains
+- **Real-Time Data Integration**: Seamless integration with Yahoo Finance for up-to-date market data.
 
 ### Interactive App
 
-- **Streamlit App** for visual exploration and comparison of models
-- User-friendly interface for both beginners and professionals
-- **Automated Sensitivity Analysis**: For Black-Scholes, Binomial, and Monte Carlo models, the app allows you to generate and visualize sensitivity analysis for Spot, interest rate (r), and Volatility with a single click. Results are saved as both PNG plots and CSV summary tables, which are displayed directly in the app for all models.
-- **Hedging & Sensitivity Section**: Analyze the impact of Delta, Delta+Gamma, and Vega hedging on your portfolio, and browse the corresponding risk and sensitivity outputs interactively.
-
----
+- **Streamlit App**: A user-friendly interface for exploring and comparing financial models.
+- **Comprehensive Analysis**: Supports full workflows for Black-Scholes, Binomial, and Monte Carlo models, including sensitivity analysis and hedging strategies.
+- **Visualization and Reporting**: Generate and display plots and tables for sensitivity analysis and model comparison.
 
 ## Installation
 
-1. Clone the repository:
+1. **Clone the repository**:
    ```bash
    git clone https://github.com/yourusername/quantitative-analysis-finance.git
    cd quantitative-analysis-finance
    ```
-2. Install dependencies:
+2. **Install dependencies**:
    ```bash
-   pip install -r option_pricing/requirements.txt
+   pip install -r requirements.txt
    ```
 
 ## Usage
@@ -63,61 +54,41 @@ A comprehensive Python toolkit for quantitative finance, focused on option prici
   python option_pricing/binomial_model/european_options/european_binomial.py
   ```
 
-### Portfolio Management
-
-- Example (Mean-Variance Optimization):
-  ```bash
-  python portfolio-management/scripts/Portfolio_Optimization.py
-  ```
-
-### Streamlit App
-
-- Launch the interactive app:
-  ```bash
-  streamlit run app.py
-  ```
-- **Note:** The app supports full workflow for Black-Scholes, Binomial, and Monte Carlo models, including automated generation and display of sensitivity analysis (plots and tables) for all key risk factors.
-
----
-
 ## Directory Structure
 
 ```
-option_pricing/
-  ├── black_scholes_model/
-  ├── binomial_model/
-  ├── monte_carlo/
-  ├── finite_difference_method/
-  ├── app.py
-  ├── requirements.txt
-portfolio-management/
-  ├── scripts/
-  ├── main.py
-LICENSE
-README.md
+quantitative-analysis-finance/
+├── app.py
+├── LICENSE
+├── README.md
+├── requirements.txt
+├── option_pricing/
+│   ├── black_scholes_model/
+│   ├── binomial_model/
+│   ├── monte_carlo/
+│   ├── finite_difference_method/
+│   ├── data/
+│   └── visualizations/
+├── portfolio_management/
+│   ├── scripts/
+│   ├── visualizations/
+│   └── main.py
+└── tests/
 ```
-
----
 
 ## License
 
 This project is licensed under the **GNU Affero General Public License v3.0 (AGPLv3)**.  
 See the [LICENSE](LICENSE) file for details.
 
----
-
 ## Author
 
 **Marcos Heredia Pimienta**  
 MSc in Quantitative Finance
 
----
-
 ## Contributing
 
 Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
-
----
 
 ## Disclaimer
 

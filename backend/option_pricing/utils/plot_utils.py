@@ -16,6 +16,7 @@ def plot_binomial_price_histogram(option: Option, N=1000, n_sim=1000, save_path=
     plt.title('Histograma precios - Binomial')
     plt.grid(True)
     if save_path:
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
         plt.savefig(save_path)
         print(f'Histograma guardado en {save_path}')
     else:
@@ -31,6 +32,7 @@ def plot_bs_price_histogram(option: Option, n_sim=1000, save_path=None):
     plt.title('Histograma precios - Black-Scholes')
     plt.grid(True)
     if save_path:
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
         plt.savefig(save_path)
         print(f'Histograma guardado en {save_path}')
     else:
@@ -46,6 +48,7 @@ def plot_mc_price_histogram(option: Option, n_sim=1000, seed=42, save_path=None)
     plt.title('Histograma precios - Monte Carlo')
     plt.grid(True)
     if save_path:
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
         plt.savefig(save_path)
         print(f'Histograma guardado en {save_path}')
     else:
@@ -62,6 +65,7 @@ def plot_binomial_pnl_portfolio_histogram(options, N=1000, n_sim=1000, save_path
     plt.title('Histograma PnL Portfolio - Binomial')
     plt.grid(True)
     if save_path:
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
         plt.savefig(save_path)
         print(f'Histograma PnL guardado en {save_path}')
     else:
@@ -77,6 +81,7 @@ def plot_bs_pnl_portfolio_histogram(options, n_sim=1000, save_path=None):
     plt.title('Histograma PnL Portfolio - Black-Scholes')
     plt.grid(True)
     if save_path:
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
         plt.savefig(save_path)
         print(f'Histograma PnL guardado en {save_path}')
     else:
@@ -92,6 +97,7 @@ def plot_mc_pnl_portfolio_histogram(options, n_sim=1000, seed=42, save_path=None
     plt.title('Histograma PnL Portfolio - Monte Carlo')
     plt.grid(True)
     if save_path:
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
         plt.savefig(save_path)
         print(f'Histograma PnL guardado en {save_path}')
     else:
@@ -119,6 +125,7 @@ def plot_binomial_sensitivity(option: Option, param: str, N=1000, save_path=None
     plt.title(f'Sensibilidad {param} - Binomial')
     plt.grid(True)
     if save_path:
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
         plt.savefig(save_path)
         print(f'Gráfico guardado en {save_path}')
     else:
@@ -145,6 +152,7 @@ def plot_bs_sensitivity(option: Option, param: str, save_path=None):
     plt.title(f'Sensibilidad {param} - Black-Scholes')
     plt.grid(True)
     if save_path:
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
         plt.savefig(save_path)
         print(f'Gráfico guardado en {save_path}')
     else:
@@ -171,6 +179,7 @@ def plot_mc_sensitivity(option: Option, param: str, n_sim=10000, seed=42, save_p
     plt.title(f'Sensibilidad {param} - Monte Carlo')
     plt.grid(True)
     if save_path:
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
         plt.savefig(save_path)
         print(f'Gráfico guardado en {save_path}')
     else:

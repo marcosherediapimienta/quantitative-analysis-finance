@@ -17,8 +17,8 @@ class TestMonteCarlo(unittest.TestCase):
         print(f"Precio opción Put (Monte Carlo, n_sim={n_sim}, seed={seed}): {put_price}")
         self.assertAlmostEqual(put_price, expected_put, delta=tolerance)
         # Plot histograma y sensibilidad
-        plot_mc_price_histogram(put_option, n_sim=500, seed=seed, save_path='option_pricing/visualizations/test_mc_put_hist.png')
-        plot_mc_sensitivity(put_option, 'spot', n_sim=500, seed=seed, save_path='option_pricing/visualizations/test_mc_put_sens_spot.png')
+        plot_mc_price_histogram(put_option, n_sim=500, seed=seed, save_path='backend/option_pricing/visualizations/test_mc_put_hist.png')
+        plot_mc_sensitivity(put_option, 'spot', n_sim=500, seed=seed, save_path='backend/option_pricing/visualizations/test_mc_put_sens_spot.png')
 
         # Test para opción call
         call_option = Option('call', 'european', 100, 100, 1, 0.2, 0.05)
@@ -26,8 +26,8 @@ class TestMonteCarlo(unittest.TestCase):
         print(f"Precio opción Call (Monte Carlo, n_sim={n_sim}, seed={seed}): {call_price}")
         self.assertAlmostEqual(call_price, expected_call, delta=tolerance)
         # Plot histograma y sensibilidad
-        plot_mc_price_histogram(call_option, n_sim=500, seed=seed, save_path='option_pricing/visualizations/test_mc_call_hist.png')
-        plot_mc_sensitivity(call_option, 'spot', n_sim=500, seed=seed, save_path='option_pricing/visualizations/test_mc_call_sens_spot.png')
+        plot_mc_price_histogram(call_option, n_sim=500, seed=seed, save_path='backend/option_pricing/visualizations/test_mc_call_hist.png')
+        plot_mc_sensitivity(call_option, 'spot', n_sim=500, seed=seed, save_path='backend/option_pricing/visualizations/test_mc_call_sens_spot.png')
 
 if __name__ == '__main__':
     unittest.main()

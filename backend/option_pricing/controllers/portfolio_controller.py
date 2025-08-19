@@ -1,7 +1,7 @@
-from ..models.portfolio import Portfolio
-from ..services.binomial_service import BinomialService
-from ..services.black_scholes_service import BlackScholesService
-from ..services.monte_carlo_service import MonteCarloService
+from backend.option_pricing.models.portfolio import Portfolio
+from backend.option_pricing.services.binomial_service import BinomialService
+from backend.option_pricing.services.black_scholes_service import BlackScholesService
+from backend.option_pricing.services.monte_carlo_service import MonteCarloService
 
 
 class PortfolioController:

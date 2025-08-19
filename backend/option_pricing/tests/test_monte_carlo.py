@@ -1,7 +1,7 @@
 import unittest
-from ..models.option import Option
-from ..services.monte_carlo_service import MonteCarloService
-from ..utils.plot_utils import plot_mc_price_histogram, plot_mc_sensitivity
+from backend.option_pricing.models.option import Option
+from backend.option_pricing.services.monte_carlo_service import MonteCarloService
+from backend.option_pricing.utils.plot_utils import plot_mc_price_histogram, plot_mc_sensitivity
 
 class TestMonteCarlo(unittest.TestCase):
     def test_price(self):

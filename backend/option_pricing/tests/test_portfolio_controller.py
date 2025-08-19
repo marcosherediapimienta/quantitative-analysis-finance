@@ -1,6 +1,6 @@
 import unittest
-from ..models.option import Option
-from ..controllers.portfolio_controller import PortfolioController
+from backend.option_pricing.models.option import Option
+from backend.option_pricing.controllers.portfolio_controller import PortfolioController
 
 class TestPortfolioController(unittest.TestCase):
     def setUp(self):

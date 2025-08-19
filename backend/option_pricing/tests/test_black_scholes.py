@@ -1,7 +1,7 @@
 import unittest
-from option_pricing.models.option import Option
-from option_pricing.services.black_scholes_service import BlackScholesService
-from option_pricing.utils.plot_utils import plot_bs_price_histogram, plot_bs_sensitivity
+from ..models.option import Option
+from ..services.black_scholes_service import BlackScholesService
+from ..utils.plot_utils import plot_bs_price_histogram, plot_bs_sensitivity
 
 class TestBlackScholes(unittest.TestCase):
     def test_price(self):

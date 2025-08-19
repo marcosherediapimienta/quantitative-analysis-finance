@@ -1,5 +1,5 @@
 from typing import List
-from option_pricing.models.option import Option
+from .option import Option
 
 class Portfolio:
     def __init__(self, options: List[Option]):

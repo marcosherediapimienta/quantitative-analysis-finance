@@ -1,7 +1,7 @@
 import unittest
-from option_pricing.models.option import Option
-from option_pricing.services.binomial_service import BinomialService
-from option_pricing.utils.plot_utils import plot_binomial_price_histogram, plot_binomial_sensitivity
+from ..models.option import Option
+from ..services.binomial_service import BinomialService
+from ..utils.plot_utils import plot_binomial_price_histogram, plot_binomial_sensitivity
 
 class TestBinomial(unittest.TestCase):
     def test_price(self):

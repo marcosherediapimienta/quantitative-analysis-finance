@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.stats import norm
-from option_pricing.models.option import Option
-from option_pricing.services.black_scholes_service import BlackScholesService
+from ..models.option import Option
+from ..services.black_scholes_service import BlackScholesService
 
 def calculate_discount_factor(rate, time):
     return 1 / (1 + rate * time)

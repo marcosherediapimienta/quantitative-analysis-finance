@@ -1,9 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from option_pricing.models.option import Option
-from option_pricing.services.binomial_service import BinomialService
-from option_pricing.services.black_scholes_service import BlackScholesService
-from option_pricing.services.monte_carlo_service import MonteCarloService
+from ..models.option import Option
+from ..services.binomial_service import BinomialService
+from ..services.black_scholes_service import BlackScholesService
+from ..services.monte_carlo_service import MonteCarloService
 import os
 
 # --- HISTOGRAMAS DE PRECIOS ---

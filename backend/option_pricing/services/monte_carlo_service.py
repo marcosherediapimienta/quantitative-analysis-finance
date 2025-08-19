@@ -1,6 +1,6 @@
 import numpy as np
-from option_pricing.models.option import Option
-from option_pricing.models.greeks import Greeks
+from ..models.option import Option
+from ..models.greeks import Greeks
 
 class MonteCarloService:
     @staticmethod

@@ -1,0 +1,132 @@
+# Backend Django - Quantitative Finance
+# Archivos y directorios a ignorar en Git
+
+# Entorno virtual
+venv/
+env/
+ENV/
+
+# Base de datos
+*.sqlite3
+*.db
+
+# Archivos de configuración local
+.env
+.env.local
+.env.production
+
+# Logs
+logs/
+*.log
+
+# Archivos estáticos recopilados
+staticfiles/
+static/
+
+# Media files
+media/
+
+# Cache de Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribución / empaquetado
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# celery beat schedule file
+celerybeat-schedule
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Django específico
+*.sqlite3
+*.sqlite3-journal
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Archivos temporales
+*.tmp
+*.temp
+*.bak
+*.backup

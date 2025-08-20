@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # Backend Django
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - ./logs:/app/logs
+    environment:
+      - DEBUG=True
+      - DJANGO_SETTINGS_MODULE=core.settings
+    depends_on:
+      - db
+    command: python manage.py runserver 0.0.0.0:8000
+
+  # Base de datos PostgreSQL (opcional)
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=quantitative_finance
+      - POSTGRES_USER=django
+      - POSTGRES_PASSWORD=django123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  # Redis para cache (opcional)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  redis_data:

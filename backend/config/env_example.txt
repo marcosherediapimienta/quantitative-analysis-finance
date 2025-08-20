@@ -1,0 +1,26 @@
+# Configuración de Django
+SECRET_KEY=django-insecure-change-this-in-production-very-long-secret-key-here
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+
+# CORS Configuration
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173
+CORS_ALLOW_ALL_ORIGINS=False
+
+# Base de datos (opcional - por defecto SQLite)
+# Para PostgreSQL:
+# DATABASE_URL=postgresql://user:password@localhost:5432/quantitative_finance
+
+# Cache Redis (opcional)
+# REDIS_URL=redis://localhost:6379/0
+
+# Configuración de logging
+LOG_LEVEL=INFO
+
+# Frontend Origins (para desarrollo)
+FRONTEND_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+
+# Configuración de producción (cambiar en producción)
+# SECRET_KEY=your-production-secret-key
+# DEBUG=False
+# ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com

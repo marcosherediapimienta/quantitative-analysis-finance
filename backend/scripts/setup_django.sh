@@ -16,7 +16,7 @@ source venv/bin/activate
 # Instalar dependencias
 echo "📚 Instalando dependencias de Django..."
 pip install --upgrade pip
-pip install -r requirements-django.txt
+pip install -r requirements.txt
 
 # Crear migraciones
 echo "🗄️ Creando migraciones..."

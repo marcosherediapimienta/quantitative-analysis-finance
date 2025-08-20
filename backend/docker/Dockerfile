@@ -4,7 +4,7 @@ FROM python:3.11-slim
 # Establecer variables de entorno
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV DJANGO_SETTINGS_MODULE=quantitative_finance.settings
+ENV DJANGO_SETTINGS_MODULE=core.settings
 
 # Establecer directorio de trabajo
 WORKDIR /app

@@ -3,7 +3,7 @@ from django.apps import AppConfig
 
 class OptionPricingConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'option_pricing'
+    name = 'apps.option_pricing'
     verbose_name = 'Option Pricing'
     
     def ready(self):

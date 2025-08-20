@@ -1,79 +1,158 @@
-# 🐍 Backend Django - Quantitative Finance
+# Backend Django - Quantitative Finance
 
-Este directorio contiene todo el backend Django para el sistema de análisis cuantitativo financiero.
-
-## 📁 Estructura del Backend
+## 🏗️ Estructura del Proyecto
 
 ```
 backend/
-├── manage.py                          # Comando de gestión de Django
-├── requirements-django.txt            # Dependencias de Django
-├── setup_django.sh                   # Script de configuración automática
-├── env_example.txt                   # Ejemplo de configuración de entorno
-├── quantitative_finance/             # Configuración principal del proyecto
-│   ├── __init__.py
-│   ├── settings.py                   # Configuración de Django
-│   ├── urls.py                       # URLs principales
-│   ├── wsgi.py                       # Configuración WSGI
-│   └── asgi.py                       # Configuración ASGI
-├── option_pricing/                   # Aplicación de pricing de opciones
-│   ├── models.py                     # Modelos de datos
-│   ├── serializers.py               # Serializers para API
-│   ├── views.py                      # Vistas de API
-│   ├── urls.py                       # URLs de la aplicación
-│   ├── admin.py                      # Configuración del admin
-│   └── services/                     # Servicios de cálculo
-│       ├── black_scholes_service.py
-│       ├── binomial_service.py
-│       └── monte_carlo_service.py
-└── portfolio_management/             # Aplicación de gestión de portfolios
-    ├── models.py                     # Modelos para análisis
-    ├── urls.py                       # URLs de la aplicación
-    └── admin.py                      # Configuración del admin
+│── apps/                          # Aplicaciones Django
+│   ├── option_pricing/           # Precios de opciones
+│   ├── portfolio_management/     # Gestión de portfolios
+│   └── quantitative_finance/     # Configuración principal
+│── core/                         # Configuración central
+│   ├── settings.py              # Configuraciones de Django
+│   ├── urls.py                  # URLs principales
+│   ├── wsgi.py                  # Configuración WSGI
+│   └── asgi.py                  # Configuración ASGI
+│── scripts/                      # Scripts de utilidad
+│   ├── install.sh               # Instalación del proyecto
+│   ├── setup_django.sh          # Configuración de Django
+│   └── start.sh                 # Inicio del servidor
+│── docker/                       # Configuración Docker
+│   ├── Dockerfile               # Imagen Docker
+│   └── docker-compose.yml       # Orquestación de servicios
+│── config/                       # Configuraciones
+│   ├── env_example.txt          # Variables de entorno de ejemplo
+│   └── project_config.py        # Configuración del proyecto
+│── requirements.txt              # Dependencias de Python
+└── manage.py                     # Utilidad de gestión de Django
 ```
 
 ## 🚀 Inicio Rápido
 
-### 1. Configuración Automática
+### 1. Instalación
 ```bash
+# Clonar el repositorio
+git clone <repository-url>
 cd backend
-./setup_django.sh
+
+# Ejecutar script de instalación
+chmod +x scripts/install.sh
+./scripts/install.sh
 ```
 
-### 2. Configuración Manual
+### 2. Configuración
 ```bash
-cd backend
+# Copiar archivo de variables de entorno
+cp config/env_example.txt .env
 
-# Crear entorno virtual
-python3 -m venv venv
-source venv/bin/activate  # En Windows: venv\Scripts\activate
+# Editar variables de entorno según tu configuración
+nano .env
+```
 
-# Instalar dependencias
-pip install -r requirements-django.txt
+### 3. Inicio del Servidor
+```bash
+# Ejecutar script de inicio
+chmod +x scripts/start.sh
+./scripts/start.sh
+```
 
-# Configurar base de datos
+## 🐳 Docker
+
+### Desarrollo
+```bash
+cd docker
+docker-compose up --build
+```
+
+### Producción
+```bash
+cd docker
+docker-compose -f docker-compose.prod.yml up --build
+```
+
+## 🔧 Desarrollo
+
+### Estructura de Aplicaciones
+- **option_pricing**: Modelos y servicios para precios de opciones
+  - Black-Scholes, Binomial, Monte Carlo
+  - Cálculo de griegas (Delta, Gamma, Vega, Theta, Rho)
+  - Volatilidad implícita y análisis de sensibilidad
+- **portfolio_management**: Gestión y optimización de portfolios
+  - Análisis técnico y fundamental
+  - Métricas de riesgo y optimización
+
+### Comandos Útiles
+```bash
+# Crear migraciones
 python manage.py makemigrations
+
+# Aplicar migraciones
 python manage.py migrate
 
 # Crear superusuario
 python manage.py createsuperuser
 
-# Ejecutar servidor
-python manage.py runserver
+# Recopilar archivos estáticos
+python manage.py collectstatic
+
+# Ejecutar tests
+python manage.py test
+
+# Verificar configuración
+python manage.py check
 ```
 
-## 🔗 URLs del Backend
+## 🔗 URLs de la API
 
-- **API Option Pricing**: `http://127.0.0.1:8000/api/option-pricing/`
-- **API Portfolio Management**: `http://127.0.0.1:8000/api/portfolio-management/`
-- **Panel Admin**: `http://127.0.0.1:8000/admin/`
-- **Health Check**: `http://127.0.0.1:8000/api/option-pricing/health/`
+- **Admin**: http://127.0.0.1:8000/admin/
+- **API Option Pricing**: http://127.0.0.1:8000/api/option-pricing/
+- **API Portfolio Management**: http://127.0.0.1:8000/api/portfolio-management/
+- **Health Check**: http://127.0.0.1:8000/api/option-pricing/health/
+
+## 📦 Dependencias Principales
+
+- **Django 4.2+** - Framework web
+- **Django REST Framework** - API REST
+- **Librerías científicas** - numpy, pandas, scipy, matplotlib
+- **Librerías financieras** - yfinance, finta, QuantLib
+- **Análisis técnico** - ta-lib, scikit-learn, cvxpy
+- **Herramientas de desarrollo** - pytest, black, flake8
+
+## ⚙️ Configuración
+
+### Variables de Entorno (.env)
+```bash
+DEBUG=True
+SECRET_KEY=your-secret-key-here
+ALLOWED_HOSTS=localhost,127.0.0.1
+DATABASE_URL=sqlite:///db.sqlite3
+REDIS_URL=redis://localhost:6379
+```
+
+### Base de Datos
+- **Desarrollo**: SQLite (por defecto)
+- **Producción**: PostgreSQL (configurable)
+
+## 🧪 Testing
+
+```bash
+# Ejecutar todos los tests
+python manage.py test
+
+# Tests específicos
+python manage.py test apps.option_pricing
+python manage.py test apps.portfolio_management
+
+# Con coverage
+coverage run --source='.' manage.py test
+coverage report
+```
 
 ## 📊 Funcionalidades Implementadas
 
 ### Option Pricing
 - ✅ Pricing con Black-Scholes, Binomial y Monte Carlo
-- ✅ Cálculo de griegas (Delta, Gamma, Vega, Theta, Rho)
+- ✅ Cálculo de griegas completas
 - ✅ Volatilidad implícita
 - ✅ Análisis de sensibilidad paramétrico
 - ✅ Gestión de portfolios de opciones
@@ -86,80 +165,14 @@ python manage.py runserver
 - ✅ Métricas de riesgo
 - ✅ Optimización de portfolios
 
-## 🔧 Configuración
-
-### Variables de Entorno
-Copia `env_example.txt` a `.env` y configura:
-```bash
-cp env_example.txt .env
-# Edita .env con tus configuraciones
-```
-
-### Base de Datos
-Por defecto usa SQLite. Para PostgreSQL:
-```bash
-# Instala psycopg2
-pip install psycopg2-binary
-
-# Configura DATABASE_URL en .env
-```
-
-## 🧪 Testing
-
-```bash
-# Ejecutar tests
-python manage.py test
-
-# Con coverage
-pip install coverage
-coverage run --source='.' manage.py test
-coverage report
-```
-
-## 📚 Documentación
-
-- **README Principal**: `../README_DJANGO.md`
-- **Resumen de Conversión**: `../CONVERSION_SUMMARY.md`
-- **Documentación de API**: Accesible en `/api/` cuando el servidor esté corriendo
-
-## 🚀 Despliegue
-
-### Desarrollo
-```bash
-python manage.py runserver
-```
-
-### Producción
-```bash
-# Usar gunicorn
-pip install gunicorn
-gunicorn quantitative_finance.wsgi:application
-
-# O usar uvicorn para ASGI
-pip install uvicorn
-uvicorn quantitative_finance.asgi:application
-```
-
-## 🔍 Troubleshooting
-
-### Problemas Comunes
-
-1. **Error de migraciones**: `python manage.py makemigrations && python manage.py migrate`
-2. **Dependencias faltantes**: `pip install -r requirements-django.txt`
-3. **Permisos de script**: `chmod +x setup_django.sh`
-4. **Base de datos corrupta**: Eliminar `db.sqlite3` y ejecutar migraciones
-
-### Logs
-Los logs se guardan en `logs/django.log` por defecto.
-
 ## 🤝 Contribución
 
 1. Fork el proyecto
-2. Crea una rama para tu feature
-3. Commit tus cambios
-4. Push a la rama
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
 5. Abre un Pull Request
 
----
+## 📄 Licencia
 
-**¡El backend Django está listo para funcionar!** 🎉
+Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más detalles.

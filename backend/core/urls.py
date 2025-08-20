@@ -8,8 +8,8 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/option-pricing/', include('option_pricing.urls')),
-    path('api/portfolio-management/', include('portfolio_management.urls')),
+    path('api/option-pricing/', include('apps.option_pricing.urls')),
+    path('api/portfolio-management/', include('apps.portfolio_management.urls')),
 ]
 
 # Servir archivos estáticos y media en desarrollo

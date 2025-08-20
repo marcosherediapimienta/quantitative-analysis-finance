@@ -10,183 +10,73 @@ logger = logging.getLogger(__name__)
 
 class YahooFinanceService:
     """
-    Servicio para testear y obtener datos de Yahoo Finance
+    Servicio para interactuar con Yahoo Finance API usando yfinance
     """
     
     @staticmethod
     def test_connection() -> Dict[str, Any]:
         """
-        Testea la conexión a Yahoo Finance
-        
-        Returns:
-            Dict con el resultado del test incluyendo:
-            - status: 'success' o 'error'
-            - message: descripción del resultado
-            - response_time: tiempo de respuesta en segundos
-            - data_sample: muestra de datos obtenidos si es exitoso
+        Prueba la conexión con Yahoo Finance
         """
+        start_time = time.time()
         result = {
-            'status': 'error',
-            'message': '',
-            'response_time': None,
-            'data_sample': None,
-            'test_timestamp': datetime.now().isoformat(),
+            'status': 'success',
+            'message': 'Conexión exitosa con Yahoo Finance',
+            'response_time': 0,
             'test_details': []
         }
         
-        start_time = datetime.now()
-        
         try:
-            # Test 1: Verificar conectividad básica a Yahoo Finance
-            logger.info("Iniciando test de conexión a Yahoo Finance...")
-            result['test_details'].append("Verificando conectividad básica...")
+            # Test 1: Crear ticker
+            result['test_details'].append('✓ Creando ticker de prueba...')
+            ticker = yf.Ticker('AAPL')
             
-            # Intentar conexión directa al dominio con reintentos
-            max_retries = 3
-            retry_delay = 2  # segundos
-            
-            for attempt in range(max_retries):
-                try:
-                    response = requests.get('https://finance.yahoo.com', timeout=10)
-                    if response.status_code == 200:
-                        result['test_details'].append("✓ Conectividad al dominio: OK")
-                        break
-                    elif response.status_code == 429:
-                        if attempt < max_retries - 1:
-                            result['test_details'].append(f"⚠ Intento {attempt + 1}: Rate limit (429), reintentando en {retry_delay}s...")
-                            time.sleep(retry_delay)
-                            retry_delay *= 2  # Backoff exponencial
-                            continue
-                        else:
-                            result['test_details'].append("✗ Conectividad al dominio: Rate limit persistente (429)")
-                            result['test_details'].append("⚠ Continuando test usando solo yfinance...")
-                            break
-                    else:
-                        result['test_details'].append(f"✗ Conectividad al dominio: Error {response.status_code}")
-                        result['test_details'].append("⚠ Continuando test usando solo yfinance...")
-                        break
-                except requests.RequestException as e:
-                    if attempt < max_retries - 1:
-                        result['test_details'].append(f"⚠ Intento {attempt + 1}: Error de red, reintentando en {retry_delay}s...")
-                        time.sleep(retry_delay)
-                        retry_delay *= 2
-                        continue
-                    else:
-                        result['test_details'].append(f"⚠ Error de red: {str(e)}")
-                        result['test_details'].append("⚠ Continuando test usando solo yfinance...")
-                        break
-            
-            # Test 2: Probar descarga de datos usando yfinance
-            result['test_details'].append("Probando descarga de datos con yfinance...")
-            
-            # Usar un símbolo conocido y estable como AAPL
-            # Si hay rate limit, intentar con un ticker diferente
-            ticker_symbols = ["AAPL", "MSFT", "GOOGL"]
-            ticker = None
-            ticker_symbol = None
-            
-            for symbol in ticker_symbols:
-                try:
-                    temp_ticker = yf.Ticker(symbol)
-                    # Hacer una petición simple para verificar
-                    info = temp_ticker.info
-                    if info and len(info) > 0:
-                        ticker = temp_ticker
-                        ticker_symbol = symbol
-                        result['test_details'].append(f"✓ Usando ticker alternativo: {symbol}")
-                        break
-                except Exception as e:
-                    result['test_details'].append(f"⚠ Error con ticker {symbol}: {str(e)}")
-                    continue
-            
-            if not ticker:
-                result['test_details'].append("✗ No se pudo obtener ningún ticker válido")
-                result['message'] = "Error: No se pudo obtener datos de ningún ticker"
-                return result
-            
-            # Obtener información básica
+            # Test 2: Obtener información básica
+            result['test_details'].append('✓ Obteniendo información básica...')
             info = ticker.info
-            if not info or len(info) == 0:
-                result['test_details'].append("✗ No se pudo obtener información básica del ticker")
-                result['message'] = "Error: No se pudo obtener información del ticker"
-                return result
+            if not info:
+                raise Exception('No se pudo obtener información del ticker')
             
-            result['test_details'].append(f"✓ Información básica obtenida para {ticker_symbol}")
+            # Test 3: Obtener precio actual
+            result['test_details'].append('✓ Obteniendo precio actual...')
+            current_price = info.get('currentPrice')
+            if current_price is None:
+                raise Exception('No se pudo obtener precio actual')
             
-            # Test 3: Obtener datos históricos recientes
-            result['test_details'].append("Obteniendo datos históricos...")
+            # Test 4: Obtener expiraciones de opciones
+            result['test_details'].append('✓ Obteniendo expiraciones de opciones...')
+            expirations = ticker.options
+            if not expirations:
+                result['test_details'].append('⚠ No se encontraron opciones disponibles para AAPL')
+            else:
+                result['test_details'].append(f'✓ Encontradas {len(expirations)} expiraciones')
             
-            # Obtener datos de los últimos 5 días
-            end_date = datetime.now()
-            start_date = end_date - timedelta(days=7)  # 7 días para asegurar que tenemos datos
+            # Test 5: Obtener cadena de opciones (si hay expiraciones)
+            if expirations:
+                try:
+                    result['test_details'].append('✓ Probando obtención de cadena de opciones...')
+                    options = ticker.option_chain(expirations[0])
+                    if hasattr(options, 'calls') or hasattr(options, 'puts'):
+                        result['test_details'].append('✓ Cadena de opciones obtenida correctamente')
+                    else:
+                        result['test_details'].append('⚠ Estructura de opciones inesperada')
+                except Exception as e:
+                    result['test_details'].append(f'⚠ Error obteniendo cadena de opciones: {str(e)}')
             
-            hist_data = ticker.history(start=start_date, end=end_date)
-            
-            if hist_data.empty:
-                result['test_details'].append("✗ No se pudieron obtener datos históricos")
-                result['message'] = "Error: No se pudieron obtener datos históricos"
-                return result
-            
-            result['test_details'].append(f"✓ Datos históricos obtenidos: {len(hist_data)} registros")
-            
-            # Test 4: Verificar que los datos son válidos
-            result['test_details'].append("Validando datos obtenidos...")
-            
-            if 'Close' not in hist_data.columns:
-                result['test_details'].append("✗ Datos históricos no contienen precio de cierre")
-                result['message'] = "Error: Estructura de datos inválida"
-                return result
-            
-            latest_price = hist_data['Close'].iloc[-1]
-            if not latest_price or latest_price <= 0:
-                result['test_details'].append("✗ Precio de cierre inválido")
-                result['message'] = "Error: Precio de cierre inválido"
-                return result
-            
-            result['test_details'].append(f"✓ Precio de cierre válido: ${latest_price:.2f}")
-            
-            # Calcular tiempo de respuesta
-            end_time = datetime.now()
-            response_time = (end_time - start_time).total_seconds()
-            
-            # Preparar muestra de datos para la respuesta
-            data_sample = {
-                'ticker': ticker_symbol,
-                'company_name': info.get('longName', 'N/A'),
-                'sector': info.get('sector', 'N/A'),
-                'latest_price': float(latest_price),
-                'currency': info.get('currency', 'USD'),
-                'market_cap': info.get('marketCap', 'N/A'),
-                'data_points_retrieved': len(hist_data),
-                'date_range': {
-                    'start': hist_data.index[0].strftime('%Y-%m-%d') if len(hist_data) > 0 else None,
-                    'end': hist_data.index[-1].strftime('%Y-%m-%d') if len(hist_data) > 0 else None
-                }
-            }
-            
-            # Test exitoso
-            result.update({
-                'status': 'success',
-                'message': 'Conexión a Yahoo Finance exitosa',
-                'response_time': response_time,
-                'data_sample': data_sample
-            })
-            
-            result['test_details'].append(f"✓ Test completado exitosamente en {response_time:.2f} segundos")
-            
-            logger.info(f"Test de Yahoo Finance completado exitosamente en {response_time:.2f}s")
+            response_time = time.time() - start_time
+            result['response_time'] = round(response_time, 3)
+            result['test_details'].append(f'✓ Test completado en {result["response_time"]}s')
             
         except Exception as e:
-            end_time = datetime.now()
-            response_time = (end_time - start_time).total_seconds()
+            response_time = time.time() - start_time
+            error_msg = f'Error en test de conexión: {str(e)}'
             
-            error_msg = f"Error inesperado durante el test: {str(e)}"
             result.update({
                 'status': 'error',
                 'message': error_msg,
                 'response_time': response_time
             })
-            result['test_details'].append(f"✗ {error_msg}")
+            result['test_details'].append(f'✗ {error_msg}')
             
             logger.error(f"Error en test de Yahoo Finance: {str(e)}")
         
@@ -279,4 +169,230 @@ class YahooFinanceService:
             return {
                 'status': 'error',
                 'message': f'Error obteniendo datos históricos de {symbol}: {str(e)}'
+            }
+
+    @staticmethod
+    def get_options_expirations(symbol: str) -> Dict[str, Any]:
+        """
+        Obtiene las fechas de expiración disponibles para opciones de un ticker
+        
+        Args:
+            symbol: Símbolo del ticker (ej: 'AAPL', 'MSFT')
+            
+        Returns:
+            Dict con fechas de expiración disponibles
+        """
+        try:
+            ticker = yf.Ticker(symbol.upper())
+            expirations = ticker.options
+            
+            if not expirations:
+                return {
+                    'status': 'error',
+                    'message': f'No se encontraron opciones disponibles para {symbol}'
+                }
+            
+            # Formatear fechas
+            formatted_expirations = []
+            for exp in expirations:
+                try:
+                    date_obj = datetime.strptime(exp, '%Y-%m-%d')
+                    formatted_expirations.append({
+                        'date': exp,
+                        'formatted': date_obj.strftime('%d/%m/%Y'),
+                        'days_to_expiry': (date_obj - datetime.now()).days
+                    })
+                except:
+                    formatted_expirations.append({
+                        'date': exp,
+                        'formatted': exp,
+                        'days_to_expiry': 0
+                    })
+            
+            return {
+                'status': 'success',
+                'symbol': symbol.upper(),
+                'expirations': formatted_expirations,
+                'count': len(formatted_expirations)
+            }
+            
+        except Exception as e:
+            return {
+                'status': 'error',
+                'message': f'Error obteniendo expiraciones de opciones para {symbol}: {str(e)}'
+            }
+    
+    @staticmethod
+    def get_options_chain(symbol: str, expiration_date: str) -> Dict[str, Any]:
+        """
+        Obtiene la cadena de opciones para una fecha de expiración específica
+        
+        Args:
+            symbol: Símbolo del ticker
+            expiration_date: Fecha de expiración en formato 'YYYY-MM-DD'
+            
+        Returns:
+            Dict con calls y puts disponibles
+        """
+        try:
+            logger.info(f"Obteniendo cadena de opciones para {symbol} en {expiration_date}")
+            ticker = yf.Ticker(symbol.upper())
+            
+            # Obtener opciones para la fecha específica
+            logger.info(f"Llamando a ticker.option_chain({expiration_date})")
+            options = ticker.option_chain(expiration_date)
+            
+            if not options:
+                logger.warning(f"No se encontraron opciones para {symbol} en {expiration_date}")
+                return {
+                    'status': 'error',
+                    'message': f'No se encontraron opciones para {symbol} en {expiration_date}'
+                }
+            
+            logger.info(f"Opciones obtenidas para {symbol} en {expiration_date}")
+            
+            # Función auxiliar para convertir valores de manera segura
+            def safe_float(value, default=0.0):
+                """Convierte un valor a float de manera segura, manejando NaN"""
+                if value is None or (hasattr(value, '__float__') and str(value) == 'nan'):
+                    return default
+                try:
+                    return float(value)
+                except (ValueError, TypeError):
+                    return default
+            
+            def safe_int(value, default=0):
+                """Convierte un valor a int de manera segura, manejando NaN"""
+                if value is None or (hasattr(value, '__float__') and str(value) == 'nan'):
+                    return default
+                try:
+                    return int(float(value))
+                except (ValueError, TypeError):
+                    return default
+            
+            # Procesar calls
+            calls = []
+            if hasattr(options, 'calls') and options.calls is not None:
+                logger.info(f"Procesando {len(options.calls)} calls para {symbol}")
+                for i, call in enumerate(options.calls.itertuples()):
+                    try:
+                        call_data = {
+                            'strike': safe_float(call.strike),
+                            'last_price': safe_float(call.lastPrice),
+                            'bid': safe_float(call.bid),
+                            'ask': safe_float(call.ask),
+                            'volume': safe_int(call.volume),
+                            'open_interest': safe_int(call.openInterest),
+                            'implied_volatility': safe_float(call.impliedVolatility)
+                        }
+                        calls.append(call_data)
+                    except Exception as e:
+                        logger.warning(f"Error procesando call {i}: {str(e)}")
+                        continue
+            else:
+                logger.info(f"No se encontraron calls para {symbol}")
+            
+            # Procesar puts
+            puts = []
+            if hasattr(options, 'puts') and options.puts is not None:
+                logger.info(f"Procesando {len(options.puts)} puts para {symbol}")
+                for i, put in enumerate(options.puts.itertuples()):
+                    try:
+                        put_data = {
+                            'strike': safe_float(put.strike),
+                            'last_price': safe_float(put.lastPrice),
+                            'bid': safe_float(put.bid),
+                            'ask': safe_float(put.ask),
+                            'volume': safe_int(put.volume),
+                            'open_interest': safe_int(put.openInterest),
+                            'implied_volatility': safe_float(put.impliedVolatility)
+                        }
+                        puts.append(put_data)
+                    except Exception as e:
+                        logger.warning(f"Error procesando put {i}: {str(e)}")
+                        continue
+            else:
+                logger.info(f"No se encontraron puts para {symbol}")
+            
+            # Obtener precio actual del subyacente
+            current_price = safe_float(ticker.info.get('currentPrice', 0))
+            logger.info(f"Precio actual de {symbol}: ${current_price}")
+            
+            result = {
+                'status': 'success',
+                'symbol': symbol.upper(),
+                'expiration_date': expiration_date,
+                'current_price': current_price,
+                'calls': calls,
+                'puts': puts,
+                'total_calls': len(calls),
+                'total_puts': len(puts)
+            }
+            
+            logger.info(f"Cadena de opciones procesada exitosamente: {len(calls)} calls, {len(puts)} puts")
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error obteniendo cadena de opciones para {symbol} en {expiration_date}: {str(e)}")
+            return {
+                'status': 'error',
+                'message': f'Error obteniendo cadena de opciones para {symbol} en {expiration_date}: {str(e)}'
+            }
+    
+    @staticmethod
+    def get_atm_options(symbol: str, expiration_date: str, option_type: str = 'call') -> Dict[str, Any]:
+        """
+        Obtiene opciones at-the-money para análisis
+        
+        Args:
+            symbol: Símbolo del ticker
+            expiration_date: Fecha de expiración
+            option_type: Tipo de opción ('call' o 'put')
+            
+        Returns:
+            Dict con opciones ATM más relevantes
+        """
+        try:
+            chain_data = YahooFinanceService.get_options_chain(symbol, expiration_date)
+            
+            if chain_data['status'] != 'success':
+                return chain_data
+            
+            current_price = chain_data['current_price']
+            options = chain_data['calls'] if option_type == 'call' else chain_data['puts']
+            
+            if not options:
+                return {
+                    'status': 'error',
+                    'message': f'No se encontraron opciones {option_type} para {symbol}'
+                }
+            
+            # Encontrar opciones ATM (strike más cercano al precio actual)
+            atm_options = []
+            for option in options:
+                strike_diff = abs(option['strike'] - current_price)
+                atm_options.append({
+                    **option,
+                    'strike_diff': strike_diff
+                })
+            
+            # Ordenar por proximidad al precio actual
+            atm_options.sort(key=lambda x: x['strike_diff'])
+            
+            # Tomar las 5 opciones más ATM
+            best_atm = atm_options[:5]
+            
+            return {
+                'status': 'success',
+                'symbol': symbol.upper(),
+                'expiration_date': expiration_date,
+                'option_type': option_type,
+                'current_price': current_price,
+                'atm_options': best_atm
+            }
+            
+        except Exception as e:
+            return {
+                'status': 'error',
+                'message': f'Error obteniendo opciones ATM para {symbol}: {str(e)}'
             }

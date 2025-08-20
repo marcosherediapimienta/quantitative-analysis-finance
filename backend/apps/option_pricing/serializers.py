@@ -59,9 +59,10 @@ class OptionCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Option
         fields = [
-            'name', 'type', 'style', 'spot', 'strike', 'maturity',
+            'id', 'name', 'type', 'style', 'spot', 'strike', 'maturity',
             'volatility', 'rate', 'market_price'
         ]
+        read_only_fields = ['id']
 
 
 class PricingRequestSerializer(serializers.Serializer):

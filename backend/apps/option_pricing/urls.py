@@ -2,7 +2,8 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     OptionViewSet, PortfolioViewSet, PricingResultViewSet, 
-    HealthCheckView, YahooFinanceTestView, YahooFinanceTickerView
+    HealthCheckView, YahooFinanceTestView, YahooFinanceTickerView,
+    YahooFinanceOptionsView
 )
 
 app_name = 'option_pricing'
@@ -21,6 +22,7 @@ urlpatterns = [
     path('yahoo-finance/test/', YahooFinanceTestView.as_view(), name='yahoo-finance-test'),
     path('yahoo-finance/ticker/', YahooFinanceTickerView.as_view(), name='yahoo-finance-ticker'),
     path('yahoo-finance/ticker/<str:symbol>/', YahooFinanceTickerView.as_view(), name='yahoo-finance-ticker-detail'),
+    path('yahoo-finance/options/', YahooFinanceOptionsView.as_view(), name='yahoo-finance-options'),
     
     # Router URLs
     path('', include(router.urls)),

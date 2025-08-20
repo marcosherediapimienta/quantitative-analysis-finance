@@ -511,3 +511,59 @@ class YahooFinanceTickerView(APIView):
                 'status': 'error',
                 'message': f'Error obteniendo información del ticker {symbol}: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class YahooFinanceOptionsView(APIView):
+    """
+    Vista para obtener información de opciones de Yahoo Finance
+    """
+    
+    def get(self, request):
+        """
+        Obtiene las fechas de expiración disponibles para un símbolo
+        """
+        symbol = request.GET.get('symbol', '').upper()
+        
+        if not symbol:
+            return Response(
+                {'error': 'Símbolo requerido'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            result = YahooFinanceService.get_options_expirations(symbol)
+            return Response(result)
+        except Exception as e:
+            return Response(
+                {'error': f'Error obteniendo expiraciones: {str(e)}'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    def post(self, request):
+        """
+        Obtiene la cadena de opciones para una fecha específica
+        """
+        symbol = request.data.get('symbol', '').upper()
+        expiration_date = request.data.get('expiration_date', '')
+        option_type = request.data.get('option_type', 'call')
+        
+        if not symbol or not expiration_date:
+            return Response(
+                {'error': 'Símbolo y fecha de expiración requeridos'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            if option_type == 'atm':
+                # Obtener opciones ATM
+                result = YahooFinanceService.get_atm_options(symbol, expiration_date, request.data.get('type', 'call'))
+            else:
+                # Obtener cadena completa
+                result = YahooFinanceService.get_options_chain(symbol, expiration_date)
+            
+            return Response(result)
+        except Exception as e:
+            return Response(
+                {'error': f'Error obteniendo opciones: {str(e)}'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

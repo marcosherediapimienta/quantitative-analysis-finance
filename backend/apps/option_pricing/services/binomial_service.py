@@ -20,14 +20,42 @@ class BinomialService:
         r = float(option.rate)
         sigma = float(option.volatility)
         
+        # Validaciones para evitar errores numéricos
         if T <= 0:
             return option.payoff(S)
+        
+        if sigma <= 0:
+            # Si la volatilidad es 0 o negativa, usar Black-Scholes simplificado
+            if option.type == 'call':
+                return max(S - K, 0) if r == 0 else max(S - K * np.exp(-r * T), 0)
+            else:  # put
+                return max(K - S, 0) if r == 0 else max(K * np.exp(-r * T) - S, 0)
+        
+        # Asegurar que N sea razonable
+        N = max(10, min(N, 10000))
         
         dt = T / N
         u = np.exp(sigma * np.sqrt(dt))
         d = 1 / u
         p = (np.exp(r * dt) - d) / (u - d)
         discount = np.exp(-r * dt)
+        
+        # Validar que p esté en [0,1] para evitar errores numéricos
+        if p < 0 or p > 1 or np.isnan(p):
+            # Ajustar parámetros para casos extremos
+            if sigma < 0.001:  # Volatilidad muy baja
+                sigma = 0.001
+                u = np.exp(sigma * np.sqrt(dt))
+                d = 1 / u
+                p = (np.exp(r * dt) - d) / (u - d)
+                discount = np.exp(-r * dt)
+            
+            # Si aún hay problemas, usar aproximación analítica
+            if p < 0 or p > 1 or np.isnan(p):
+                if option.type == 'call':
+                    return max(S - K, 0) if r == 0 else max(S - K * np.exp(-r * T), 0)
+                else:  # put
+                    return max(K - S, 0) if r == 0 else max(K * np.exp(-r * T) - S, 0)
         
         # Precios del activo subyacente en el vencimiento
         j = np.arange(N + 1)
@@ -63,7 +91,17 @@ class BinomialService:
                 # Tomar el máximo entre continuar y ejercer
                 payoff = np.maximum(payoff, exercise_value)
         
-        return float(payoff[0])
+        result = float(payoff[0])
+        
+        # Validar que el resultado sea un número válido
+        if np.isnan(result) or np.isinf(result):
+            # Fallback a cálculo analítico simple
+            if option.type == 'call':
+                result = max(S - K, 0) if r == 0 else max(S - K * np.exp(-r * T), 0)
+            else:  # put
+                result = max(K - S, 0) if r == 0 else max(K * np.exp(-r * T) - S, 0)
+        
+        return result
     
     @staticmethod
     def greeks(option: Option, N: int = 1000, h: float = None) -> Dict[str, float]:

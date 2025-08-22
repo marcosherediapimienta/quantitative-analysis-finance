@@ -20,7 +20,14 @@ import {
   Calendar,
   DollarSign,
   Percent,
-  Search
+  Search,
+  BookOpen,
+  Lightbulb,
+  TrendingUp as TrendingUpIcon,
+  Shield,
+  AlertTriangle,
+  Trophy,
+  Star
 } from "lucide-react";
 import { useInteractiveOptionsAnalysis } from "./hooks/useInteractiveOptionsAnalysis";
 import SensitivityChart from "./components/SensitivityChart";
@@ -356,11 +363,11 @@ function HomeTab({ backendStatus }) {
               <CardContent className="text-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <div className="text-blue-400">{feature.icon}</div>
-                  </div>
+                </div>
                 <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
                 <p className="text-zinc-400 text-sm">{feature.desc}</p>
-                </CardContent>
-              </Card>
+              </CardContent>
+            </Card>
           </motion.div>
         ))}
       </div>
@@ -491,8 +498,9 @@ function OptionsAnalysisTab() {
   const steps = [
     { id: 0, title: "Símbolo", description: "Ingresa el símbolo de la acción" },
     { id: 1, title: "Expiraciones", description: "Selecciona la fecha de expiración" },
-    { id: 2, title: "Resultados", description: "Análisis completo de la opción" },
-    { id: 3, title: "Sensibilidad", description: "Análisis de sensibilidad y escenarios" }
+    { id: 2, title: "Precio Teórico", description: "Configura y calcula el precio teórico" },
+    { id: 3, title: "Sensibilidad", description: "Análisis de sensibilidad y escenarios" },
+    { id: 4, title: "Análisis de Griegas", description: "Interpretación de griegas y valoración del precio" }
   ];
 
   const handleSymbolSubmit = async (e) => {
@@ -989,7 +997,7 @@ function OptionsAnalysisTab() {
                   <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
                     <span className="text-blue-400 font-bold">3</span>
                   </div>
-                  Configuración y Resultados
+                  Cálculo del Precio Teórico
                 </CardTitle>
           </CardHeader>
           <CardContent>
@@ -997,8 +1005,8 @@ function OptionsAnalysisTab() {
                   <div className="w-20 h-20 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center mx-auto">
                     <DollarSign className="w-10 h-10 text-blue-400" />
                   </div>
-                  <h3 className="text-xl font-semibold text-white">Configuración y Resultados</h3>
-                  <p className="text-zinc-400">Configura los parámetros del modelo y obtén el análisis completo</p>
+                  <h3 className="text-xl font-semibold text-white">Cálculo del Precio Teórico</h3>
+                  <p className="text-zinc-400">Configura los parámetros del modelo y calcula el precio teórico de la opción</p>
                 </div>
 
                 {/* Opciones Disponibles Mejoradas */}
@@ -1072,7 +1080,7 @@ function OptionsAnalysisTab() {
                                     ${option.last_price?.toFixed(2) || '0.00'}
                                   </div>
                                   <div className="text-xs text-zinc-500 uppercase tracking-wide">
-                                    Premio
+                                    PRECIO
                                   </div>
                                   <div className="text-xs text-zinc-400 mt-1">
                                     Bid: ${option.bid?.toFixed(2) || '0.00'} | Ask: ${option.ask?.toFixed(2) || '0.00'}
@@ -1146,7 +1154,7 @@ function OptionsAnalysisTab() {
                         </div>
                         
                         <div className="p-4 bg-zinc-800/50 rounded-lg">
-                          <div className="text-sm text-zinc-400 mb-1">Premio de la Opción</div>
+                          <div className="text-sm text-zinc-400 mb-1">Último Precio</div>
                           <div className="text-3xl font-bold text-green-400">${yahooData.selectedOption.last_price?.toFixed(2) || '0.00'}</div>
                         </div>
                         
@@ -1191,21 +1199,11 @@ function OptionsAnalysisTab() {
                       </div>
                     </div>
                     
-                    {/* Comparación con Precio Actual */}
+                    {/* Precio Actual del Subyacente */}
                     <div className="mt-4 p-4 bg-gradient-to-r from-green-900/20 to-blue-900/20 rounded-lg border border-green-500/30">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-sm text-green-300">Precio Actual del Subyacente</div>
-                          <div className="text-2xl font-bold text-green-400">${yahooData.currentPrice}</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm text-blue-300">Diferencia vs Strike</div>
-                          <div className={`text-xl font-bold ${
-                            yahooData.currentPrice > yahooData.selectedOption.strike ? 'text-green-400' : 'text-red-400'
-                          }`}>
-                            ${Math.abs(yahooData.currentPrice - yahooData.selectedOption.strike).toFixed(2)}
-                          </div>
-                        </div>
+                      <div className="text-center">
+                        <div className="text-sm text-green-300">Precio Actual del Subyacente</div>
+                        <div className="text-2xl font-bold text-green-400">${yahooData.currentPrice}</div>
                       </div>
                     </div>
                     
@@ -1589,20 +1587,117 @@ function OptionsAnalysisTab() {
                       )}
                     </div>
                     
-                    {/* Mostrar botón para análisis de sensibilidad después de calcular precio */}
+                    {/* Mostrar resultados después de calcular precio */}
                     {analysisResults.calculatedPrice && (
-                      <div className="text-center mt-6">
-                        <Button
-                          onClick={nextStep}
-                          className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                        >
-                          <Activity className="w-5 h-5 mr-2" />
-                          Continuar con Análisis de Sensibilidad
-                          <ArrowRight className="w-5 h-5 ml-2" />
-                        </Button>
-                        <p className="text-xs text-zinc-500 mt-2">
-                          Analiza cómo cambia el precio ante variaciones en los parámetros del mercado
-                        </p>
+                      <div className="mt-6 space-y-6">
+                        {/* Resultados del Cálculo */}
+                        <div className="p-6 bg-gradient-to-r from-green-900/30 to-blue-900/30 rounded-xl border border-green-500/30">
+                          <div className="flex items-center gap-3 mb-4">
+                            <CheckCircle className="w-6 h-6 text-green-400" />
+                            <h4 className="text-xl font-semibold text-white">¡Precio Calculado Exitosamente!</h4>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Precio Teórico */}
+                            <div className="text-center p-4 bg-green-500/20 rounded-lg">
+                              <div className="text-sm text-green-300 mb-1">Precio Teórico</div>
+                              <div className="text-4xl font-bold text-green-400">
+                                ${analysisResults.calculatedPrice?.toFixed(4) || '0.0000'}
+                              </div>
+                              <div className="text-xs text-green-200 mt-1">
+                                Calculado con {userInputs.selectedModel === 'black_scholes' ? 'Black-Scholes' : 
+                                userInputs.selectedModel === 'binomial' ? 'Binomial' : 'Monte Carlo'}
+                              </div>
+                            </div>
+                            
+                            {/* Comparación con Precio de Mercado */}
+                            <div className="text-center p-4 bg-blue-500/20 rounded-lg">
+                              <div className="text-sm text-blue-300 mb-1">Precio de Mercado</div>
+                              <div className="text-4xl font-bold text-blue-400">
+                                ${yahooData.selectedOption?.last_price?.toFixed(4) || '0.0000'}
+                              </div>
+                              <div className="text-xs text-blue-200 mt-1">
+                                Diferencia: {analysisResults.calculatedPrice && yahooData.selectedOption?.last_price ? 
+                                  `$${Math.abs(analysisResults.calculatedPrice - yahooData.selectedOption.last_price).toFixed(4)}` : 'N/A'}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Griegas si están disponibles */}
+                          {analysisResults.greeks && Object.keys(analysisResults.greeks).length > 0 && (
+                            <div className="mt-4 p-4 bg-purple-500/10 rounded-lg border border-purple-500/30">
+                              <h5 className="font-semibold text-purple-300 mb-3">Griegas</h5>
+                              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
+                                {analysisResults.greeks.delta !== undefined && analysisResults.greeks.delta !== null && (
+                                  <div className="text-center">
+                                    <div className="text-purple-200">Delta</div>
+                                    <div className="font-bold">{Number(analysisResults.greeks.delta).toFixed(4)}</div>
+                                  </div>
+                                )}
+                                {analysisResults.greeks.gamma !== undefined && analysisResults.greeks.gamma !== null && (
+                                  <div className="text-center">
+                                    <div className="text-purple-200">Gamma</div>
+                                    <div className="font-bold">{Number(analysisResults.greeks.gamma).toFixed(4)}</div>
+                                  </div>
+                                )}
+                                {analysisResults.greeks.theta !== undefined && analysisResults.greeks.theta !== null && (
+                                  <div className="text-center">
+                                    <div className="text-purple-200">Theta</div>
+                                    <div className="font-bold">{Number(analysisResults.greeks.theta).toFixed(4)}</div>
+                                  </div>
+                                )}
+                                {analysisResults.greeks.vega !== undefined && analysisResults.greeks.vega !== null && (
+                                  <div className="text-center">
+                                    <div className="text-purple-200">Vega</div>
+                                    <div className="font-bold">{Number(analysisResults.greeks.vega).toFixed(4)}</div>
+                                  </div>
+                                )}
+                                {analysisResults.greeks.rho !== undefined && analysisResults.greeks.rho !== null && (
+                                  <div className="text-center">
+                                    <div className="text-purple-200">Rho</div>
+                                    <div className="font-bold">{Number(analysisResults.greeks.rho).toFixed(4)}</div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Pregunta para continuar con análisis de sensibilidad */}
+                        <div className="text-center p-6 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
+                          <div className="w-16 h-16 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <Activity className="w-8 h-8 text-purple-400" />
+                          </div>
+                          <h4 className="text-xl font-semibold text-white mb-3">¿Deseas realizar un Análisis de Sensibilidad?</h4>
+                          <p className="text-zinc-400 mb-6 max-w-2xl mx-auto">
+                            El análisis de sensibilidad te permitirá ver cómo cambia el precio de la opción ante variaciones 
+                            en el precio del subyacente, volatilidad, tasa de interés y tiempo al vencimiento.
+                          </p>
+                          
+                          <div className="flex items-center justify-center gap-4">
+                            <Button
+                              onClick={nextStep}
+                              className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                            >
+                              <Activity className="w-5 h-5 mr-2" />
+                              Sí, realizar Análisis de Sensibilidad
+                              <ArrowRight className="w-5 h-5 ml-2" />
+                            </Button>
+                            
+                            <Button
+                              onClick={resetFlow}
+                              variant="secondary"
+                              className="px-6 py-3"
+                            >
+                              <RefreshCw className="w-4 h-4 mr-2" />
+                              No, realizar nuevo análisis
+                            </Button>
+                          </div>
+                          
+                          <p className="text-xs text-zinc-500 mt-4">
+                            Puedes realizar un nuevo análisis en cualquier momento o continuar con el análisis de sensibilidad
+                          </p>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1656,15 +1751,15 @@ function OptionsAnalysisTab() {
                             onChange={(e) => updateSensitivityParams('sensitivityType', e.target.value)}
                           >
                             <option value="spot">📈 Precio del Subyacente (±10%)</option>
-                            <option value="volatility">📊 Volatilidad (10% - 30%)</option>
+                            <option value="volatility">📊 Volatilidad (±20%)</option>
                             <option value="rate">🏦 Tasa de Interés (1% - 5%)</option>
-                            <option value="time">⏰ Tiempo al Vencimiento (50% - 150%)</option>
+                            <option value="time">⏰ Tiempo al Vencimiento (±30%)</option>
                           </Select>
                           <p className="text-xs text-zinc-500">
                             {sensitivityParams.sensitivityType === 'spot' && 'Analiza cambios del ±10% en el precio de la acción'}
-                            {sensitivityParams.sensitivityType === 'volatility' && 'Analiza volatilidad entre 10% y 30%'}
+                            {sensitivityParams.sensitivityType === 'volatility' && 'Analiza cambios del ±20% en la volatilidad'}
                             {sensitivityParams.sensitivityType === 'rate' && 'Analiza tasas de interés entre 1% y 5%'}
-                            {sensitivityParams.sensitivityType === 'time' && 'Analiza entre 50% y 150% del tiempo restante'}
+                            {sensitivityParams.sensitivityType === 'time' && 'Analiza cambios del ±30% en el tiempo al vencimiento'}
                           </p>
                         </div>
                         
@@ -1697,12 +1792,12 @@ function OptionsAnalysisTab() {
                       </div>
                       
                       <div className="p-4 bg-blue-500/10 rounded-xl border border-blue-500/30">
-                        <h5 className="font-semibold text-blue-300 mb-2">Rangos Simplificados</h5>
+                        <h5 className="font-semibold text-blue-300 mb-2">Rangos de Análisis</h5>
                         <div className="text-xs text-blue-200 space-y-1">
                           <div><strong>Spot:</strong> ±10% del precio actual</div>
-                          <div><strong>Volatilidad:</strong> 10% - 30%</div>
-                          <div><strong>Tasa:</strong> 1% - 5%</div>
-                          <div><strong>Tiempo:</strong> 50% - 150% del tiempo restante</div>
+                          <div><strong>Volatilidad:</strong> ±20% del valor actual</div>
+                          <div><strong>Tasa:</strong> Rango de 1% a 5%</div>
+                          <div><strong>Tiempo:</strong> ±30% del tiempo restante</div>
                         </div>
                       </div>
                       
@@ -1773,24 +1868,20 @@ function OptionsAnalysisTab() {
                     <div className="space-y-4">
                       <div className="p-4 bg-green-500/10 rounded-xl border border-green-500/30">
                         <h5 className="font-semibold text-green-300 mb-3">Resultados del Análisis</h5>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                           <div className="text-center p-3 bg-green-500/20 rounded-lg">
                             <div className="text-lg font-bold text-green-400">
                               {sensitivityResults.data.data_points?.length || 0}
                             </div>
-                            <div className="text-green-200">Puntos Analizados</div>
-                          </div>
-                          
-                          <div className="text-center p-3 bg-blue-500/20 rounded-lg">
-                            <div className="text-lg font-bold text-blue-400">
-                              {sensitivityResults.data.calculation_time?.toFixed(2) || '0.00'}s
-                            </div>
-                            <div className="text-blue-200">Tiempo de Cálculo</div>
+                            <div className="text-green-200">Escenarios Calculados</div>
                           </div>
                           
                           <div className="text-center p-3 bg-purple-500/20 rounded-lg">
                             <div className="text-lg font-bold text-purple-400">
-                              {sensitivityResults.data.model_used || 'N/A'}
+                              {sensitivityResults.data.model_used === 'monte_carlo' ? 'Monte Carlo' : 
+                               sensitivityResults.data.model_used === 'black_scholes' ? 'Black-Scholes' :
+                               sensitivityResults.data.model_used === 'binomial' ? 'Binomial' :
+                               sensitivityResults.data.model_used || 'N/A'}
                             </div>
                             <div className="text-purple-200">Modelo Utilizado</div>
                           </div>
@@ -1862,9 +1953,620 @@ function OptionsAnalysisTab() {
                       Anterior
                     </Button>
                     
+                    {sensitivityResults.data && (
+                      <Button onClick={nextStep} variant="primary">
+                        <BookOpen className="w-4 h-4 mr-2" />
+                        Ver Conclusiones
+                      </Button>
+                    )}
+                    
                     <Button onClick={resetFlow} variant="secondary">
                       <RefreshCw className="w-4 h-4 mr-2" />
                       Nuevo Análisis
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {currentStep === 4 && (
+          <motion.div
+            key="step-4"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+                    <span className="text-emerald-400 font-bold">5</span>
+                  </div>
+                  Análisis Detallado de Griegas
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-8">
+                  
+                  {/* Header del Análisis */}
+                  <div className="text-center space-y-6 mb-8">
+                    <div className="w-20 h-20 bg-gradient-to-br from-emerald-500/20 to-teal-500/20 rounded-2xl flex items-center justify-center mx-auto">
+                      <TrendingUp className="w-10 h-10 text-emerald-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-white mb-2">Interpretación de las Griegas</h3>
+                      <p className="text-zinc-400 max-w-2xl mx-auto">
+                        Análisis profundo de las sensibilidades de tu opción y valoración del precio teórico calculado
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Valoración del Precio Teórico */}
+                  <div className="bg-gradient-to-br from-blue-900/30 to-indigo-900/30 rounded-xl p-6 border border-blue-700/30">
+                    <h4 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+                      <Target className="w-5 h-5 text-blue-400" />
+                      Valoración del Precio Teórico
+                    </h4>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Comparación de Precios */}
+                      <div className="space-y-4">
+                        <div className="bg-blue-800/20 rounded-lg p-4 border border-blue-600/30">
+                          <h5 className="text-blue-300 font-medium mb-3">💰 Comparación de Precios</h5>
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-zinc-400">Precio Teórico:</span>
+                              <span className="text-white font-bold">
+                                ${analysisResults.calculatedPrice && typeof analysisResults.calculatedPrice === 'number' ? 
+                                  analysisResults.calculatedPrice.toFixed(4) : 'N/A'}
+                              </span>
+                            </div>
+                            {yahooData.selectedOption?.lastPrice && (
+                              <>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-zinc-400">Precio de Mercado:</span>
+                                  <span className="text-white font-bold">
+                                    ${yahooData.selectedOption.lastPrice.toFixed(4)}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-zinc-400">Diferencia:</span>
+                                  <span className={`font-bold ${
+                                    (analysisResults.calculatedPrice - yahooData.selectedOption.lastPrice) > 0 ? 
+                                    'text-green-400' : 'text-red-400'
+                                  }`}>
+                                    {((analysisResults.calculatedPrice - yahooData.selectedOption.lastPrice) > 0 ? '+' : '')}
+                                    {(((analysisResults.calculatedPrice - yahooData.selectedOption.lastPrice) / yahooData.selectedOption.lastPrice) * 100).toFixed(2)}%
+                                  </span>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Interpretación del Precio */}
+                        <div className="bg-blue-800/20 rounded-lg p-4 border border-blue-600/30">
+                          <h5 className="text-blue-300 font-medium mb-3">🎯 Interpretación</h5>
+                          <div className="text-sm text-blue-200">
+                            {yahooData.selectedOption?.lastPrice && analysisResults.calculatedPrice ? (
+                              (() => {
+                                const diff = ((analysisResults.calculatedPrice - yahooData.selectedOption.lastPrice) / yahooData.selectedOption.lastPrice) * 100;
+                                if (diff > 10) {
+                                  return "🚀 La opción está significativamente subvalorada. El mercado la está cotizando muy por debajo de su valor teórico.";
+                                } else if (diff > 5) {
+                                  return "📈 La opción está moderadamente subvalorada. Podría representar una oportunidad de compra.";
+                                } else if (diff > -5) {
+                                  return "⚖️ El precio está cerca del valor teórico. La valoración del mercado es coherente con el modelo.";
+                                } else if (diff > -10) {
+                                  return "📉 La opción está moderadamente sobrevalorada. El mercado la está cotizando por encima de su valor teórico.";
+                                } else {
+                                  return "⚠️ La opción está significativamente sobrevalorada. El precio de mercado está muy por encima del valor teórico.";
+                                }
+                              })()
+                            ) : (
+                              "📊 Sin precio de mercado disponible para comparación. Usa el precio teórico como referencia."
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Confianza del Modelo */}
+                      <div className="space-y-4">
+                        <div className="bg-blue-800/20 rounded-lg p-4 border border-blue-600/30">
+                          <h5 className="text-blue-300 font-medium mb-3">🔬 Calidad del Modelo</h5>
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-zinc-400">Modelo Usado:</span>
+                              <span className="text-white font-medium">
+                                {userInputs.selectedModel === 'black_scholes' ? 'Black-Scholes' :
+                                 userInputs.selectedModel === 'binomial' ? 'Binomial' : 'Monte Carlo'}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-zinc-400">Tipo de Opción:</span>
+                              <span className="text-white font-medium">
+                                {userInputs.optionStyle === 'european' ? 'Europea' : 'Americana'}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-zinc-400">Precisión:</span>
+                              <span className="text-green-400 font-medium">
+                                {userInputs.selectedModel === 'black_scholes' ? '⭐⭐⭐⭐⭐' :
+                                 userInputs.selectedModel === 'binomial' ? '⭐⭐⭐⭐' : '⭐⭐⭐⭐'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-blue-800/20 rounded-lg p-4 border border-blue-600/30">
+                          <h5 className="text-blue-300 font-medium mb-2">💡 Recomendación del Modelo</h5>
+                          <p className="text-sm text-blue-200">
+                            {userInputs.selectedModel === 'black_scholes' ? 
+                              "Black-Scholes es ideal para opciones europeas con alta liquidez. Muy preciso para opciones estándar." :
+                              userInputs.selectedModel === 'binomial' ? 
+                              "Binomial maneja bien opciones americanas y dividendos. Buena flexibilidad para ejercicio temprano." :
+                              "Monte Carlo captura la complejidad del mercado real. Excelente para opciones exóticas o condiciones especiales."}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Análisis Detallado de Cada Griega */}
+                  {analysisResults.greeks && Object.keys(analysisResults.greeks).length > 0 && (
+                    <div className="bg-gradient-to-br from-emerald-900/30 to-teal-900/30 rounded-xl p-6 border border-emerald-700/30">
+                      <h4 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+                        <Activity className="w-5 h-5 text-emerald-400" />
+                        Análisis Completo de Sensibilidades
+                      </h4>
+
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Delta - Sensibilidad al Precio */}
+                        <div className="bg-emerald-800/20 rounded-lg p-4 border border-emerald-600/30">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+                              <span className="text-emerald-400 font-bold text-lg">Δ</span>
+                            </div>
+                            <div>
+                              <h5 className="text-emerald-300 font-semibold">Delta</h5>
+                              <p className="text-xs text-emerald-400">Sensibilidad al precio del subyacente</p>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-3">
+                            <div className="flex justify-between">
+                              <span className="text-zinc-400">Valor:</span>
+                              <span className="text-white font-bold">
+                                {Number(analysisResults.greeks.delta).toFixed(4)}
+                              </span>
+                            </div>
+                            
+                            <div className="p-3 bg-emerald-900/30 rounded-lg">
+                              <p className="text-sm text-emerald-200 mb-2">
+                                <strong>Interpretación:</strong>
+                              </p>
+                              <p className="text-xs text-emerald-300">
+                                {(() => {
+                                  const delta = Number(analysisResults.greeks.delta);
+                                  const absDelta = Math.abs(delta);
+                                  
+                                  if (userInputs.optionType === 'call') {
+                                    if (delta > 0.8) return "🔥 Muy alta correlación con el subyacente. La opción se comporta casi como la acción.";
+                                    if (delta > 0.5) return "📈 Alta sensibilidad. Por cada $1 que sube la acción, la opción sube ~$" + delta.toFixed(2);
+                                    if (delta > 0.3) return "⚡ Sensibilidad moderada. Movimientos del subyacente tienen impacto medio.";
+                                    return "💧 Baja sensibilidad. La opción está lejos del dinero.";
+                                  } else {
+                                    if (delta < -0.8) return "🔥 Muy alta correlación inversa. La opción se mueve casi 1:1 contra la acción.";
+                                    if (delta < -0.5) return "📉 Alta sensibilidad. Por cada $1 que baja la acción, la opción sube ~$" + Math.abs(delta).toFixed(2);
+                                    if (delta < -0.3) return "⚡ Sensibilidad moderada. Beneficio medio cuando baja el subyacente.";
+                                    return "💧 Baja sensibilidad. La opción está lejos del dinero.";
+                                  }
+                                })()}
+                              </p>
+                            </div>
+                            
+                            <div className="p-2 bg-emerald-800/20 rounded">
+                              <p className="text-xs text-emerald-400">
+                                <strong>Consejo:</strong> {Math.abs(Number(analysisResults.greeks.delta)) > 0.7 ? 
+                                  "Posición direccional fuerte. Ideal si tienes convicción sobre la dirección del mercado." :
+                                  Math.abs(Number(analysisResults.greeks.delta)) > 0.3 ?
+                                  "Equilibrio entre riesgo y exposición. Buena opción para estrategias balanceadas." :
+                                  "Posición especulativa. Requiere grandes movimientos para ser rentable."}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Gamma - Convexidad */}
+                        <div className="bg-emerald-800/20 rounded-lg p-4 border border-emerald-600/30">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+                              <span className="text-emerald-400 font-bold text-lg">Γ</span>
+                            </div>
+                            <div>
+                              <h5 className="text-emerald-300 font-semibold">Gamma</h5>
+                              <p className="text-xs text-emerald-400">Aceleración del Delta</p>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-3">
+                            <div className="flex justify-between">
+                              <span className="text-zinc-400">Valor:</span>
+                              <span className="text-white font-bold">
+                                {Number(analysisResults.greeks.gamma).toFixed(6)}
+                              </span>
+                            </div>
+                            
+                            <div className="p-3 bg-emerald-900/30 rounded-lg">
+                              <p className="text-sm text-emerald-200 mb-2">
+                                <strong>Interpretación:</strong>
+                              </p>
+                              <p className="text-xs text-emerald-300">
+                                {(() => {
+                                  const gamma = Number(analysisResults.greeks.gamma);
+                                  
+                                  if (gamma > 0.01) return "🌊 Muy alta convexidad. El delta cambiará rápidamente con movimientos del subyacente.";
+                                  if (gamma > 0.005) return "〰️ Convexidad moderada. Aceleración media del delta.";
+                                  if (gamma > 0.001) return "➖ Baja convexidad. El delta se mantiene relativamente estable.";
+                                  return "📏 Convexidad mínima. Delta prácticamente lineal.";
+                                })()}
+                              </p>
+                            </div>
+                            
+                            <div className="p-2 bg-emerald-800/20 rounded">
+                              <p className="text-xs text-emerald-400">
+                                <strong>Consejo:</strong> {Number(analysisResults.greeks.gamma) > 0.005 ? 
+                                  "Alta gamma = mayor riesgo/recompensa. Beneficio acelerado si aciertas la dirección." :
+                                  "Baja gamma = comportamiento más predecible. Menos sorpresas en el P&L."}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Theta - Decay Temporal */}
+                        <div className="bg-emerald-800/20 rounded-lg p-4 border border-emerald-600/30">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+                              <span className="text-emerald-400 font-bold text-lg">Θ</span>
+                            </div>
+                            <div>
+                              <h5 className="text-emerald-300 font-semibold">Theta</h5>
+                              <p className="text-xs text-emerald-400">Pérdida de valor por tiempo</p>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-3">
+                            <div className="flex justify-between">
+                              <span className="text-zinc-400">Valor diario:</span>
+                              <span className="text-white font-bold">
+                                ${Number(analysisResults.greeks.theta).toFixed(4)}
+                              </span>
+                            </div>
+                            
+                            <div className="p-3 bg-emerald-900/30 rounded-lg">
+                              <p className="text-sm text-emerald-200 mb-2">
+                                <strong>Interpretación:</strong>
+                              </p>
+                              <p className="text-xs text-emerald-300">
+                                {(() => {
+                                  const theta = Math.abs(Number(analysisResults.greeks.theta));
+                                  const daysToExpiry = userInputs.expirationDate ? 
+                                    Math.ceil((new Date(userInputs.expirationDate) - new Date()) / (1000 * 60 * 60 * 24)) : 0;
+                                  
+                                  if (theta > 0.05) return `⚡ Decay acelerado. Pierdes $${theta.toFixed(4)} por día. ${daysToExpiry < 30 ? 'Urgente por cercanía al vencimiento.' : ''}`;
+                                  if (theta > 0.02) return `⏰ Decay moderado. Pérdida controlada de $${theta.toFixed(4)} diarios.`;
+                                  return `🐌 Decay lento. El tiempo trabaja gradualmente contra ti.`;
+                                })()}
+                              </p>
+                            </div>
+                            
+                            <div className="p-2 bg-emerald-800/20 rounded">
+                              <p className="text-xs text-emerald-400">
+                                <strong>Consejo:</strong> {Math.abs(Number(analysisResults.greeks.theta)) > 0.03 ? 
+                                  "Alto theta = necesitas movimientos rápidos. Evita mantener mucho tiempo." :
+                                  "Theta moderado = puedes ser más paciente con la posición."}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Vega - Sensibilidad a Volatilidad */}
+                        <div className="bg-emerald-800/20 rounded-lg p-4 border border-emerald-600/30">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+                              <span className="text-emerald-400 font-bold text-lg">ν</span>
+                            </div>
+                            <div>
+                              <h5 className="text-emerald-300 font-semibold">Vega</h5>
+                              <p className="text-xs text-emerald-400">Sensibilidad a volatilidad implícita</p>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-3">
+                            <div className="flex justify-between">
+                              <span className="text-zinc-400">Por 1% de vol:</span>
+                              <span className="text-white font-bold">
+                                ${Number(analysisResults.greeks.vega).toFixed(4)}
+                              </span>
+                            </div>
+                            
+                            <div className="p-3 bg-emerald-900/30 rounded-lg">
+                              <p className="text-sm text-emerald-200 mb-2">
+                                <strong>Interpretación:</strong>
+                              </p>
+                              <p className="text-xs text-emerald-300">
+                                {(() => {
+                                  const vega = Number(analysisResults.greeks.vega);
+                                  
+                                  if (vega > 0.15) return "🌪️ Muy sensible a cambios en volatilidad. Beneficio si aumenta la incertidumbre del mercado.";
+                                  if (vega > 0.08) return "💨 Sensibilidad moderada. Los eventos de mercado pueden afectar significativamente.";
+                                  if (vega > 0.03) return "🍃 Baja sensibilidad. Menos expuesto a cambios de volatilidad implícita.";
+                                  return "🪨 Mínima sensibilidad a volatilidad.";
+                                })()}
+                              </p>
+                            </div>
+                            
+                            <div className="p-2 bg-emerald-800/20 rounded">
+                              <p className="text-xs text-emerald-400">
+                                <strong>Consejo:</strong> {Number(analysisResults.greeks.vega) > 0.1 ? 
+                                  "Alto vega = beneficio antes de eventos importantes (earnings, noticias). Vende después." :
+                                  "Bajo vega = menos exposición a cambios de volatilidad implícita."}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Resumen de Sensibilidad */}
+                  {sensitivityResults.data?.data_points && (
+                    <div className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 rounded-xl p-6 border border-slate-700/50">
+                      <h4 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+                        <BarChart3 className="w-5 h-5 text-slate-400" />
+                        Resumen del Análisis de Sensibilidad
+                      </h4>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="md:col-span-2">
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                            {(() => {
+                              const prices = sensitivityResults.data.data_points.map(p => p.option_price);
+                              const maxPrice = Math.max(...prices);
+                              const minPrice = Math.min(...prices);
+                              const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
+                              const basePrice = analysisResults.calculatedPrice || avgPrice;
+                              
+                              return (
+                                <>
+                                  <div className="bg-slate-800/50 rounded-lg p-3 text-center">
+                                    <div className="text-lg font-bold text-green-400">${maxPrice.toFixed(4)}</div>
+                                    <div className="text-xs text-green-300">Mejor Escenario</div>
+                                  </div>
+                                  <div className="bg-slate-800/50 rounded-lg p-3 text-center">
+                                    <div className="text-lg font-bold text-red-400">${minPrice.toFixed(4)}</div>
+                                    <div className="text-xs text-red-300">Peor Escenario</div>
+                                  </div>
+                                  <div className="bg-slate-800/50 rounded-lg p-3 text-center">
+                                    <div className="text-lg font-bold text-blue-400">${avgPrice.toFixed(4)}</div>
+                                    <div className="text-xs text-blue-300">Precio Promedio</div>
+                                  </div>
+                                  <div className="bg-slate-800/50 rounded-lg p-3 text-center">
+                                    <div className="text-lg font-bold text-yellow-400">
+                                      {(((maxPrice - minPrice) / avgPrice) * 100).toFixed(1)}%
+                                    </div>
+                                    <div className="text-xs text-yellow-300">Rango de Variación</div>
+                                  </div>
+                                </>
+                              );
+                            })()}
+                          </div>
+                          
+                          <div className="bg-slate-800/50 rounded-lg p-4">
+                            <h5 className="text-slate-300 font-medium mb-3">📊 Tipo de Análisis</h5>
+                            <p className="text-sm text-slate-200 mb-2">
+                              <strong>Variable analizada:</strong> {
+                                sensitivityParams.sensitivityType === 'spot' ? 'Precio del subyacente' :
+                                sensitivityParams.sensitivityType === 'volatility' ? 'Volatilidad implícita' :
+                                sensitivityParams.sensitivityType === 'rate' ? 'Tasa de interés libre de riesgo' :
+                                'Tiempo hasta vencimiento'
+                              }
+                            </p>
+                            <p className="text-xs text-slate-400">
+                              Se han analizado {sensitivityResults.data.data_points.length} escenarios diferentes para entender 
+                              cómo reacciona el precio de la opción ante cambios en {
+                                sensitivityParams.sensitivityType === 'spot' ? 'el precio de la acción' :
+                                sensitivityParams.sensitivityType === 'volatility' ? 'la volatilidad del mercado' :
+                                sensitivityParams.sensitivityType === 'rate' ? 'las tasas de interés' :
+                                'el paso del tiempo'
+                              }.
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-4">
+                          <div className="bg-slate-800/50 rounded-lg p-4">
+                            <h5 className="text-slate-300 font-medium mb-3">🎯 Conclusión</h5>
+                            {(() => {
+                              const prices = sensitivityResults.data.data_points.map(p => p.option_price);
+                              const basePrice = analysisResults.calculatedPrice || prices.reduce((a, b) => a + b, 0) / prices.length;
+                              const profitable = prices.filter(p => p > basePrice * 1.05).length / prices.length;
+                              
+                              if (profitable > 0.6) {
+                                return (
+                                  <div className="text-center">
+                                    <div className="text-2xl mb-2">🚀</div>
+                                    <div className="text-green-400 font-medium text-sm">ESCENARIOS FAVORABLES</div>
+                                    <div className="text-xs text-slate-400 mt-1">
+                                      {(profitable * 100).toFixed(0)}% de los casos son positivos
+                                    </div>
+                                  </div>
+                                );
+                              } else if (profitable > 0.4) {
+                                return (
+                                  <div className="text-center">
+                                    <div className="text-2xl mb-2">⚖️</div>
+                                    <div className="text-yellow-400 font-medium text-sm">EQUILIBRIO</div>
+                                    <div className="text-xs text-slate-400 mt-1">
+                                      Resultados mixtos según escenario
+                                    </div>
+                                  </div>
+                                );
+                              } else {
+                                return (
+                                  <div className="text-center">
+                                    <div className="text-2xl mb-2">⚠️</div>
+                                    <div className="text-red-400 font-medium text-sm">RIESGO ELEVADO</div>
+                                    <div className="text-xs text-slate-400 mt-1">
+                                      Mayoría de escenarios desfavorables
+                                    </div>
+                                  </div>
+                                );
+                              }
+                            })()}
+                          </div>
+                          
+                          <div className="bg-slate-800/50 rounded-lg p-4">
+                            <h5 className="text-slate-300 font-medium mb-2">💡 Consejo Clave</h5>
+                            <p className="text-xs text-slate-300">
+                              {sensitivityParams.sensitivityType === 'spot' ? 
+                                "Monitorea el precio del subyacente de cerca. Tu opción es sensible a sus movimientos." :
+                                sensitivityParams.sensitivityType === 'volatility' ?
+                                "Atento a eventos que cambien la volatilidad implícita (earnings, noticias, etc.)." :
+                                sensitivityParams.sensitivityType === 'rate' ?
+                                "Vigila los anuncios de política monetaria que puedan afectar las tasas." :
+                                "El tiempo trabaja contra ti. Considera el timing de tu estrategia."
+                              }
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Consejo Final del Apartado */}
+                  <div className="bg-gradient-to-br from-emerald-900/30 to-green-900/30 rounded-xl p-6 border border-emerald-700/30">
+                    <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                      <Lightbulb className="w-5 h-5 text-emerald-400" />
+                      Consejo Estratégico Personalizado
+                    </h4>
+                    
+                    <div className="space-y-4">
+                      {analysisResults.greeks && Object.keys(analysisResults.greeks).length > 0 ? (
+                        <div className="bg-emerald-800/20 rounded-lg p-4 border border-emerald-600/30">
+                          <h5 className="text-emerald-300 font-medium mb-3">🎯 Estrategia Recomendada</h5>
+                          <p className="text-sm text-emerald-200 mb-3">
+                            Basado en el análisis de tus griegas, aquí está tu estrategia personalizada:
+                          </p>
+                          
+                          <div className="space-y-3 text-sm">
+                            {(() => {
+                              const delta = Math.abs(Number(analysisResults.greeks?.delta || 0));
+                              const gamma = Number(analysisResults.greeks?.gamma || 0);
+                              const theta = Math.abs(Number(analysisResults.greeks?.theta || 0));
+                              const vega = Number(analysisResults.greeks?.vega || 0);
+                              
+                              let strategy = [];
+                              let risk = [];
+                              let timing = [];
+                              
+                              // Estrategia basada en Delta
+                              if (delta > 0.7) {
+                                strategy.push("🎯 **Posición direccional fuerte**: Esta opción se mueve casi como la acción.");
+                              } else if (delta > 0.3) {
+                                strategy.push("⚖️ **Posición equilibrada**: Buena exposición con riesgo controlado.");
+                              } else {
+                                strategy.push("🎲 **Posición especulativa**: Necesitas grandes movimientos para obtener beneficios.");
+                              }
+                              
+                              // Riesgo basado en Gamma y Theta
+                              if (gamma > 0.005 && theta > 0.03) {
+                                risk.push("⚡ **Alto riesgo/recompensa**: Potencial de grandes ganancias pero también pérdidas rápidas.");
+                              } else if (theta > 0.05) {
+                                risk.push("⏰ **Riesgo temporal alto**: El tiempo trabaja activamente contra ti.");
+                              } else {
+                                risk.push("🛡️ **Riesgo moderado**: Perfil de riesgo más predecible.");
+                              }
+                              
+                              // Timing basado en Theta y Vega
+                              if (vega > 0.1) {
+                                timing.push("📅 **Timing crítico**: Ideal antes de eventos que aumenten volatilidad (earnings, noticias).");
+                              }
+                              if (theta > 0.03) {
+                                timing.push("⏱️ **Urgencia temporal**: Evita mantener la posición mucho tiempo.");
+                              } else {
+                                timing.push("🕐 **Flexibilidad temporal**: Puedes ser más paciente con esta posición.");
+                              }
+                              
+                              return [...strategy, ...risk, ...timing].map((item, index) => (
+                                <div key={index} className="text-emerald-200">
+                                  {item}
+                                </div>
+                              ));
+                            })()}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-emerald-800/20 rounded-lg p-4 border border-emerald-600/30">
+                          <h5 className="text-emerald-300 font-medium mb-2">📈 Consejos Generales</h5>
+                          <p className="text-sm text-emerald-200">
+                            Para obtener consejos más específicos, realiza el cálculo completo incluyendo las griegas en el paso anterior.
+                          </p>
+                        </div>
+                      )}
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-emerald-800/20 rounded-lg p-3 border border-emerald-600/30">
+                          <h6 className="text-emerald-300 font-medium mb-2">✅ Factores a Favor</h6>
+                          <ul className="text-xs text-emerald-400 space-y-1">
+                            {yahooData.selectedOption?.lastPrice && analysisResults.calculatedPrice && 
+                             analysisResults.calculatedPrice > yahooData.selectedOption.lastPrice ? (
+                              <li>• Opción subvalorada según el modelo</li>
+                            ) : null}
+                            {analysisResults.greeks?.vega && Number(analysisResults.greeks.vega) > 0.08 ? (
+                              <li>• Alta sensibilidad a volatilidad (bueno pre-eventos)</li>
+                            ) : null}
+                            {analysisResults.greeks?.delta && Math.abs(Number(analysisResults.greeks.delta)) > 0.5 ? (
+                              <li>• Buena sensibilidad direccional</li>
+                            ) : null}
+                            <li>• Modelo {userInputs.selectedModel === 'black_scholes' ? 'Black-Scholes' : userInputs.selectedModel === 'binomial' ? 'Binomial' : 'Monte Carlo'} apropiado para esta opción</li>
+                          </ul>
+                        </div>
+                        
+                        <div className="bg-emerald-800/20 rounded-lg p-3 border border-emerald-600/30">
+                          <h6 className="text-emerald-300 font-medium mb-2">⚠️ Riesgos a Considerar</h6>
+                          <ul className="text-xs text-emerald-400 space-y-1">
+                            {analysisResults.greeks?.theta && Math.abs(Number(analysisResults.greeks.theta)) > 0.05 ? (
+                              <li>• Decay temporal acelerado</li>
+                            ) : null}
+                            {yahooData.selectedOption?.lastPrice && analysisResults.calculatedPrice && 
+                             analysisResults.calculatedPrice < yahooData.selectedOption.lastPrice ? (
+                              <li>• Opción sobrevalorada según el modelo</li>
+                            ) : null}
+                            {userInputs.expirationDate && 
+                             Math.ceil((new Date(userInputs.expirationDate) - new Date()) / (1000 * 60 * 60 * 24)) < 30 ? (
+                              <li>• Poco tiempo hasta vencimiento</li>
+                            ) : null}
+                            <li>• Los modelos son estimaciones, no garantías</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Botones de Navegación */}
+                  <div className="flex items-center justify-center gap-4 pt-6 border-t border-zinc-700/50">
+                    <Button onClick={prevStep} variant="ghost">
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      Análisis de Sensibilidad
+                    </Button>
+                    
+                    <Button onClick={resetFlow} variant="primary">
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Realizar Otro Análisis
                     </Button>
                   </div>
                 </div>
@@ -1876,7 +2578,6 @@ function OptionsAnalysisTab() {
     </motion.div>
   );
 }
-
 // Tab de portfolio
 function PortfolioTab() {
   return (
@@ -1920,7 +2621,7 @@ function SettingsTab() {
             <Settings className="w-16 h-16 mx-auto mb-4 opacity-50" />
             <p className="text-lg">Configuración en desarrollo</p>
             <p className="text-sm">Próximamente podrás personalizar tu experiencia</p>
-      </div>
+          </div>
         </CardContent>
       </Card>
     </motion.div>

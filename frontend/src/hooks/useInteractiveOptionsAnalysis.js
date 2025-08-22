@@ -412,8 +412,12 @@ export const useInteractiveOptionsAnalysis = () => {
       console.log('💾 Nuevos resultados:', newAnalysisResults);
       setAnalysisResults(newAnalysisResults);
       
-      console.log('🔄 Cambiando a paso 3...');
-      setCurrentStep(3);
+      console.log('🔄 Manteniendo en paso 2 para mostrar resultados y pregunta...');
+      // No cambiar automáticamente al paso 3, mantener en paso 2 para mostrar los resultados
+      // y pregunta de si continuar con análisis de sensibilidad
+      
+      // Limpiar estado de loading después del cálculo exitoso
+      setLoading(false);
       
       console.log('🎉 === CÁLCULO COMPLETADO EXITOSAMENTE ===');
       return pricingData;
@@ -856,7 +860,7 @@ export const useInteractiveOptionsAnalysis = () => {
    * Función para avanzar al siguiente paso
    */
   const nextStep = useCallback(() => {
-    setCurrentStep(prev => Math.min(prev + 1, 3));
+    setCurrentStep(prev => Math.min(prev + 1, 4));
   }, []);
 
   /**

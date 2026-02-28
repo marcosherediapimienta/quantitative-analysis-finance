@@ -1,6 +1,8 @@
 from typing import Dict, Optional
 
-from models import CoxRossRubinsteinBinomialModel, FiniteDifferenceConfig, OptionContract
+from models.european_binomial import CoxRossRubinsteinBinomialModel
+from tools.analytics.numerics import FiniteDifferenceConfig
+from tools.analytics.options import OptionContract
 
 class BinomialGreeksCalculator:
     def __init__(

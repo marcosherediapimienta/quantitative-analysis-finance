@@ -8,7 +8,7 @@ from .valuation import (
     price_option_monte_carlo,
     solve_option_implied_volatility,
 )
-from risk import value_at_risk_expected_shortfall
+from risk.metrics import value_at_risk_expected_shortfall
 
 def run_monte_carlo_hedging_analysis(
     portfolio: List[Dict],

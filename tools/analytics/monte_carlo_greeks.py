@@ -18,18 +18,22 @@ class MonteCarloGreeksCalculator:
         self.time_bump_abs = time_bump_abs
 
     def calculate(self, S: float, K: float, T: float, r: float, sigma: float, **kwargs) -> Dict[str, float]:
-        base_rng = np.random.default_rng(kwargs.get("seed", None))
+        pricing_kwargs = dict(kwargs)
+        base_seed = pricing_kwargs.pop("seed", None)
+        base_rng = np.random.default_rng(base_seed)
         seeds = base_rng.integers(0, 1e9, size=7)
 
         eps_s = max(self.spot_bump_rel * S, 1e-8)
-        price_up = self.pricing_fn(S=S + eps_s, K=K, T=T, r=r, sigma=sigma, seed=int(seeds[0]), **kwargs)
-        price_down = self.pricing_fn(S=S - eps_s, K=K, T=T, r=r, sigma=sigma, seed=int(seeds[1]), **kwargs)
-        price = self.pricing_fn(S=S, K=K, T=T, r=r, sigma=sigma, seed=int(seeds[2]), **kwargs)
+        price_up = self.pricing_fn(S=S + eps_s, K=K, T=T, r=r, sigma=sigma, seed=int(seeds[0]), **pricing_kwargs)
+        price_down = self.pricing_fn(S=S - eps_s, K=K, T=T, r=r, sigma=sigma, seed=int(seeds[1]), **pricing_kwargs)
+        price = self.pricing_fn(S=S, K=K, T=T, r=r, sigma=sigma, seed=int(seeds[2]), **pricing_kwargs)
         delta = (price_up - price_down) / (2 * eps_s)
         gamma = (price_up - 2 * price + price_down) / (eps_s**2)
 
         eps_sigma = self.vol_bump_abs
-        price_vega_up = self.pricing_fn(S=S, K=K, T=T, r=r, sigma=sigma + eps_sigma, seed=int(seeds[3]), **kwargs)
+        price_vega_up = self.pricing_fn(
+            S=S, K=K, T=T, r=r, sigma=sigma + eps_sigma, seed=int(seeds[3]), **pricing_kwargs
+        )
         price_vega_down = self.pricing_fn(
             S=S,
             K=K,
@@ -37,19 +41,19 @@ class MonteCarloGreeksCalculator:
             r=r,
             sigma=max(1e-8, sigma - eps_sigma),
             seed=int(seeds[4]),
-            **kwargs,
+            **pricing_kwargs,
         )
         vega = (price_vega_up - price_vega_down) / (2 * eps_sigma)
 
         dt = min(self.time_bump_abs, max(1e-8, T - 1e-8))
         if T - dt > 0:
-            price_t = self.pricing_fn(S=S, K=K, T=T - dt, r=r, sigma=sigma, seed=int(seeds[5]), **kwargs)
+            price_t = self.pricing_fn(S=S, K=K, T=T - dt, r=r, sigma=sigma, seed=int(seeds[5]), **pricing_kwargs)
             theta = (price_t - price) / dt
         else:
             theta = float("nan")
 
         dr = self.rate_bump_abs
-        price_rho_up = self.pricing_fn(S=S, K=K, T=T, r=r + dr, sigma=sigma, seed=int(seeds[6]), **kwargs)
-        price_rho_down = self.pricing_fn(S=S, K=K, T=T, r=r - dr, sigma=sigma, seed=int(seeds[2]), **kwargs)
+        price_rho_up = self.pricing_fn(S=S, K=K, T=T, r=r + dr, sigma=sigma, seed=int(seeds[6]), **pricing_kwargs)
+        price_rho_down = self.pricing_fn(S=S, K=K, T=T, r=r - dr, sigma=sigma, seed=int(seeds[2]), **pricing_kwargs)
         rho = (price_rho_up - price_rho_down) / (2 * dr)
         return {"delta": delta, "gamma": gamma, "vega": vega, "theta": theta, "rho": rho}

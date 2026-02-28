@@ -2,7 +2,9 @@ from typing import Callable, Dict, Optional
 
 from scipy.optimize import brentq
 
-from models import BlackScholesPricer, ImpliedVolatilityConfig, OptionType
+from models.bs import BlackScholesPricer
+from tools.analytics.numerics import ImpliedVolatilityConfig
+from tools.analytics.options import OptionType
 
 class ImpliedVolatilitySolver:
     _bs_price: Dict[OptionType, Callable[[float, float, float, float, float], float]] = {

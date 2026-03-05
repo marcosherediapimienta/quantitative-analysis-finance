@@ -1,11 +1,9 @@
 import numpy as np
 from typing import Callable, Dict, Tuple
-
 from .config import DEFAULT_SCHEME, DEFAULT_STEPS
 from .types import Contract, FactorScheme
 
 TreeFactorFn = Callable[[float, float, float, int], Tuple[float, float, float, float]]
-
 
 def _crr_factors(
     time_to_maturity: float,
@@ -26,12 +24,10 @@ FACTOR_SCHEMES: Dict[FactorScheme, TreeFactorFn] = {
     "crr": _crr_factors,
 }
 
-
 def normalize_contract(contract: Contract) -> Contract:
     normalized = dict(contract)
     normalized["steps"] = int(normalized.get("steps", DEFAULT_STEPS))
     return normalized  # type: ignore[return-value]
-
 
 def get_tree_factors(contract: Contract, scheme: str = DEFAULT_SCHEME) -> Tuple[float, float, float, float]:
     normalized = normalize_contract(contract)
@@ -43,16 +39,13 @@ def get_tree_factors(contract: Contract, scheme: str = DEFAULT_SCHEME) -> Tuple[
         normalized["steps"],
     )
 
-
 def terminal_spot_prices(contract: Contract, up: float, down: float) -> np.ndarray:
     steps = contract["steps"]
     j = np.arange(steps + 1)
     return contract["spot"] * (up**j) * (down ** (steps - j))
 
-
 def step_back(values: np.ndarray, p_up: float, discount: float) -> np.ndarray:
     return discount * (p_up * values[1:] + (1.0 - p_up) * values[:-1])
-
 
 def early_exercise_spot_prices(contract: Contract, up: float, down: float, step: int) -> np.ndarray:
     j = np.arange(step + 1)

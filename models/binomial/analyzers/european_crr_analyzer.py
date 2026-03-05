@@ -1,6 +1,7 @@
 from typing import Dict, Mapping, Optional
 from ..tools.config import DEFAULT_SCHEME
 from ..tools.european import price_european_binomial
+from ..tools.greeks import finite_difference_greeks
 from ..tools.types import Contract
 
 class EuropeanCRRAnalyzer:
@@ -15,5 +16,10 @@ class EuropeanCRRAnalyzer:
     def price(self, contract: Contract) -> float:
         return price_european_binomial(contract=contract, scheme=self.scheme)
 
+    def greeks(self, contract: Contract) -> Dict[str, float]:
+        metrics = finite_difference_greeks(pricer=self.price, contract=contract, bumps=self.bumps)
+        metrics.pop("price", None)
+        return metrics
+
     def analyze(self, contract: Contract) -> Dict[str, float]:
-        return {"price": self.price(contract)}
+        return finite_difference_greeks(pricer=self.price, contract=contract, bumps=self.bumps)

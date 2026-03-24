@@ -1,5 +1,3 @@
-from .european_bs_analyzer import EuropeanBSAnalyzer
+from .bs_analyzer import BSAnalyzer
 
-__all__ = [
-    "EuropeanBSAnalyzer",
-]
+__all__ = ["BSAnalyzer"]

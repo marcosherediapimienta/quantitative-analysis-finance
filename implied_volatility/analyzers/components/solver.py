@@ -1,31 +1,33 @@
-from typing import Any, Dict, Literal, TypedDict
-from models.black_scholes import price_european_black_scholes
-from models.black_scholes.tools.greeks import analytical_greeks
+from typing import Any, Dict
 
-OptionType = Literal["call", "put"]
-SolverMethod = Literal["newton", "bisection"]
+from models.black_scholes import analytical_greeks, price_european_black_scholes
 
-class IVContract(TypedDict):
-    spot: float
-    strike: float
-    time_to_maturity: float
-    risk_free_rate: float
-    market_price: float
-    option_type: OptionType
+from ...tools.config import (
+    DEFAULT_BISECTION_MAX_ITERATIONS,
+    DEFAULT_INITIAL_VOLATILITY,
+    DEFAULT_MAX_ITERATIONS,
+    DEFAULT_METHOD,
+    DEFAULT_TOLERANCE,
+    DEFAULT_USE_FALLBACK,
+    MAX_VOLATILITY,
+    MIN_VEGA,
+    MIN_VOLATILITY,
+)
+from ...tools.types import IVContract, SolverMethod
 
 
 class ImpliedVolatilitySolver:
     def __init__(
         self,
-        method: SolverMethod = "newton",
-        tolerance: float = 1e-8,
-        max_iterations: int = 50,
-        bisection_max_iterations: int = 200,
-        initial_volatility: float = 0.2,
-        min_volatility: float = 1e-8,
-        max_volatility: float = 5.0,
-        min_vega: float = 1e-8,
-        use_fallback: bool = True,
+        method: SolverMethod = DEFAULT_METHOD,
+        tolerance: float = DEFAULT_TOLERANCE,
+        max_iterations: int = DEFAULT_MAX_ITERATIONS,
+        bisection_max_iterations: int = DEFAULT_BISECTION_MAX_ITERATIONS,
+        initial_volatility: float = DEFAULT_INITIAL_VOLATILITY,
+        min_volatility: float = MIN_VOLATILITY,
+        max_volatility: float = MAX_VOLATILITY,
+        min_vega: float = MIN_VEGA,
+        use_fallback: bool = DEFAULT_USE_FALLBACK,
     ) -> None:
         if method not in ("newton", "bisection"):
             raise ValueError("method debe ser 'newton' o 'bisection'.")

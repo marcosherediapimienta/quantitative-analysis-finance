@@ -1,0 +1,11 @@
+from .types import SolverMethod
+
+DEFAULT_METHOD: SolverMethod = "newton"
+DEFAULT_TOLERANCE: float = 1e-8
+DEFAULT_MAX_ITERATIONS: int = 50
+DEFAULT_BISECTION_MAX_ITERATIONS: int = 200
+DEFAULT_INITIAL_VOLATILITY: float = 0.2
+MIN_VOLATILITY: float = 1e-8
+MAX_VOLATILITY: float = 5.0
+MIN_VEGA: float = 1e-8
+DEFAULT_USE_FALLBACK: bool = True

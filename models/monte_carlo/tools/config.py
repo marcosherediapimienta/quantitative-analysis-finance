@@ -1,10 +1,13 @@
-DEFAULT_NUM_SIMULATIONS = 10000
-DEFAULT_NUM_STEPS = 50
-DEFAULT_REGRESSION_TYPE = "quadratic"
-DEFAULT_REGRESSION_DEGREE = 2
-MIN_POSITIVE_VALUE = 1e-8
+from .types import BumpConfig, ExerciseStyle, RegressionType
 
-DEFAULT_DIFF_BUMPS = {
+DEFAULT_NUM_SIMULATIONS: int = 10000
+DEFAULT_NUM_STEPS: int = 50
+DEFAULT_REGRESSION_TYPE: RegressionType = "quadratic"
+DEFAULT_REGRESSION_DEGREE: int = 2
+DEFAULT_EXERCISE_STYLE: ExerciseStyle = "european"
+MIN_POSITIVE_VALUE: float = 1e-8
+
+DEFAULT_DIFF_BUMPS: BumpConfig = {
     "spot_bump_rel": 0.01,
     "spot_bump_min": 0.01,
     "vol_bump_abs": 0.01,

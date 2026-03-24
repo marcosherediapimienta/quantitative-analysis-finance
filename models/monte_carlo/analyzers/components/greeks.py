@@ -1,20 +1,23 @@
-from typing import Callable, Dict, Mapping, Optional
-from .config import DEFAULT_DIFF_BUMPS, MIN_POSITIVE_VALUE
-from .types import Contract
+from typing import Callable, Dict, Optional
+
+from ...tools.config import DEFAULT_DIFF_BUMPS, MIN_POSITIVE_VALUE
+from ...tools.types import BumpConfig, Contract
 
 PricerFn = Callable[[Contract], float]
+
 
 def _with_updates(contract: Contract, **updates: float) -> Contract:
     updated = dict(contract)
     updated.update(updates)
-    return updated 
+    return updated  # type: ignore[return-value]
+
 
 def finite_difference_greeks(
     pricer: PricerFn,
     contract: Contract,
-    bumps: Optional[Mapping[str, float]] = None,
+    bumps: Optional[BumpConfig] = None,
 ) -> Dict[str, float]:
-    bump_values = {**DEFAULT_DIFF_BUMPS, **(bumps or {})}
+    bump_values: BumpConfig = {**DEFAULT_DIFF_BUMPS, **(bumps or {})}  # type: ignore[misc]
     base_price = pricer(contract)
 
     spot_bump = max(bump_values["spot_bump_rel"] * contract["spot"], bump_values["spot_bump_min"])

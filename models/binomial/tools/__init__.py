@@ -1,11 +1,9 @@
-from .american import price_american_binomial
-from .european import price_european_binomial
-from .types import Contract, FactorScheme, OptionType
+from .types import BumpConfig, Contract, ExerciseStyle, FactorScheme, OptionType
 
 __all__ = [
+    "BumpConfig",
     "Contract",
     "OptionType",
     "FactorScheme",
-    "price_european_binomial",
-    "price_american_binomial",
+    "ExerciseStyle",
 ]

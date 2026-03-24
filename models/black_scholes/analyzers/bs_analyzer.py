@@ -1,9 +1,11 @@
 from typing import Dict
-from ..tools.european import price_european_black_scholes
-from ..tools.greeks import analytical_greeks
-from ..tools.types import Contract
 
-class EuropeanBSAnalyzer:
+from ..tools.types import Contract
+from .components.european import price_european_black_scholes
+from .components.greeks import analytical_greeks
+
+
+class BSAnalyzer:
     def price(self, contract: Contract) -> float:
         return price_european_black_scholes(contract=contract)
 

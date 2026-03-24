@@ -1,5 +1,7 @@
 import numpy as np
-from .config import DEFAULT_SCHEME
+
+from ...tools.config import DEFAULT_SCHEME
+from ...tools.types import Contract, FactorScheme
 from .helper import (
     early_exercise_spot_prices,
     get_tree_factors,
@@ -7,9 +9,9 @@ from .helper import (
     terminal_spot_prices,
 )
 from .payoff import get_payoff
-from .types import Contract
 
-def price_american_binomial(contract: Contract, scheme: str = DEFAULT_SCHEME) -> float:
+
+def price_american_binomial(contract: Contract, scheme: FactorScheme = DEFAULT_SCHEME) -> float:
     up, down, p_up, discount = get_tree_factors(contract, scheme=scheme)
     payoff = get_payoff(contract["option_type"])
     values = payoff(terminal_spot_prices(contract, up=up, down=down), contract["strike"])

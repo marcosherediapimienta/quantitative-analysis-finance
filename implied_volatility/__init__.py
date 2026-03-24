@@ -1,10 +1,6 @@
 from .analyzers import IVAnalyzer
-from .tools import (
-    ImpliedVolatilitySolver,
-    IVContract,
-    OptionType,
-    SolverMethod,
-)
+from .analyzers.components import ImpliedVolatilitySolver
+from .tools.types import IVContract, OptionType, SolverMethod
 
 __all__ = [
     "OptionType",

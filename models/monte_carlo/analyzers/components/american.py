@@ -1,16 +1,18 @@
 import numpy as np
 from typing import Optional
-from .config import DEFAULT_NUM_SIMULATIONS, DEFAULT_NUM_STEPS, DEFAULT_REGRESSION_TYPE
+
+from ...tools.config import DEFAULT_NUM_SIMULATIONS, DEFAULT_NUM_STEPS, DEFAULT_REGRESSION_TYPE
+from ...tools.types import Contract, RegressionType
 from .helper import get_regression_degree, simulate_price_paths
 from .payoff import get_payoff
-from .types import Contract
+
 
 def price_american_monte_carlo(
     contract: Contract,
     num_simulations: int = DEFAULT_NUM_SIMULATIONS,
     num_steps: int = DEFAULT_NUM_STEPS,
     seed: Optional[int] = None,
-    regression_type: str = DEFAULT_REGRESSION_TYPE,
+    regression_type: RegressionType = DEFAULT_REGRESSION_TYPE,
 ) -> float:
     paths = simulate_price_paths(
         contract=contract,

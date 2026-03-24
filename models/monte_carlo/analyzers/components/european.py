@@ -1,9 +1,11 @@
 import numpy as np
 from typing import Optional
-from .config import DEFAULT_NUM_SIMULATIONS
+
+from ...tools.config import DEFAULT_NUM_SIMULATIONS
+from ...tools.types import Contract
 from .helper import simulate_terminal_prices
 from .payoff import get_payoff
-from .types import Contract
+
 
 def price_european_monte_carlo(
     contract: Contract,

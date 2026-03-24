@@ -1,7 +1,3 @@
-from .american_mc_analyzer import AmericanMCAnalyzer
-from .european_mc_analyzer import EuropeanMCAnalyzer
+from .mc_analyzer import MCAnalyzer
 
-__all__ = [
-    "EuropeanMCAnalyzer",
-    "AmericanMCAnalyzer",
-]
+__all__ = ["MCAnalyzer"]

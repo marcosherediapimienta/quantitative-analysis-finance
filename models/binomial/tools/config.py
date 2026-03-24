@@ -1,13 +1,14 @@
-DEFAULT_STEPS = 500
-DEFAULT_SCHEME = "crr"
-EPSILON = 1e-12
+from .types import BumpConfig, ExerciseStyle, FactorScheme
 
-DEFAULT_DIFF_BUMPS = {
+DEFAULT_STEPS: int = 500
+DEFAULT_SCHEME: FactorScheme = "crr"
+DEFAULT_EXERCISE_STYLE: ExerciseStyle = "european"
+MIN_POSITIVE_VALUE: float = 1e-8
+
+DEFAULT_DIFF_BUMPS: BumpConfig = {
     "spot_bump_rel": 0.01,
     "spot_bump_min": 0.01,
     "vol_bump_abs": 0.01,
     "time_bump_abs": 0.01,
     "rate_bump_abs": 0.01,
 }
-
-MIN_POSITIVE_VALUE = 1e-8

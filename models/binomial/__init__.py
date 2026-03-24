@@ -1,21 +1,15 @@
-from .tools import (
-    Contract,
-    FactorScheme,
-    OptionType,
-    price_american_binomial,
-    price_european_binomial,
-)
-from .analyzers import (
-    AmericanCRRAnalyzer,
-    EuropeanCRRAnalyzer,
-)
+from .tools.types import BumpConfig, Contract, ExerciseStyle, FactorScheme, OptionType
+from .analyzers import CRRAnalyzer
+from .analyzers.components.american import price_american_binomial
+from .analyzers.components.european import price_european_binomial
 
 __all__ = [
     "Contract",
+    "BumpConfig",
     "OptionType",
     "FactorScheme",
+    "ExerciseStyle",
     "price_european_binomial",
     "price_american_binomial",
-    "EuropeanCRRAnalyzer",
-    "AmericanCRRAnalyzer",
+    "CRRAnalyzer",
 ]

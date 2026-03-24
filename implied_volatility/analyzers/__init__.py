@@ -1,5 +1,3 @@
 from .iv_analyzer import IVAnalyzer
 
-__all__ = [
-    "IVAnalyzer",
-]
+__all__ = ["IVAnalyzer"]

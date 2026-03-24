@@ -1,9 +1,10 @@
-from .config import DEFAULT_SCHEME
+from ...tools.config import DEFAULT_SCHEME
+from ...tools.types import Contract, FactorScheme
 from .helper import get_tree_factors, step_back, terminal_spot_prices
 from .payoff import get_payoff
-from .types import Contract
 
-def price_european_binomial(contract: Contract, scheme: str = DEFAULT_SCHEME) -> float:
+
+def price_european_binomial(contract: Contract, scheme: FactorScheme = DEFAULT_SCHEME) -> float:
     up, down, p_up, discount = get_tree_factors(contract, scheme=scheme)
     payoff = get_payoff(contract["option_type"])
     values = payoff(terminal_spot_prices(contract, up=up, down=down), contract["strike"])

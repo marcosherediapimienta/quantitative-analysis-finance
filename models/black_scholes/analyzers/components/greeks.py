@@ -1,7 +1,9 @@
 from math import exp, sqrt
 from typing import Dict
+
+from ...tools.types import Contract
 from .helper import get_d_values, normal_cdf, normal_pdf
-from .types import Contract
+
 
 def analytical_greeks(contract: Contract) -> Dict[str, float]:
     d_values = get_d_values(contract)

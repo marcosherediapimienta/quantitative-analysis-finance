@@ -1,7 +1,3 @@
-from .american_crr_analyzer import AmericanCRRAnalyzer
-from .european_crr_analyzer import EuropeanCRRAnalyzer
+from .crr_analyzer import CRRAnalyzer
 
-__all__ = [
-    "AmericanCRRAnalyzer",
-    "EuropeanCRRAnalyzer",
-]
+__all__ = ["CRRAnalyzer"]

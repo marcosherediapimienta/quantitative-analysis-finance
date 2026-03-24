@@ -1,13 +1,7 @@
-from .implied_volatility import (
-    ImpliedVolatilitySolver,
-    IVContract,
-    OptionType,
-    SolverMethod,
-)
+from .types import IVContract, OptionType, SolverMethod
 
 __all__ = [
+    "IVContract",
     "OptionType",
     "SolverMethod",
-    "IVContract",
-    "ImpliedVolatilitySolver",
 ]

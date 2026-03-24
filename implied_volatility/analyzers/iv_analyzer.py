@@ -1,11 +1,15 @@
 from typing import Any, Dict, Optional
-from ..tools import IVContract, ImpliedVolatilitySolver, SolverMethod
+
+from ..tools.config import DEFAULT_METHOD
+from ..tools.types import IVContract, SolverMethod
+from .components.solver import ImpliedVolatilitySolver
+
 
 class IVAnalyzer:
     def __init__(
         self,
         solver: Optional[ImpliedVolatilitySolver] = None,
-        method: SolverMethod = "newton",
+        method: SolverMethod = DEFAULT_METHOD,
         **solver_kwargs: Any,
     ) -> None:
         self.solver = solver or ImpliedVolatilitySolver(method=method, **solver_kwargs)

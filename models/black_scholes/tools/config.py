@@ -1,0 +1,1 @@
+MIN_POSITIVE_VALUE: float = 1e-8
